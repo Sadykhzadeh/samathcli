@@ -1,0 +1,1 @@
+int checkAnswer(char* userAnswer, char* ans, char* first, char* second, char* third, char* fourth);
