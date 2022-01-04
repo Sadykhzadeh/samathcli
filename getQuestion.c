@@ -4,7 +4,9 @@
 #include "checkAnswer.h"
 #include "getQuestion.h"
 
-void fetchQuestion() { system("curl http://localhost:3000/gen?c=true -o .tmp.samath && clear");}
+void fetchQuestion() {
+  system("curl http://localhost:3000/gen?c=true -o .tmp.samath && clear");
+}
 
 int displayQuestion(int number){
   fetchQuestion();
@@ -27,12 +29,12 @@ int displayQuestion(int number){
   char* fourth = strtok(NULL, " ,");
   printf("\t\tD) %s\n\n\t", fourth);
   char* userAnswer;
-  printf("Answer: "); scanf("%1s", userAnswer);  
+  printf("Answer: "); scanf("%1s", userAnswer); 
   char* ans = strtok(NULL, " ,");
 
   system("clear");
   FILE * errors = fopen(".tmp.errors", "a");
-  fprintf(errors, "Task %d. %s = %s\n", number, expression, ans);
+  fprintf(errors, "Task %d. %s\t= %s\n", number, expression, ans);
   fclose(errors);
 
   return (checkAnswer(userAnswer, ans, first, second, third, fourth) == 1) ? 1 : 0;
