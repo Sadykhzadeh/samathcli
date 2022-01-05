@@ -7,7 +7,7 @@
 #define noArgs \
   "😅 Please, provide me a number of questions that I should output! :3"
 #define noErrors "🥳 Fantastic, you haven't got any mistakes!"
-#define bye "😉 Have a nice day!"
+#define bye "\n😉 Have a nice day!"
 
 int main(int n, char** a) {
   puts(welcomeText);
