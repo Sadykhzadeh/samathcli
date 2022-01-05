@@ -32,12 +32,12 @@ int displayQuestion(int number) {
   printf("Answer: ");
   scanf("%1s", userAnswer);
   char* ans = strtok(NULL, " ,");
-
   system("clear");
+
+  if(checkAnswer(userAnswer, ans, first, second, third, fourth)) return 0;
+
   FILE* errors = fopen(".tmp.errors", "a");
   fprintf(errors, "Task %d. %s\t= %s\n", number, expression, ans);
   fclose(errors);
-
-  return (checkAnswer(userAnswer, ans, first, second, third, fourth) == 1) ? 1
-                                                                           : 0;
+  return 1;
 }
