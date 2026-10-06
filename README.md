@@ -23,8 +23,22 @@
 ## Usage
 
 * Download repo
-* run `make -f Makefile build`
-* That's it! Type `./samath`
+* run `make`
+* That's it! Type `./samath 5` to get five questions
+
+`make clean` removes the binary, the object files and any leftover temporaries.
+
+### Requirements
+
+* a C11 compiler (`gcc` or `clang`) and `make`
+* `curl` on `PATH`
+* a running [SaMathAPI](https://github.com/Sadykhzadeh/samathapi) instance
+
+### Configuration
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `SAMATH_API_URL` | `http://localhost:3000/gen?c=true` | Where questions are fetched from. A value containing characters that are not valid in a URL is ignored in favour of the default. |
 
 ## Contributing
 
