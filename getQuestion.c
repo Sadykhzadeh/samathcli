@@ -3,6 +3,7 @@
 #include <string.h>
 #include "checkAnswer.h"
 #include "getQuestion.h"
+#include "question.h"
 
 #define apiUrlEnv "SAMATH_API_URL"
 #define apiUrlDefault "http://localhost:3000/gen?c=true"
@@ -19,11 +20,11 @@ static int isSafeUrl(const char* url) {
 }
 
 /* A terminal that refuses to clear is not worth failing a question over. */
-static void clearScreen() {
+static void clearScreen(void) {
   if (system("clear")) return;
 }
 
-static int fetchQuestion() {
+static int fetchQuestion(void) {
   const char* url = getenv(apiUrlEnv);
   if (!url || !isSafeUrl(url)) url = apiUrlDefault;
 
@@ -42,36 +43,32 @@ int displayQuestion(int number) {
 
   FILE* content = fopen(".tmp.samath", "r");
   if (!content) return -1;
-  char stringOfContent[512];
-  char* line = fgets(stringOfContent, sizeof stringOfContent, content);
+  char line[512];
+  char* got = fgets(line, sizeof line, content);
   fclose(content);
-  if (!line) return -1;
-  stringOfContent[strcspn(stringOfContent, "\r\n")] = '\0';
+  if (!got) return -1;
 
-  char* expression = strtok(stringOfContent, " ,");
-  char* first = strtok(NULL, " ,");
-  char* second = strtok(NULL, " ,");
-  char* third = strtok(NULL, " ,");
-  char* fourth = strtok(NULL, " ,");
-  char* ans = strtok(NULL, " ,");
-  if (!expression || !first || !second || !third || !fourth || !ans) return -1;
+  Question q;
+  if (!parseQuestion(line, &q)) return -1;
 
-  printf("%d\t🤔 Solve this expression: %s\n\n", number, expression);
-  printf("\tA) %s", first);
-  printf("\t\tB) %s\n", second);
-  printf("\tC) %s", third);
-  printf("\t\tD) %s\n\n\t", fourth);
+  printf("%d\t🤔 Solve this expression: %s\n\n", number, q.expression);
+  printf("\tA) %s", q.options[0]);
+  printf("\t\tB) %s\n", q.options[1]);
+  printf("\tC) %s", q.options[2]);
+  printf("\t\tD) %s\n\n\t", q.options[3]);
 
   char userAnswer[8];
   printf("Answer: ");
   if (scanf("%7s", userAnswer) != 1) return -1;
   clearScreen();
 
-  if (checkAnswer(userAnswer, ans, first, second, third, fourth)) return 1;
+  if (checkAnswer(userAnswer, q.answer, q.options[0], q.options[1],
+                  q.options[2], q.options[3]))
+    return 1;
 
   FILE* errors = fopen(".tmp.errors", "a");
   if (errors) {
-    fprintf(errors, "Task %d. %s\t= %s\n", number, expression, ans);
+    fprintf(errors, "Task %d. %s\t= %s\n", number, q.expression, q.answer);
     fclose(errors);
   }
   return 0;
