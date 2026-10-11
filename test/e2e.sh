@@ -18,6 +18,9 @@ default_api="http://api.test/gen?c=true"
 SAMATH_API_URL=$default_api
 export SAMATH_API_URL
 
+# How long standard input stays open after the answers; a question left alone
+# can only run out of time while someone might still type.
+hold=0
 passed=0
 failed=0
 
@@ -36,7 +39,7 @@ run() {
   shift
   rm -f "$CURL_LOG" "$CURL_LOG.served"
   : > "$CURL_LOG"
-  (cd "$work/cwd" && printf '%s' "$input" | "$root/samath" "$@" > "$work/out" 2> "$work/err")
+  (cd "$work/cwd" && { printf '%s' "$input"; sleep "$hold"; } | "$root/samath" "$@" > "$work/out" 2> "$work/err")
   status=$?
   out=$(cat "$work/out")
   err=$(cat "$work/err")
@@ -197,6 +200,53 @@ run_at "http://api.test/gen?c=true&x='\$(touch pwned)';touch pwned2" "the URL is
 if [ ! -e "$work/cwd/pwned" ] && [ ! -e "$work/cwd/pwned2" ]; then ok; else fail "a command in the URL ran"; fi
 expect_url "\$(touch pwned)"
 
+input=$(right 3)
+run "a time limit that is kept changes nothing" -t 5 3
+expect_status 0
+expect_out "Fantastic"
+run "the limit may come after the number" 3 --time=5
+expect_status 0
+expect_out "Fantastic"
+
+# The input stays open and says nothing, so the second question runs out.
+hold=2
+input=$(printf 'a')
+run "a question left alone runs out of time" -t 1 2
+hold=0
+expect_status 0
+expect_out "You have 1 mistakes!"
+expect_out "Task 2. 1+1"
+expect_out "(time ran out)"
+expect_no_out "Task 1."
+expect_out "1 of 2 right (50%)"
+
+input=
+run "help says how to use it" --help
+expect_status 0
+expect_requests 0
+expect_out "usage: samath"
+expect_out "--time"
+
+for bad in "-t 0 5" "-t 3601 5" "-t soon 5" "-t"; do
+  input=
+  # shellcheck disable=SC2086
+  run "\"$bad\" is not a time limit" $bad
+  expect_status 1
+  expect_requests 0
+  expect_err "time limit"
+done
+
+input=
+run "an option that does not exist" -x 5
+expect_status 1
+expect_requests 0
+expect_err "do not know the option \"-x\""
+
+run "two numbers of questions" 5 6
+expect_status 1
+expect_requests 0
+expect_err "\"6\" is a second one"
+
 input=
 run "no arguments is a hint"
 expect_status 0
@@ -208,7 +258,7 @@ for bad in 0 -3 abc 2.5 ""; do
   run "\"$bad\" is not a number of questions" "$bad"
   expect_status 1
   expect_requests 0
-  expect_out "whole number"
+  expect_err "whole number"
 done
 
 echo "$passed checks passed, $failed failed"

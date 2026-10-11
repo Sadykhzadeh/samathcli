@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <sys/select.h>
 #include <termios.h>
+#include <time.h>
 #include <unistd.h>
 #include "input.h"
 
@@ -14,6 +15,10 @@
 /* How long the rest of an escape sequence is waited for. A terminal sends it
    in one piece, so this only has to outlast the wire. */
 #define SEQUENCE_WAIT_MS 30
+
+/* What readByte gives besides a byte. */
+#define BYTE_END (-1)
+#define BYTE_NONE (-2)
 
 static struct termios original;
 static volatile sig_atomic_t taken = 0;
@@ -35,6 +40,12 @@ static void onSignal(int signal) {
   fallback.sa_flags = 0;
   sigaction(signal, &fallback, NULL);
   raise(signal);
+}
+
+double monotonicSeconds(void) {
+  struct timespec time;
+  clock_gettime(CLOCK_MONOTONIC, &time);
+  return (double)time.tv_sec + (double)time.tv_nsec / 1e9;
 }
 
 void inputStart(void) {
@@ -66,8 +77,8 @@ void inputDiscard(void) {
   if (taken) tcflush(STDIN_FILENO, TCIFLUSH);
 }
 
-/* One byte of input, or -1 at the end of it. With a wait, also -1 when
-   nothing comes in time. */
+/* One byte of input, BYTE_END at the end of it, or, when `waitMs` is not
+   negative and nothing came in that long, BYTE_NONE. */
 static int readByte(int waitMs) {
   if (waitMs >= 0) {
     fd_set readable;
@@ -75,14 +86,14 @@ static int readByte(int waitMs) {
     FD_SET(STDIN_FILENO, &readable);
     struct timeval timeout = {waitMs / 1000, (waitMs % 1000) * 1000};
     int ready = select(STDIN_FILENO + 1, &readable, NULL, NULL, &timeout);
-    if (ready <= 0) return -1;
+    if (ready <= 0) return BYTE_NONE;
   }
   unsigned char byte;
   for (;;) {
     ssize_t got = read(STDIN_FILENO, &byte, 1);
     if (got == 1) return byte;
     if (got < 0 && errno == EINTR) continue;
-    return -1;
+    return BYTE_END;
   }
 }
 
@@ -94,10 +105,28 @@ static void skipEscapeSequence(void) {
     if (next >= 0x40 && next <= 0x7e) return;
 }
 
-int readChoice(void) {
+int readChoice(int seconds, void (*tick)(int left)) {
+  double deadline = monotonicSeconds() + seconds;
+  int shown = seconds;
+
   for (;;) {
-    int key = readByte(-1);
-    if (key < 0 || key == CTRL_D) return CHOICE_QUIT;
+    int waitMs = -1;
+    if (seconds > 0) {
+      double remaining = deadline - monotonicSeconds();
+      if (remaining <= 0) return CHOICE_TIMEOUT;
+      /* Whole seconds still to go, counting the one running. */
+      int left = (int)remaining;
+      if ((double)left < remaining) left++;
+      if (left != shown) {
+        shown = left;
+        if (tick) tick(left);
+      }
+      waitMs = (int)((remaining - (double)(left - 1)) * 1000) + 1;
+    }
+
+    int key = readByte(waitMs);
+    if (key == BYTE_NONE) continue;
+    if (key == BYTE_END || key == CTRL_D) return CHOICE_QUIT;
     if (key == ESCAPE) {
       skipEscapeSequence();
       continue;
