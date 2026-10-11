@@ -35,7 +35,7 @@ static int isOption(const char* arg, char shortName, const char* longName,
 }
 
 ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) {
-  Options options = {0, 0, -1};
+  Options options = {0, 0, -1, 0};
   int optionsEnded = 0;
   *culprit = NULL;
 
@@ -61,6 +61,8 @@ ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) 
       options.questions = (long)questions;
     } else if (!strcmp(arg, "--")) {
       optionsEnded = 1;
+    } else if (!strcmp(arg, "-p") || !strcmp(arg, "--practice")) {
+      options.practice = 1;
     } else if (isOption(arg, 't', "time", &attached)) {
       const char* value = attached ? attached : i + 1 < argc ? argv[++i] : NULL;
       long long seconds = value ? wholeNumber(value, 1, TIME_LIMIT_MAX) : -1;

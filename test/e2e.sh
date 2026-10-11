@@ -281,6 +281,44 @@ for bad in "-s -1 5" "-s 4294967296 5" "-s many 5" "-s"; do
   expect_err "seed"
 done
 
+# Questions 1 and 3 are answered wrong, so they come back: the first is wrong
+# again, then right, and the third is right at once.
+input=$(printf 'b\nb\na\nb\nc\na\n')
+run "practice asks the mistakes again until each is right" -p 3
+expect_status 0
+expect_requests 1
+expect_out "You have 2 mistakes!"
+expect_out "1 of 3 right (33%)"
+expect_out "Practice, round 1: 2 to go"
+expect_out "Practice, round 2: 1 to go"
+expect_out "Practice: every mistake put right, in 2 rounds."
+
+input=$(printf 'b\nb\na\n')
+run "a mistake put right at once is one round" -p 2
+expect_out "in 1 round."
+expect_no_out "rounds"
+
+input=$(printf 'b\na\nq')
+run "q stops the practice with what is left" -p 2
+expect_status 0
+expect_out "Practice stopped with 2 of 2 still to put right."
+expect_no_out "put right, in"
+expect_out "0 of 2 right (0%)"
+
+input=$(printf 'bq')
+run "a run that was stopped does not go on to practise" -p 3
+expect_out "You stopped after 1 of 3 questions."
+expect_no_out "Practice"
+
+input=$(right 3)
+run "nothing to practise is not mentioned" -p 3
+expect_out "Fantastic"
+expect_no_out "Practice"
+
+input=$(printf 'b\nb\nb\nb\n')
+run "without -p the mistakes are only listed" 4
+expect_no_out "Practice"
+
 input=
 run "help says how to use it" --help
 expect_status 0

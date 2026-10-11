@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include "checkAnswer.h"
 #include "getQuestion.h"
@@ -26,6 +27,8 @@
   "                       one that runs out counts as a mistake\n"        \
   "  -s, --seed NUMBER    ask the same questions every time\n"            \
   "                       (0 to 4294967295; the API has to take a seed)\n" \
+  "  -p, --practice       ask the ones you got wrong again until they are\n" \
+  "                       right\n"                                        \
   "  -h, --help           show this\n"                                    \
   "\n"                                                                    \
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
@@ -70,11 +73,13 @@ static void tick(int left) {
    not 0. Returns ASKED_RIGHT, ASKED_WRONG, ASKED_TIMEOUT, or ASKED_STOP when
    the person stopped or the input ended. The time from showing the question
    to the answer, or to the end of the limit, is added to `*spent`; waiting for
-   the server is not the person's time. */
+   the server is not the person's time. A `note` is put on a line of its own
+   above the question. */
 static int askQuestion(long number, const Question* q, int limit,
-                       double* spent) {
+                       double* spent, const char* note) {
   inputDiscard();
   clearScreen();
+  if (note) printf("%s\n\n", note);
   printf("%ld\t🤔 Solve this expression: %s\n\n", number, q->expression);
   printf("\tA) %s", q->options[0]);
   printf("\t\tB) %s\n", q->options[1]);
@@ -91,6 +96,40 @@ static int askQuestion(long number, const Question* q, int limit,
   char letter[2] = {(char)('A' + choice), '\0'};
   return checkAnswer(letter, q->answer, q->options[0], q->options[1],
                      q->options[2], q->options[3]);
+}
+
+/* Asks the mistakes again, round after round, until each has been put right.
+   Sets `*rounds` to how many rounds that took. Returns how many were still
+   wrong when the person stopped, 0 when all were put right, or -1 when there
+   was no memory for it. */
+static long practise(const Mistake* mistakes, long count, int limit,
+                     long* rounds) {
+  Mistake* pending = malloc((size_t)count * sizeof *pending);
+  if (!pending) return -1;
+  memcpy(pending, mistakes, (size_t)count * sizeof *pending);
+
+  long left = count;
+  double notCounted = 0; /* practice is not part of the time on the result */
+  *rounds = 0;
+  while (left > 0) {
+    (*rounds)++;
+    long kept = 0;
+    for (long i = 0; i < left; i++) {
+      char note[96];
+      snprintf(note, sizeof note, "🔁 Practice, round %ld: %ld to go", *rounds,
+               left - i);
+      int result = askQuestion(pending[i].number, &pending[i].question, limit,
+                               &notCounted, note);
+      if (result == ASKED_STOP) {
+        free(pending);
+        return kept + (left - i);
+      }
+      if (result != ASKED_RIGHT) pending[kept++] = pending[i];
+    }
+    left = kept;
+  }
+  free(pending);
+  return 0;
 }
 
 int main(int argc, char** argv) {
@@ -147,7 +186,8 @@ int main(int argc, char** argv) {
       free(mistakes);
       return 1;
     }
-    int result = askQuestion(i + 1, &question, options.seconds, &thinking);
+    int result =
+        askQuestion(i + 1, &question, options.seconds, &thinking, NULL);
     if (result == ASKED_STOP) break;
     answered++;
     if (result == ASKED_RIGHT) continue;
@@ -165,6 +205,19 @@ int main(int argc, char** argv) {
     mistakes[numberOfMistakes].question = question;
     mistakes[numberOfMistakes].timedOut = result == ASKED_TIMEOUT;
     numberOfMistakes++;
+  }
+
+  /* A run that was stopped is over; one that was finished goes on to the
+     mistakes if that was asked for. */
+  long stillWrong = 0, rounds = 0;
+  int practised = options.practice && numberOfMistakes &&
+                  answered == options.questions;
+  if (practised) {
+    stillWrong = practise(mistakes, numberOfMistakes, options.seconds, &rounds);
+    if (stillWrong < 0) {
+      free(mistakes);
+      return 1;
+    }
   }
 
   clearScreen();
@@ -185,6 +238,12 @@ int main(int argc, char** argv) {
                 sizeof stats);
     printf("\n📊 %s\n", stats);
   }
+  if (practised && !stillWrong)
+    printf("\n🔁 Practice: every mistake put right, in %ld %s.\n", rounds,
+           rounds == 1 ? "round" : "rounds");
+  else if (practised)
+    printf("\n🔁 Practice stopped with %ld of %ld still to put right.\n",
+           stillWrong, numberOfMistakes);
   puts(bye);
   free(mistakes);
   return 0;
