@@ -3,6 +3,7 @@
 #include "../checkAnswer.h"
 #include "../getQuestion.h"
 #include "../question.h"
+#include "../report.h"
 
 static int checks = 0;
 static int failures = 0;
@@ -183,6 +184,61 @@ static void saysSoWhenTheURLDoesNotFit(void) {
   CHECK(!urlWithQuery("http://host.example/gen?c=true", "count=5", out, 8));
 }
 
+static void saysDurationsTheWayAPersonDoes(void) {
+  char out[32];
+  formatDuration(0, out, sizeof out);
+  CHECK_STR(out, "0.0 s");
+  formatDuration(-3, out, sizeof out);
+  CHECK_STR(out, "0.0 s");
+  formatDuration(7.24, out, sizeof out);
+  CHECK_STR(out, "7.2 s");
+  formatDuration(9.94, out, sizeof out);
+  CHECK_STR(out, "9.9 s");
+  formatDuration(9.96, out, sizeof out);
+  CHECK_STR(out, "10 s");
+  formatDuration(45.6, out, sizeof out);
+  CHECK_STR(out, "46 s");
+  formatDuration(59.4, out, sizeof out);
+  CHECK_STR(out, "59 s");
+  /* Rounding up to 60 is a minute, not "60 s". */
+  formatDuration(59.6, out, sizeof out);
+  CHECK_STR(out, "1 min 0 s");
+  formatDuration(72, out, sizeof out);
+  CHECK_STR(out, "1 min 12 s");
+  formatDuration(185, out, sizeof out);
+  CHECK_STR(out, "3 min 5 s");
+  formatDuration(3725, out, sizeof out);
+  CHECK_STR(out, "1 h 2 min");
+}
+
+static void summarisesARun(void) {
+  char out[128];
+  formatStats(7, 10, 72, out, sizeof out);
+  CHECK_STR(out, "7 of 10 right (70%), 1 min 12 s, 7.2 s a question");
+  formatStats(2, 3, 30, out, sizeof out);
+  CHECK_STR(out, "2 of 3 right (67%), 30 s, 10 s a question");
+  formatStats(0, 4, 8, out, sizeof out);
+  CHECK_STR(out, "0 of 4 right (0%), 8.0 s, 2.0 s a question");
+  formatStats(10, 10, 31, out, sizeof out);
+  CHECK_STR(out, "10 of 10 right (100%), 31 s, 3.1 s a question");
+}
+
+static void doesNotRepeatItselfForOneAnswer(void) {
+  char out[128];
+  formatStats(1, 1, 3.2, out, sizeof out);
+  CHECK_STR(out, "1 of 1 right (100%), 3.2 s");
+}
+
+static void neverWritesPastTheRoomItWasGiven(void) {
+  char out[12];
+  memset(out, 'x', sizeof out);
+  formatStats(7, 10, 72, out, 10);
+  CHECK(strlen(out) <= 9);
+  CHECK(out[10] == 'x' && out[11] == 'x');
+  formatDuration(3725, out, 4);
+  CHECK(strlen(out) <= 3);
+}
+
 static void picksTheOptionThatHoldsTheAnswer(void) {
   char* o[4] = {"11", "9", "12", "10"};
   CHECK(checkAnswer("A", "11", o[0], o[1], o[2], o[3]));
@@ -228,6 +284,10 @@ int main(void) {
   addsCountToAnyURL();
   leavesTheURLAloneWithoutAQuery();
   saysSoWhenTheURLDoesNotFit();
+  saysDurationsTheWayAPersonDoes();
+  summarisesARun();
+  doesNotRepeatItselfForOneAnswer();
+  neverWritesPastTheRoomItWasGiven();
 
   if (failures) {
     fprintf(stderr, "%d of %d checks failed\n", failures, checks);

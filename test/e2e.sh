@@ -115,6 +115,7 @@ expect_out "Task 1. 0+1"
 expect_out "Task 3. 2+1"
 expect_out "Task 4. 3+1"
 expect_no_out "Task 2."
+expect_out "1 of 4 right (25%)"
 
 input=$(right 3)
 FAKE_IGNORE_COUNT=1
@@ -154,6 +155,7 @@ input=$(printf 'abcD')
 run "an answer is one letter, no Enter" 4
 expect_status 0
 expect_out "Fantastic"
+expect_out "4 of 4 right (100%)"
 
 input=$(printf 'x\n 1 ??\n a\n\tb\n')
 run "keys that are not answers are ignored" 2
@@ -170,6 +172,7 @@ input=$(printf 'abq')
 run "q stops the quiz and shows the result" 5
 expect_status 0
 expect_out "You stopped after 2 of 5 questions."
+expect_out "2 of 2 right (100%)"
 expect_out "Fantastic"
 
 input=$(printf 'a\004')
@@ -182,6 +185,7 @@ run "stopping at once is not a perfect score" 3
 expect_status 0
 expect_out "You stopped after 0 of 3 questions."
 expect_no_out "Fantastic"
+expect_no_out "right ("
 expect_no_out "You have"
 
 input=$(right 5)

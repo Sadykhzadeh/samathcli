@@ -4,10 +4,12 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 #include "checkAnswer.h"
 #include "getQuestion.h"
 #include "input.h"
+#include "report.h"
 
 #define welcomeText "👋 Welcome to SaMath System!"
 #define noArgs \
@@ -34,14 +36,25 @@ static long parseQuestionCount(const char* text) {
 }
 
 /* An escape sequence, not a `clear` process for every question, and only for
-   a person at a terminal: a pipe or a file should not get it. */
+   a person at a terminal: a pipe or a file gets a blank line instead. */
 static void clearScreen(void) {
-  if (isatty(STDOUT_FILENO)) fputs("\033[H\033[2J", stdout);
+  if (isatty(STDOUT_FILENO))
+    fputs("\033[H\033[2J", stdout);
+  else
+    putchar('\n');
+}
+
+static double now(void) {
+  struct timespec time;
+  clock_gettime(CLOCK_MONOTONIC, &time);
+  return (double)time.tv_sec + (double)time.tv_nsec / 1e9;
 }
 
 /* Shows the question and reads the answer. Returns 1 when it was right, 0 when
-   it was not, and -1 when the person stopped or the input ended. */
-static int askQuestion(long number, const Question* q) {
+   it was not, and -1 when the person stopped or the input ended. The time
+   from showing the question to the answer is added to `*seconds`; waiting for
+   the server is not the person's time. */
+static int askQuestion(long number, const Question* q, double* seconds) {
   inputDiscard();
   clearScreen();
   printf("%ld\t🤔 Solve this expression: %s\n\n", number, q->expression);
@@ -52,8 +65,10 @@ static int askQuestion(long number, const Question* q) {
   printf("Answer (A-D, Q to stop): ");
   fflush(stdout);
 
+  double shown = now();
   int choice = readChoice();
   if (choice == CHOICE_QUIT) return -1;
+  *seconds += now() - shown;
 
   char letter[2] = {(char)('A' + choice), '\0'};
   return checkAnswer(letter, q->answer, q->options[0], q->options[1],
@@ -72,6 +87,7 @@ int main(int n, char** a) {
 
   Mistake* mistakes = NULL;
   long numberOfMistakes = 0, room = 0, answered = 0;
+  double thinking = 0;
   for (long i = 0; i < numberOfQuestions; i++) {
     Question question;
     if (quizNext(&quiz, &question) < 0) {
@@ -79,7 +95,7 @@ int main(int n, char** a) {
       free(mistakes);
       return 1;
     }
-    int right = askQuestion(i + 1, &question);
+    int right = askQuestion(i + 1, &question, &thinking);
     if (right < 0) break;
     answered++;
     if (right) continue;
@@ -109,6 +125,12 @@ int main(int n, char** a) {
              mistakes[i].question.expression, mistakes[i].question.answer);
   } else if (answered)
     puts(noErrors);
+  if (answered) {
+    char stats[128];
+    formatStats(answered - numberOfMistakes, answered, thinking, stats,
+                sizeof stats);
+    printf("\n📊 %s\n", stats);
+  }
   puts(bye);
   free(mistakes);
   return 0;
