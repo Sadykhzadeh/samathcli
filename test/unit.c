@@ -255,7 +255,7 @@ static void readsTheNumberOfQuestions(void) {
   Options o;
   const char* culprit;
   CHECK(args(&o, &culprit, 1, "5") == ARGS_OK);
-  CHECK(o.questions == 5 && o.seconds == 0);
+  CHECK(o.questions == 5 && o.seconds == 0 && o.seed == -1);
   CHECK(args(&o, &culprit, 1, "1") == ARGS_OK && o.questions == 1);
   CHECK(args(&o, &culprit, 1, "2147483647") == ARGS_OK);
   CHECK(args(&o, &culprit, 0) == ARGS_NONE);
@@ -303,6 +303,33 @@ static void refusesATimeLimitItCannotUse(void) {
   CHECK(args(&o, &culprit, 2, "--time=", "5") == ARGS_BAD_TIME);
 }
 
+static void takesTheSeedInEveryForm(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 3, "-s", "42", "5") == ARGS_OK);
+  CHECK(o.questions == 5 && o.seed == 42);
+  CHECK(args(&o, &culprit, 2, "5", "-s7") == ARGS_OK && o.seed == 7);
+  CHECK(args(&o, &culprit, 3, "--seed", "0", "5") == ARGS_OK && o.seed == 0);
+  CHECK(args(&o, &culprit, 2, "--seed=4294967295", "5") == ARGS_OK);
+  CHECK(o.seed == 4294967295LL);
+  CHECK(args(&o, &culprit, 5, "-s", "3", "-t", "9", "5") == ARGS_OK);
+  CHECK(o.seed == 3 && o.seconds == 9 && o.questions == 5);
+}
+
+static void refusesASeedItCannotUse(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 3, "-s", "-1", "5") == ARGS_BAD_SEED);
+  CHECK_STR(culprit, "-1");
+  CHECK(args(&o, &culprit, 3, "-s", "4294967296", "5") == ARGS_BAD_SEED);
+  CHECK(args(&o, &culprit, 3, "-s", "abc", "5") == ARGS_BAD_SEED);
+  CHECK_STR(culprit, "abc");
+  CHECK(args(&o, &culprit, 3, "-s", "1.5", "5") == ARGS_BAD_SEED);
+  CHECK(args(&o, &culprit, 2, "5", "-s") == ARGS_BAD_SEED);
+  CHECK_STR(culprit, "-s");
+  CHECK(args(&o, &culprit, 2, "--seed=", "5") == ARGS_BAD_SEED);
+}
+
 static void refusesOptionsThatDoNotExist(void) {
   Options o;
   const char* culprit;
@@ -311,6 +338,7 @@ static void refusesOptionsThatDoNotExist(void) {
   CHECK(args(&o, &culprit, 2, "--nope", "5") == ARGS_BAD_OPTION);
   CHECK(args(&o, &culprit, 2, "--timeout=5", "5") == ARGS_BAD_OPTION);
   CHECK_STR(culprit, "--timeout=5");
+  CHECK(args(&o, &culprit, 2, "--seeds=5", "5") == ARGS_BAD_OPTION);
 }
 
 static void refusesASecondNumberOfQuestions(void) {
@@ -389,6 +417,8 @@ int main(void) {
   readsTheNumberOfQuestions();
   refusesWhatIsNotANumberOfQuestions();
   takesTheTimeLimitInEveryForm();
+  takesTheSeedInEveryForm();
+  refusesASeedItCannotUse();
   refusesATimeLimitItCannotUse();
   refusesOptionsThatDoNotExist();
   refusesASecondNumberOfQuestions();

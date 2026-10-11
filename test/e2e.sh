@@ -78,10 +78,12 @@ expect_url() {
   if grep -qF -- "$1" "$CURL_LOG"; then ok; else fail "no request for $1"; fi
 }
 
-# The right letters for questions 1..$1: A B C D A B C D ...
+# The right letters for the next $1 questions, which are numbered from $2 (0
+# unless there is a seed): A B C D A B C D ...
 right() {
-  i=0
-  while [ "$i" -lt "$1" ]; do
+  i=${2:-0}
+  end=$((i + $1))
+  while [ "$i" -lt "$end" ]; do
     case $((i % 4)) in 0) echo a ;; 1) echo b ;; 2) echo c ;; 3) echo D ;; esac
     i=$((i + 1))
   done
@@ -219,6 +221,65 @@ expect_out "Task 2. 1+1"
 expect_out "(time ran out)"
 expect_no_out "Task 1."
 expect_out "1 of 2 right (50%)"
+
+# With a seed, question n of the stand-in is seed + n - 1.
+input=$(right 3 42)
+run "a seed is passed on with the count" -s 42 3
+expect_status 0
+expect_requests 1
+expect_url "http://api.test/gen?c=true&count=3&seed=42"
+expect_out "Fantastic"
+
+input=$(right 1 7)
+run "one question with a seed is the plain request and the seed" -s 7 1
+expect_status 0
+if [ "$(cat "$CURL_LOG")" = "http://api.test/gen?c=true&seed=7" ]; then ok; else fail "asked for $(cat "$CURL_LOG")"; fi
+expect_out "Fantastic"
+
+input=$(right 250 10)
+run "each batch starts where the last one ended" --seed=10 250
+expect_status 0
+expect_requests 3
+expect_url "count=100&seed=10"
+expect_url "count=100&seed=110"
+expect_url "count=50&seed=210"
+expect_out "Fantastic"
+
+input=$(right 150 4294967295)
+run "the seed wraps at 32 bits, as the API's does" -s 4294967295 150
+expect_status 0
+expect_url "count=100&seed=4294967295"
+expect_url "count=50&seed=99"
+expect_out "Fantastic"
+
+input=$(right 3 5)
+FAKE_IGNORE_COUNT=1
+export FAKE_IGNORE_COUNT
+run "a server that ignores count still gets each question's seed" -s 5 3
+unset FAKE_IGNORE_COUNT
+expect_status 0
+expect_requests 3
+expect_url "count=3&seed=5"
+expect_url "c=true&seed=6"
+expect_url "c=true&seed=7"
+expect_out "Fantastic"
+
+input=$(printf 'b')
+run "the same seed is the same questions" -s 100 3
+first=$(printf '%s\n' "$out" | grep '^Task')
+run "the same seed, again" -s 100 3
+if [ "$(printf '%s\n' "$out" | grep '^Task')" = "$first" ]; then ok; else fail "two runs differed"; fi
+run "another seed" -s 101 3
+if [ "$(printf '%s\n' "$out" | grep '^Task')" != "$first" ]; then ok; else fail "two seeds gave one run"; fi
+
+for bad in "-s -1 5" "-s 4294967296 5" "-s many 5" "-s"; do
+  input=
+  # shellcheck disable=SC2086
+  run "\"$bad\" is not a seed" $bad
+  expect_status 1
+  expect_requests 0
+  expect_err "seed"
+done
 
 input=
 run "help says how to use it" --help
