@@ -24,6 +24,8 @@
   "  QUESTIONS            how many questions to ask, 1 or more\n"         \
   "  -t, --time SECONDS   seconds to answer each question (1 to 3600);\n" \
   "                       one that runs out counts as a mistake\n"        \
+  "  -s, --seed NUMBER    ask the same questions every time\n"            \
+  "                       (0 to 4294967295; the API has to take a seed)\n" \
   "  -h, --help           show this\n"                                    \
   "\n"                                                                    \
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
@@ -110,6 +112,12 @@ int main(int argc, char** argv) {
                      "not \"%s\"! :3\n",
                      TIME_LIMIT_MAX, culprit),
              1;
+    case ARGS_BAD_SEED:
+      return fprintf(stderr,
+                     "😅 A seed is a whole number from 0 to %lld, not "
+                     "\"%s\"! :3\n",
+                     SEED_MAX, culprit),
+             1;
     case ARGS_BAD_OPTION:
       return fprintf(stderr,
                      "😅 I do not know the option \"%s\". See samath --help! "
@@ -126,7 +134,7 @@ int main(int argc, char** argv) {
 
   atTerminal = isatty(STDOUT_FILENO);
   Quiz quiz;
-  quizOpen(&quiz, options.questions);
+  quizOpen(&quiz, options.questions, options.seed);
   inputStart();
 
   Mistake* mistakes = NULL;

@@ -9,19 +9,22 @@
 
 /* The questions of one run, fetched a batch at a time. */
 typedef struct {
-  long total;  /* how many questions the run has */
-  long asked;  /* how many quizNext has handed out */
+  long total;       /* how many questions the run has */
+  long long seed;   /* what to ask the server to seed with, or -1 */
+  long asked;       /* how many quizNext has handed out */
   const char* url;
-  int batched; /* the server has answered `count` with that many questions */
-  int size;    /* questions fetched into `batch` */
-  int next;    /* the first of them not handed out yet */
+  int batched;      /* the server has answered `count` with that many */
+  int size;         /* questions fetched into `batch` */
+  int next;         /* the first of them not handed out yet */
   Question batch[QUIZ_BATCH_MAX];
 } Quiz;
 
 /* Starts a run of `total` questions from SAMATH_API_URL, or from
-   http://localhost:3000/gen?c=true when that is not set. Nothing is fetched
-   until the first question is asked for. */
-void quizOpen(Quiz* quiz, long total);
+   http://localhost:3000/gen?c=true when that is not set. A `seed` of 0 or
+   more is passed on to the server, which then sends the same questions each
+   time; -1 leaves it out. Nothing is fetched until the first question is
+   asked for. */
+void quizOpen(Quiz* quiz, long total, long long seed);
 
 /* Hands out the next question. Returns 1 and fills `out`, 0 once all `total`
    have been handed out, and -1 when the server could not be reached or did

@@ -35,9 +35,12 @@
 | Option | Meaning |
 | --- | --- |
 | `-t`, `--time SECONDS` | Give each question that long to answer, 1 to 3600. The seconds left count down on the prompt; a question that runs out counts as a mistake and is listed as `(time ran out)`. |
+| `-s`, `--seed NUMBER` | Ask the same questions every time, 0 to 4294967295: a class that runs `./samath -s 2024 10` gets the same ten questions. The seed goes to the API, so it has to be a [SaMathAPI](https://got.az/azer/samathapi) that takes `seed`; an older one ignores it. |
 | `-h`, `--help` | Print the options. |
 
-`./samath -t 10 20` is twenty questions with ten seconds each.
+`./samath -t 10 20` is twenty questions with ten seconds each. Question `n`
+of a run is the one the API gives for `seed + n - 1`, so the questions are the
+same however they were fetched.
 
 ### Answering
 
