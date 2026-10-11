@@ -40,6 +40,11 @@
 | --- | --- | --- |
 | `SAMATH_API_URL` | `http://localhost:3000/gen?c=true` | Where questions are fetched from. A value containing characters that are not valid in a URL is ignored in favour of the default. |
 
+## Development
+
+`make clean check` rebuilds everything with warnings as errors and runs the
+tests in `test/`. It needs nothing beyond the compiler and `make`.
+
 ## Contributing
 
 Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.

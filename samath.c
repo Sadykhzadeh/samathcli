@@ -13,7 +13,7 @@
 #define noErrors "🥳 Fantastic, you haven't got any mistakes!"
 #define bye "\n😉 Have a nice day!"
 
-static void cleanTempFiles() {
+static void cleanTempFiles(void) {
   remove(".tmp.samath");
   remove(".tmp.errors");
 }
