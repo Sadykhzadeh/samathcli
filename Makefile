@@ -1,7 +1,7 @@
 CC ?= gcc
 CFLAGS ?= -std=c11 -O2 -Wall -Wextra -Wpedantic -Wshadow -Wstrict-prototypes
 BIN = samath
-LIB = getQuestion.o checkAnswer.o question.o
+LIB = getQuestion.o checkAnswer.o input.o question.o
 OBJ = $(LIB) samath.o
 UNIT = test/unit
 
@@ -20,14 +20,16 @@ $(BIN): $(OBJ)
 
 getQuestion.o: getQuestion.c getQuestion.h question.h
 checkAnswer.o: checkAnswer.c checkAnswer.h
+input.o: input.c input.h
 question.o: question.c question.h
-samath.o: samath.c checkAnswer.h getQuestion.h question.h
+samath.o: samath.c checkAnswer.h getQuestion.h input.h question.h
 
 # Run `make clean check`: the objects are rebuilt with warnings as errors.
 check: CFLAGS += -Werror
 check: $(BIN) $(UNIT)
 	./$(UNIT)
 	sh test/e2e.sh
+	@if command -v python3 >/dev/null 2>&1; then python3 test/terminal.py ./$(BIN); else echo "python3 not found: the terminal checks were skipped"; fi
 
 $(UNIT): test/unit.c $(LIB)
 	$(CC) $(CFLAGS) test/unit.c $(LIB) -o $@

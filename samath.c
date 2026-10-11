@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include "checkAnswer.h"
 #include "getQuestion.h"
+#include "input.h"
 
 #define welcomeText "👋 Welcome to SaMath System!"
 #define noArgs \
@@ -39,20 +40,23 @@ static void clearScreen(void) {
 }
 
 /* Shows the question and reads the answer. Returns 1 when it was right, 0 when
-   it was not, and -1 when there is no more input. */
+   it was not, and -1 when the person stopped or the input ended. */
 static int askQuestion(long number, const Question* q) {
+  inputDiscard();
   clearScreen();
   printf("%ld\t🤔 Solve this expression: %s\n\n", number, q->expression);
   printf("\tA) %s", q->options[0]);
   printf("\t\tB) %s\n", q->options[1]);
   printf("\tC) %s", q->options[2]);
   printf("\t\tD) %s\n\n\t", q->options[3]);
+  printf("Answer (A-D, Q to stop): ");
+  fflush(stdout);
 
-  char userAnswer[8];
-  printf("Answer: ");
-  if (scanf("%7s", userAnswer) != 1) return -1;
+  int choice = readChoice();
+  if (choice == CHOICE_QUIT) return -1;
 
-  return checkAnswer(userAnswer, q->answer, q->options[0], q->options[1],
+  char letter[2] = {(char)('A' + choice), '\0'};
+  return checkAnswer(letter, q->answer, q->options[0], q->options[1],
                      q->options[2], q->options[3]);
 }
 
@@ -64,6 +68,7 @@ int main(int n, char** a) {
 
   Quiz quiz;
   quizOpen(&quiz, numberOfQuestions);
+  inputStart();
 
   Mistake* mistakes = NULL;
   long numberOfMistakes = 0, room = 0, answered = 0;
@@ -94,6 +99,9 @@ int main(int n, char** a) {
   }
 
   clearScreen();
+  if (answered < numberOfQuestions)
+    printf("✋ You stopped after %ld of %ld questions.\n\n", answered,
+           numberOfQuestions);
   if (numberOfMistakes) {
     printf("😔 You have %ld mistakes!\n\n", numberOfMistakes);
     for (long i = 0; i < numberOfMistakes; i++)

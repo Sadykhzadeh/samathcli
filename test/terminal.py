@@ -1,0 +1,153 @@
+"""Drives ./samath on a real pseudo-terminal, which a pipe cannot stand in for:
+single keys, escape sequences, stopping, Ctrl-C, and what is left of the
+terminal settings afterwards. Questions come from test/fakecurl.sh.
+
+usage: python3 test/terminal.py ./samath
+"""
+import os
+import pty
+import re
+import select
+import shutil
+import signal
+import sys
+import tempfile
+import termios
+import time
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+BINARY = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "..", "samath"))
+
+work = tempfile.mkdtemp()
+os.mkdir(os.path.join(work, "bin"))
+shutil.copy(os.path.join(HERE, "fakecurl.sh"), os.path.join(work, "bin", "curl"))
+os.chmod(os.path.join(work, "bin", "curl"), 0o755)
+os.environ["PATH"] = os.path.join(work, "bin") + os.pathsep + os.environ["PATH"]
+os.environ["CURL_LOG"] = os.path.join(work, "requests")
+os.environ["SAMATH_API_URL"] = "http://api.test/gen?c=true"
+os.environ["TERM"] = "xterm"
+open(os.environ["CURL_LOG"], "w").close()
+
+
+def start(argv):
+    # Every run starts with question 1, whose right answer is A.
+    if os.path.exists(os.environ["CURL_LOG"] + ".served"):
+        os.remove(os.environ["CURL_LOG"] + ".served")
+    pid, fd = pty.fork()
+    if pid == 0:
+        os.execv(BINARY, [BINARY] + argv)
+    return pid, fd
+
+
+def drain(fd, quiet=0.3):
+    """Everything the program prints until it has been quiet for `quiet`."""
+    out = b""
+    end = time.time() + quiet
+    while time.time() < end:
+        ready, _, _ = select.select([fd], [], [], 0.05)
+        if ready:
+            try:
+                chunk = os.read(fd, 65536)
+            except OSError:
+                break
+            if not chunk:
+                break
+            out += chunk
+            end = time.time() + quiet
+    return out.decode("utf-8", "replace")
+
+
+def modes(fd):
+    lflag = termios.tcgetattr(fd)[3]
+    return bool(lflag & termios.ECHO), bool(lflag & termios.ICANON)
+
+
+def reap(pid):
+    for _ in range(60):
+        done, status = os.waitpid(pid, os.WNOHANG)
+        if done:
+            return status
+        time.sleep(0.05)
+    os.kill(pid, signal.SIGKILL)
+    os.waitpid(pid, 0)
+    return None
+
+
+def questions(text):
+    return len(re.findall(r"Solve this expression", text))
+
+
+failed = 0
+
+
+def check(label, ok, detail=""):
+    global failed
+    if not ok:
+        failed += 1
+        print("FAIL: %s %s" % (label, detail))
+
+
+# One key is one answer; arrows and other keys are ignored; q stops.
+pid, fd = start(["3"])
+first = drain(fd)
+check("the first question is shown", questions(first) == 1, first[-200:])
+echo, canon = modes(fd)
+check("echo and line mode are off while asking", not echo and not canon, "echo=%s canon=%s" % (echo, canon))
+os.write(fd, b"a")  # question 1 is answered by A
+second = drain(fd)
+check("one key, no Enter, moves on", questions(second) == 1 and "\x1b[H\x1b[2J" in second, second[-200:])
+os.write(fd, b"\x1b[A")
+arrow = drain(fd)
+check("an arrow key changes nothing", questions(arrow) == 0 and "stopped" not in arrow and "mistake" not in arrow, arrow[-200:])
+os.write(fd, b"\x1bOB")
+check("an application-mode arrow changes nothing", questions(drain(fd)) == 0)
+os.write(fd, b"\x1a")
+check("Ctrl-Z is ignored", questions(drain(fd)) == 0)
+os.write(fd, b"7")
+check("a digit is ignored", questions(drain(fd)) == 0)
+os.write(fd, b"q")
+summary = drain(fd)
+check("q shows the result", "You stopped after 1 of 3 questions." in summary, summary[-300:])
+status = reap(pid)
+echo, canon = modes(fd)
+check("the terminal is handed back", echo and canon, "echo=%s canon=%s" % (echo, canon))
+check("the exit status is 0", status is not None and os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0, str(status))
+os.close(fd)
+
+# Keys typed before the first question is drawn do not answer it.
+pid, fd = start(["1"])
+os.write(fd, b"b")
+drained = drain(fd, 0.5)
+check("a key typed ahead is not an answer", questions(drained) == 1 and "mistake" not in drained and "Fantastic" not in drained, drained[-200:])
+os.write(fd, b"a")
+check("and the real answer is", "Fantastic" in drain(fd))
+reap(pid)
+os.close(fd)
+
+# Ctrl-C and SIGTERM hand the terminal back and end the run by the signal.
+for label, interrupt, sig in (
+    ("Ctrl-C", lambda pid, fd: os.write(fd, b"\x03"), signal.SIGINT),
+    ("SIGTERM", lambda pid, fd: os.kill(pid, signal.SIGTERM), signal.SIGTERM),
+):
+    pid, fd = start(["3"])
+    drain(fd)
+    interrupt(pid, fd)
+    status = reap(pid)
+    echo, canon = modes(fd)
+    check(label + " hands the terminal back", echo and canon, "echo=%s canon=%s" % (echo, canon))
+    check(label + " ends the run by the signal", status is not None and os.WIFSIGNALED(status) and os.WTERMSIG(status) == sig, str(status))
+    os.close(fd)
+
+# Ctrl-D stops the run.
+pid, fd = start(["3"])
+drain(fd)
+os.write(fd, b"\x04")
+check("Ctrl-D stops the run", "You stopped after 0 of 3 questions." in drain(fd))
+reap(pid)
+os.close(fd)
+
+shutil.rmtree(work, ignore_errors=True)
+if failed:
+    print("%d terminal checks failed" % failed)
+    sys.exit(1)
+print("terminal checks passed")
