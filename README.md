@@ -28,6 +28,17 @@
 
 `make clean` removes the binary and the object files.
 
+### Options
+
+`./samath [options] QUESTIONS`, with the options before or after the number:
+
+| Option | Meaning |
+| --- | --- |
+| `-t`, `--time SECONDS` | Give each question that long to answer, 1 to 3600. The seconds left count down on the prompt; a question that runs out counts as a mistake and is listed as `(time ran out)`. |
+| `-h`, `--help` | Print the options. |
+
+`./samath -t 10 20` is twenty questions with ten seconds each.
+
 ### Answering
 
 At a terminal one key is one answer: `A`, `B`, `C` or `D`, in either case,

@@ -1,7 +1,9 @@
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include "../checkAnswer.h"
 #include "../getQuestion.h"
+#include "../options.h"
 #include "../question.h"
 #include "../report.h"
 
@@ -239,6 +241,102 @@ static void neverWritesPastTheRoomItWasGiven(void) {
   CHECK(strlen(out) <= 3);
 }
 
+/* The result of parseArgs for a command line given as a list of words. */
+static ArgsResult args(Options* options, const char** culprit, int n, ...) {
+  char* argv[16] = {"samath"};
+  va_list words;
+  va_start(words, n);
+  for (int i = 0; i < n; i++) argv[i + 1] = va_arg(words, char*);
+  va_end(words);
+  return parseArgs(n + 1, argv, options, culprit);
+}
+
+static void readsTheNumberOfQuestions(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "5") == ARGS_OK);
+  CHECK(o.questions == 5 && o.seconds == 0);
+  CHECK(args(&o, &culprit, 1, "1") == ARGS_OK && o.questions == 1);
+  CHECK(args(&o, &culprit, 1, "2147483647") == ARGS_OK);
+  CHECK(args(&o, &culprit, 0) == ARGS_NONE);
+}
+
+static void refusesWhatIsNotANumberOfQuestions(void) {
+  Options o;
+  const char* culprit;
+  const char* bad[] = {"0",   "-3", "abc", "2.5", "", "5x",
+                       "2147483648", "99999999999999999999", "-"};
+  for (size_t i = 0; i < sizeof bad / sizeof *bad; i++) {
+    CHECK(args(&o, &culprit, 1, bad[i]) == ARGS_BAD_COUNT);
+    CHECK_STR(culprit, bad[i]);
+  }
+}
+
+static void takesTheTimeLimitInEveryForm(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 3, "-t", "10", "5") == ARGS_OK);
+  CHECK(o.questions == 5 && o.seconds == 10);
+  CHECK(args(&o, &culprit, 3, "5", "-t", "10") == ARGS_OK);
+  CHECK(o.questions == 5 && o.seconds == 10);
+  CHECK(args(&o, &culprit, 2, "-t10", "5") == ARGS_OK && o.seconds == 10);
+  CHECK(args(&o, &culprit, 3, "--time", "7", "5") == ARGS_OK && o.seconds == 7);
+  CHECK(args(&o, &culprit, 2, "--time=3600", "5") == ARGS_OK);
+  CHECK(o.seconds == 3600);
+  CHECK(args(&o, &culprit, 4, "-t", "3", "-t", "4") == ARGS_NONE);
+  CHECK(args(&o, &culprit, 5, "-t", "3", "-t", "4", "9") == ARGS_OK);
+  CHECK(o.seconds == 4);
+}
+
+static void refusesATimeLimitItCannotUse(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 3, "-t", "0", "5") == ARGS_BAD_TIME);
+  CHECK_STR(culprit, "0");
+  CHECK(args(&o, &culprit, 3, "-t", "3601", "5") == ARGS_BAD_TIME);
+  CHECK(args(&o, &culprit, 3, "-t", "-4", "5") == ARGS_BAD_TIME);
+  CHECK(args(&o, &culprit, 3, "-t", "x", "5") == ARGS_BAD_TIME);
+  CHECK_STR(culprit, "x");
+  CHECK(args(&o, &culprit, 3, "-t", "2.5", "5") == ARGS_BAD_TIME);
+  CHECK(args(&o, &culprit, 2, "5", "-t") == ARGS_BAD_TIME);
+  CHECK_STR(culprit, "-t");
+  CHECK(args(&o, &culprit, 2, "--time=", "5") == ARGS_BAD_TIME);
+}
+
+static void refusesOptionsThatDoNotExist(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 2, "-x", "5") == ARGS_BAD_OPTION);
+  CHECK_STR(culprit, "-x");
+  CHECK(args(&o, &culprit, 2, "--nope", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "--timeout=5", "5") == ARGS_BAD_OPTION);
+  CHECK_STR(culprit, "--timeout=5");
+}
+
+static void refusesASecondNumberOfQuestions(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 2, "5", "6") == ARGS_EXTRA);
+  CHECK_STR(culprit, "6");
+}
+
+static void helpWinsOverEverythingElse(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "-h") == ARGS_HELP);
+  CHECK(args(&o, &culprit, 1, "--help") == ARGS_HELP);
+  CHECK(args(&o, &culprit, 3, "0", "-x", "--help") == ARGS_HELP);
+  CHECK(args(&o, &culprit, 3, "--", "-h", "5") == ARGS_BAD_COUNT);
+}
+
+static void aDoubleDashEndsTheOptions(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 3, "-t", "5", "--") == ARGS_NONE);
+  CHECK(args(&o, &culprit, 2, "--", "5") == ARGS_OK && o.questions == 5);
+  CHECK(args(&o, &culprit, 2, "--", "-5") == ARGS_BAD_COUNT);
+}
+
 static void picksTheOptionThatHoldsTheAnswer(void) {
   char* o[4] = {"11", "9", "12", "10"};
   CHECK(checkAnswer("A", "11", o[0], o[1], o[2], o[3]));
@@ -288,6 +386,14 @@ int main(void) {
   summarisesARun();
   doesNotRepeatItselfForOneAnswer();
   neverWritesPastTheRoomItWasGiven();
+  readsTheNumberOfQuestions();
+  refusesWhatIsNotANumberOfQuestions();
+  takesTheTimeLimitInEveryForm();
+  refusesATimeLimitItCannotUse();
+  refusesOptionsThatDoNotExist();
+  refusesASecondNumberOfQuestions();
+  helpWinsOverEverythingElse();
+  aDoubleDashEndsTheOptions();
 
   if (failures) {
     fprintf(stderr, "%d of %d checks failed\n", failures, checks);

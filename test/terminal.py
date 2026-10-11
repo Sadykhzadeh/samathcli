@@ -138,6 +138,40 @@ for label, interrupt, sig in (
     check(label + " ends the run by the signal", status is not None and os.WIFSIGNALED(status) and os.WTERMSIG(status) == sig, str(status))
     os.close(fd)
 
+def collect(fd, seconds):
+    """Everything printed in the next `seconds`, quiet or not."""
+    out = b""
+    end = time.time() + seconds
+    while time.time() < end:
+        ready, _, _ = select.select([fd], [], [], 0.05)
+        if ready:
+            try:
+                out += os.read(fd, 65536)
+            except OSError:
+                break
+    return out.decode("utf-8", "replace")
+
+
+# A time limit counts down in place, and moves on when it runs out.
+pid, fd = start(["-t", "2", "2"])
+seen = collect(fd, 3.5)  # two seconds to run out, with room for a slow start
+check("the limit is shown", "Answer (A-D, Q to stop) - 2 s left: " in seen, seen[-300:])
+check("it counts down in place", "\r\tAnswer (A-D, Q to stop) - 1 s left: " in seen, seen[-300:])
+check("a question that runs out moves on to the next", questions(seen) == 2, seen[-300:])
+os.write(fd, b"a")  # the second question is answered by B, so this is a mistake
+summary = collect(fd, 0.5)
+check("and counts as a mistake", "You have 2 mistakes!" in summary and "(time ran out)" in summary, summary[-300:])
+reap(pid)
+os.close(fd)
+
+# Answering in time stops the clock: nothing runs out afterwards.
+pid, fd = start(["-t", "1", "1"])
+drain(fd, 0.2)
+os.write(fd, b"a")
+check("an answer in time is kept", "Fantastic" in collect(fd, 0.5))
+reap(pid)
+os.close(fd)
+
 # Ctrl-D stops the run.
 pid, fd = start(["3"])
 drain(fd)
