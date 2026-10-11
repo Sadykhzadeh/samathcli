@@ -28,6 +28,14 @@
 
 `make clean` removes the binary and the object files.
 
+### Answering
+
+At a terminal one key is one answer: `A`, `B`, `C` or `D`, in either case,
+with no Enter. `Q` or Ctrl-D stops the run and shows the result so far; any
+other key, arrow keys included, is ignored. When the input is a pipe or a
+file the same letters are read from it as they come, which makes a run
+scriptable: `printf 'abcd' | ./samath 4`.
+
 ### Requirements
 
 * a C11 compiler (`gcc` or `clang`) and `make`
@@ -53,7 +61,14 @@ in the API's format are ignored.
 ## Development
 
 `make clean check` rebuilds everything with warnings as errors and runs the
-tests in `test/`. It needs nothing beyond the compiler and `make`.
+tests in `test/`: unit checks of the parser, then the program itself against a
+stand-in for `curl`, then (when `python3` is there) on a pseudo-terminal, which
+is the only way to see single-key input working. No server is needed. To
+check for memory errors as well:
+
+```sh
+make clean check CFLAGS='-std=c11 -g -O1 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined'
+```
 
 ## Contributing
 

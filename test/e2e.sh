@@ -150,6 +150,40 @@ expect_requests 1
 expect_out "Fantastic"
 case "$err" in *"could not reach"*) fail "blamed the server" ;; *) ok ;; esac
 
+input=$(printf 'abcD')
+run "an answer is one letter, no Enter" 4
+expect_status 0
+expect_out "Fantastic"
+
+input=$(printf 'x\n 1 ??\n a\n\tb\n')
+run "keys that are not answers are ignored" 2
+expect_status 0
+expect_out "Fantastic"
+
+# Arrow keys end in the letters A to D, which are answers if let through.
+input=$(printf 'a\033[Ab\033OB')
+run "arrow keys are not answers" 2
+expect_status 0
+expect_out "Fantastic"
+
+input=$(printf 'abq')
+run "q stops the quiz and shows the result" 5
+expect_status 0
+expect_out "You stopped after 2 of 5 questions."
+expect_out "Fantastic"
+
+input=$(printf 'a\004')
+run "Ctrl-D stops it too" 3
+expect_status 0
+expect_out "You stopped after 1 of 3 questions."
+
+input=$(printf 'q')
+run "stopping at once is not a perfect score" 3
+expect_status 0
+expect_out "You stopped after 0 of 3 questions."
+expect_no_out "Fantastic"
+expect_no_out "You have"
+
 input=$(right 5)
 run "nothing is left behind in the directory" 5
 if [ -z "$(ls -A "$work/cwd")" ]; then ok; else fail "left $(ls -A "$work/cwd")"; fi
