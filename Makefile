@@ -1,7 +1,7 @@
 CC ?= gcc
 CFLAGS ?= -std=c11 -O2 -Wall -Wextra -Wpedantic -Wshadow -Wstrict-prototypes
 BIN = samath
-LIB = getQuestion.o checkAnswer.o input.o question.o
+LIB = getQuestion.o checkAnswer.o input.o question.o report.o
 OBJ = $(LIB) samath.o
 UNIT = test/unit
 
@@ -22,7 +22,8 @@ getQuestion.o: getQuestion.c getQuestion.h question.h
 checkAnswer.o: checkAnswer.c checkAnswer.h
 input.o: input.c input.h
 question.o: question.c question.h
-samath.o: samath.c checkAnswer.h getQuestion.h input.h question.h
+report.o: report.c report.h
+samath.o: samath.c checkAnswer.h getQuestion.h input.h question.h report.h
 
 # Run `make clean check`: the objects are rebuilt with warnings as errors.
 check: CFLAGS += -Werror

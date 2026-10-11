@@ -36,6 +36,18 @@ other key, arrow keys included, is ignored. When the input is a pipe or a
 file the same letters are read from it as they come, which makes a run
 scriptable: `printf 'abcd' | ./samath 4`.
 
+### The result
+
+When the run ends you get the mistakes, each with the right answer, and one
+line with the score and the time:
+
+```
+📊 7 of 10 right (70%), 1 min 12 s, 7.2 s a question
+```
+
+The time is the time spent over the questions, from showing one to the key
+that answered it; waiting for the server is not counted.
+
 ### Requirements
 
 * a C11 compiler (`gcc` or `clang`) and `make`
