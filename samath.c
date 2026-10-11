@@ -1,7 +1,11 @@
+#define _POSIX_C_SOURCE 200809L
+
 #include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include "checkAnswer.h"
 #include "getQuestion.h"
 
 #define welcomeText "👋 Welcome to SaMath System!"
@@ -13,10 +17,10 @@
 #define noErrors "🥳 Fantastic, you haven't got any mistakes!"
 #define bye "\n😉 Have a nice day!"
 
-static void cleanTempFiles(void) {
-  remove(".tmp.samath");
-  remove(".tmp.errors");
-}
+typedef struct {
+  long number;
+  Question question;
+} Mistake;
 
 /* Returns the requested question count, or -1 when the argument is not a
    whole number of 1 or more. */
@@ -28,39 +32,76 @@ static long parseQuestionCount(const char* text) {
   return count;
 }
 
+/* An escape sequence, not a `clear` process for every question, and only for
+   a person at a terminal: a pipe or a file should not get it. */
+static void clearScreen(void) {
+  if (isatty(STDOUT_FILENO)) fputs("\033[H\033[2J", stdout);
+}
+
+/* Shows the question and reads the answer. Returns 1 when it was right, 0 when
+   it was not, and -1 when there is no more input. */
+static int askQuestion(long number, const Question* q) {
+  clearScreen();
+  printf("%ld\t🤔 Solve this expression: %s\n\n", number, q->expression);
+  printf("\tA) %s", q->options[0]);
+  printf("\t\tB) %s\n", q->options[1]);
+  printf("\tC) %s", q->options[2]);
+  printf("\t\tD) %s\n\n\t", q->options[3]);
+
+  char userAnswer[8];
+  printf("Answer: ");
+  if (scanf("%7s", userAnswer) != 1) return -1;
+
+  return checkAnswer(userAnswer, q->answer, q->options[0], q->options[1],
+                     q->options[2], q->options[3]);
+}
+
 int main(int n, char** a) {
   puts(welcomeText);
   if (!(n - 1)) return puts(noArgs), 0;
   long numberOfQuestions = parseQuestionCount(a[1]);
   if (numberOfQuestions < 0) return puts(badArgs), 1;
 
-  /* A fresh run must not count mistakes left behind by an earlier one. */
-  cleanTempFiles();
+  Quiz quiz;
+  quizOpen(&quiz, numberOfQuestions);
 
-  int numberOfCorrect = 0;
+  Mistake* mistakes = NULL;
+  long numberOfMistakes = 0, room = 0, answered = 0;
   for (long i = 0; i < numberOfQuestions; i++) {
-    int answer = displayQuestion((int)(i + 1));
-    if (answer < 0) {
+    Question question;
+    if (quizNext(&quiz, &question) < 0) {
       fputs(apiUnreachable, stderr);
-      cleanTempFiles();
+      free(mistakes);
       return 1;
     }
-    numberOfCorrect += answer;
+    int right = askQuestion(i + 1, &question);
+    if (right < 0) break;
+    answered++;
+    if (right) continue;
+
+    if (numberOfMistakes == room) {
+      room = room ? room * 2 : 8;
+      Mistake* grown = realloc(mistakes, (size_t)room * sizeof *mistakes);
+      if (!grown) {
+        free(mistakes);
+        return 1;
+      }
+      mistakes = grown;
+    }
+    mistakes[numberOfMistakes].number = i + 1;
+    mistakes[numberOfMistakes].question = question;
+    numberOfMistakes++;
   }
 
-  long numberOfMistakes = numberOfQuestions - numberOfCorrect;
+  clearScreen();
   if (numberOfMistakes) {
     printf("😔 You have %ld mistakes!\n\n", numberOfMistakes);
-    FILE* errorsFile = fopen(".tmp.errors", "r");
-    if (errorsFile) {
-      char errorsArr[256];
-      while (fgets(errorsArr, sizeof errorsArr, errorsFile))
-        printf("%s", errorsArr);
-      fclose(errorsFile);
-    }
-  } else
+    for (long i = 0; i < numberOfMistakes; i++)
+      printf("Task %ld. %s\t= %s\n", mistakes[i].number,
+             mistakes[i].question.expression, mistakes[i].question.answer);
+  } else if (answered)
     puts(noErrors);
   puts(bye);
-  cleanTempFiles();
+  free(mistakes);
   return 0;
 }

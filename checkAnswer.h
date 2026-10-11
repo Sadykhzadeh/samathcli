@@ -3,7 +3,7 @@
 
 /* Returns 1 when userAnswer names the option holding ans, 0 otherwise.
    The comparison ignores case, so both "a" and "A" pick the first option. */
-int checkAnswer(char* userAnswer, char* ans, char* first, char* second,
-                char* third, char* fourth);
+int checkAnswer(const char* userAnswer, const char* ans, const char* first,
+                const char* second, const char* third, const char* fourth);
 
 #endif

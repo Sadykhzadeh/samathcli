@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "../checkAnswer.h"
+#include "../getQuestion.h"
 #include "../question.h"
 
 static int checks = 0;
@@ -121,6 +122,67 @@ static void leavesTheResultAloneWhenItRefuses(void) {
   CHECK_STR(q.expression, "1+1");
 }
 
+static void readsEveryQuestionInAReply(void) {
+  Question q[8];
+  CHECK(parseQuestions("1+1 2,3,4,5 2\n2+2 4,5,6,7 4\n3+3 9,8,7,6 6\n", q, 8) == 3);
+  CHECK_STR(q[0].expression, "1+1");
+  CHECK_STR(q[1].expression, "2+2");
+  CHECK_STR(q[2].expression, "3+3");
+  CHECK_STR(q[2].answer, "6");
+  CHECK(parseQuestions("1+1 2,3,4,5 2\r\n2+2 4,5,6,7 4\r\n", q, 8) == 2);
+  CHECK(parseQuestions("1+1 2,3,4,5 2\n2+2 4,5,6,7 4", q, 8) == 2);
+  CHECK_STR(q[1].answer, "4");
+}
+
+static void skipsWhatIsNotAQuestionInAReply(void) {
+  Question q[8];
+  char hundreds[700];
+  CHECK(parseQuestions("\n\n1+1 2,3,4,5 2\n\nnonsense\n2+2 4,5,6,7 4\n", q, 8) == 2);
+  CHECK_STR(q[0].expression, "1+1");
+  CHECK_STR(q[1].expression, "2+2");
+  CHECK(parseQuestions("", q, 8) == 0);
+  CHECK(parseQuestions("<html>\n<body>502</body>\n</html>\n", q, 8) == 0);
+  memset(hundreds, '1', sizeof hundreds - 1);
+  hundreds[sizeof hundreds - 1] = '\0';
+  CHECK(parseQuestions(hundreds, q, 8) == 0);
+}
+
+static void stopsAtTheRoomItWasGiven(void) {
+  Question q[2];
+  CHECK(parseQuestions("1+1 2,3,4,5 2\n2+2 4,5,6,7 4\n3+3 9,8,7,6 6\n", q, 2) == 2);
+  CHECK_STR(q[1].expression, "2+2");
+  CHECK(parseQuestions("1+1 2,3,4,5 2\n", q, 0) == 0);
+}
+
+static void addsCountToAnyURL(void) {
+  char out[64];
+  CHECK(urlWithQuery("http://h/gen?c=true", "count=5", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?c=true&count=5");
+  CHECK(urlWithQuery("http://h/gen", "count=5", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?count=5");
+  CHECK(urlWithQuery("http://h/gen?", "count=5", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?count=5");
+  CHECK(urlWithQuery("http://h/gen?c=true&", "count=5", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?c=true&count=5");
+}
+
+static void leavesTheURLAloneWithoutAQuery(void) {
+  char out[64];
+  CHECK(urlWithQuery("http://h/gen?c=true", "", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?c=true");
+  CHECK(urlWithQuery("http://h/gen", "", out, sizeof out));
+  CHECK_STR(out, "http://h/gen");
+}
+
+static void saysSoWhenTheURLDoesNotFit(void) {
+  char out[32];
+  /* "http://h/gen?c=1&count=5" is 24 characters and needs 25 bytes. */
+  CHECK(!urlWithQuery("http://h/gen?c=1", "count=5", out, 24));
+  CHECK(urlWithQuery("http://h/gen?c=1", "count=5", out, 25));
+  CHECK_STR(out, "http://h/gen?c=1&count=5");
+  CHECK(!urlWithQuery("http://host.example/gen?c=true", "count=5", out, 8));
+}
+
 static void picksTheOptionThatHoldsTheAnswer(void) {
   char* o[4] = {"11", "9", "12", "10"};
   CHECK(checkAnswer("A", "11", o[0], o[1], o[2], o[3]));
@@ -160,6 +222,12 @@ int main(void) {
   picksTheOptionThatHoldsTheAnswer();
   doesNotCareAboutCase();
   refusesAnythingButOneLetter();
+  readsEveryQuestionInAReply();
+  skipsWhatIsNotAQuestionInAReply();
+  stopsAtTheRoomItWasGiven();
+  addsCountToAnyURL();
+  leavesTheURLAloneWithoutAQuery();
+  saysSoWhenTheURLDoesNotFit();
 
   if (failures) {
     fprintf(stderr, "%d of %d checks failed\n", failures, checks);
