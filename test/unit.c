@@ -316,6 +316,19 @@ static void takesTheSeedInEveryForm(void) {
   CHECK(o.seed == 3 && o.seconds == 9 && o.questions == 5);
 }
 
+static void takesPractice(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "5") == ARGS_OK && o.practice == 0);
+  CHECK(args(&o, &culprit, 2, "-p", "5") == ARGS_OK && o.practice == 1);
+  CHECK(args(&o, &culprit, 2, "5", "--practice") == ARGS_OK && o.practice == 1);
+  CHECK(args(&o, &culprit, 6, "-p", "-t", "4", "-s", "1", "5") == ARGS_OK);
+  CHECK(o.practice == 1 && o.seconds == 4 && o.seed == 1 && o.questions == 5);
+  /* It takes no value, and short options are not run together. */
+  CHECK(args(&o, &culprit, 2, "--practice=yes", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "-pt5", "5") == ARGS_BAD_OPTION);
+}
+
 static void refusesASeedItCannotUse(void) {
   Options o;
   const char* culprit;
@@ -419,6 +432,7 @@ int main(void) {
   takesTheTimeLimitInEveryForm();
   takesTheSeedInEveryForm();
   refusesASeedItCannotUse();
+  takesPractice();
   refusesATimeLimitItCannotUse();
   refusesOptionsThatDoNotExist();
   refusesASecondNumberOfQuestions();

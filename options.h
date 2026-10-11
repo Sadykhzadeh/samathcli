@@ -8,6 +8,7 @@ typedef struct {
   long questions;  /* how many to ask: 1 or more */
   int seconds;     /* the time each question gets, or 0 for no limit */
   long long seed;  /* 0 to SEED_MAX, or -1 for questions that differ every run */
+  int practice;    /* ask the mistakes again until each is right */
 } Options;
 
 typedef enum {
