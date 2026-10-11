@@ -18,19 +18,20 @@ $(BIN): $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-getQuestion.o: getQuestion.c getQuestion.h checkAnswer.h question.h
+getQuestion.o: getQuestion.c getQuestion.h question.h
 checkAnswer.o: checkAnswer.c checkAnswer.h
 question.o: question.c question.h
-samath.o: samath.c getQuestion.h
+samath.o: samath.c checkAnswer.h getQuestion.h question.h
 
 # Run `make clean check`: the objects are rebuilt with warnings as errors.
 check: CFLAGS += -Werror
 check: $(BIN) $(UNIT)
 	./$(UNIT)
+	sh test/e2e.sh
 
-$(UNIT): test/unit.c checkAnswer.o question.o
-	$(CC) $(CFLAGS) test/unit.c checkAnswer.o question.o -o $@
+$(UNIT): test/unit.c $(LIB)
+	$(CC) $(CFLAGS) test/unit.c $(LIB) -o $@
 
 clean:
-	rm -f $(BIN) $(OBJ) $(UNIT) .tmp.*
+	rm -f $(BIN) $(OBJ) $(UNIT)
 	@echo Done! :3

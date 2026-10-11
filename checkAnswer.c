@@ -4,10 +4,10 @@
 #include <string.h>
 #include "checkAnswer.h"
 
-int checkAnswer(char* userAnswer, char* ans, char* first, char* second,
-                char* third, char* fourth) {
+int checkAnswer(const char* userAnswer, const char* ans, const char* first,
+                const char* second, const char* third, const char* fourth) {
   if (!userAnswer || !ans || !first || !second || !third || !fourth) return 0;
-  char* actualAns =
+  const char* actualAns =
       (!strcmp(ans, first)) ? "A" : (!strcmp(ans, second))
                                         ? "B"
                                         : (!strcmp(ans, third)) ? "C" : "D";

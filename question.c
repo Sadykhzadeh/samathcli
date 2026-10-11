@@ -65,3 +65,19 @@ int parseQuestion(const char* line, Question* out) {
   *out = q;
   return 1;
 }
+
+int parseQuestions(const char* text, Question* out, int max) {
+  int count = 0;
+  while (*text && count < max) {
+    size_t length = strcspn(text, "\n");
+    if (length < QUESTION_LINE_MAX) {
+      char line[QUESTION_LINE_MAX];
+      memcpy(line, text, length);
+      line[length] = '\0';
+      if (parseQuestion(line, &out[count])) count++;
+    }
+    text += length;
+    if (*text == '\n') text++;
+  }
+  return count;
+}
