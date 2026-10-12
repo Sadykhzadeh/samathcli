@@ -329,6 +329,39 @@ static void takesPractice(void) {
   CHECK(args(&o, &culprit, 2, "-pt5", "5") == ARGS_BAD_OPTION);
 }
 
+static void takesTheLengthAndBrackets(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "5") == ARGS_OK);
+  CHECK(o.length == 0 && o.brackets == 0);
+  CHECK(args(&o, &culprit, 3, "-l", "6", "5") == ARGS_OK && o.length == 6);
+  CHECK(args(&o, &culprit, 2, "5", "-l2") == ARGS_OK && o.length == 2);
+  CHECK(args(&o, &culprit, 3, "--length", "12", "5") == ARGS_OK);
+  CHECK(o.length == 12);
+  CHECK(args(&o, &culprit, 2, "--length=7", "5") == ARGS_OK && o.length == 7);
+  CHECK(args(&o, &culprit, 2, "-b", "5") == ARGS_OK && o.brackets == 1);
+  CHECK(args(&o, &culprit, 2, "5", "--brackets") == ARGS_OK);
+  CHECK(o.brackets == 1);
+  CHECK(args(&o, &culprit, 5, "-b", "-l", "4", "-p", "5") == ARGS_OK);
+  CHECK(o.brackets == 1 && o.length == 4 && o.practice == 1);
+  CHECK(args(&o, &culprit, 2, "--brackets=yes", "5") == ARGS_BAD_OPTION);
+}
+
+static void refusesALengthItCannotUse(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 3, "-l", "1", "5") == ARGS_BAD_LENGTH);
+  CHECK_STR(culprit, "1");
+  CHECK(args(&o, &culprit, 3, "-l", "13", "5") == ARGS_BAD_LENGTH);
+  CHECK(args(&o, &culprit, 3, "-l", "-4", "5") == ARGS_BAD_LENGTH);
+  CHECK(args(&o, &culprit, 3, "-l", "long", "5") == ARGS_BAD_LENGTH);
+  CHECK_STR(culprit, "long");
+  CHECK(args(&o, &culprit, 3, "-l", "4.5", "5") == ARGS_BAD_LENGTH);
+  CHECK(args(&o, &culprit, 2, "5", "-l") == ARGS_BAD_LENGTH);
+  CHECK_STR(culprit, "-l");
+  CHECK(args(&o, &culprit, 2, "--length=", "5") == ARGS_BAD_LENGTH);
+}
+
 static void refusesASeedItCannotUse(void) {
   Options o;
   const char* culprit;
@@ -432,6 +465,8 @@ int main(void) {
   takesTheTimeLimitInEveryForm();
   takesTheSeedInEveryForm();
   refusesASeedItCannotUse();
+  takesTheLengthAndBrackets();
+  refusesALengthItCannotUse();
   takesPractice();
   refusesATimeLimitItCannotUse();
   refusesOptionsThatDoNotExist();

@@ -8,7 +8,6 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "getQuestion.h"
-#include "options.h"
 
 #define apiUrlEnv "SAMATH_API_URL"
 #define apiUrlDefault "http://localhost:3000/gen?c=true"
@@ -98,10 +97,12 @@ static int fetchText(const char* url, char** text) {
   return 0;
 }
 
-void quizOpen(Quiz* quiz, long total, long long seed) {
+void quizOpen(Quiz* quiz, const Options* options) {
   const char* url = getenv(apiUrlEnv);
-  quiz->total = total;
-  quiz->seed = seed;
+  quiz->total = options->questions;
+  quiz->seed = options->seed;
+  quiz->length = options->length;
+  quiz->brackets = options->brackets;
   quiz->asked = 0;
   quiz->url = url && *url ? url : apiUrlDefault;
   quiz->batched = 1;
@@ -109,17 +110,25 @@ void quizOpen(Quiz* quiz, long total, long long seed) {
   quiz->next = 0;
 }
 
-/* The URL that asks for `want` questions. One question and no seed is the
-   plain URL, the request every server has always understood. With a seed,
-   the question the request starts at is the seed plus the questions already
-   handed out, so a run is the same questions however they were batched. */
+/* The URL that asks for `want` questions. One question with nothing else
+   asked for is the plain URL, the request every server has always
+   understood. With a seed, the question the request starts at is the seed
+   plus the questions already handed out, so a run is the same questions
+   however they were batched. */
 static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
-  char query[64] = "";
+  char query[96] = "";
   size_t used = 0;
   if (want > 1) used = (size_t)snprintf(query, sizeof query, "count=%d", want);
   if (quiz->seed >= 0)
-    snprintf(query + used, sizeof query - used, "%sseed=%lld", used ? "&" : "",
-             (quiz->seed + quiz->asked) % (SEED_MAX + 1));
+    used += (size_t)snprintf(query + used, sizeof query - used, "%sseed=%lld",
+                             used ? "&" : "",
+                             (quiz->seed + quiz->asked) % (SEED_MAX + 1));
+  if (quiz->length)
+    used += (size_t)snprintf(query + used, sizeof query - used, "%slength=%d",
+                             used ? "&" : "", quiz->length);
+  if (quiz->brackets)
+    snprintf(query + used, sizeof query - used, "%sbrackets=true",
+             used ? "&" : "");
   return urlWithQuery(quiz->url, query, url, capacity);
 }
 

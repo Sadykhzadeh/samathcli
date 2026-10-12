@@ -35,7 +35,7 @@ static int isOption(const char* arg, char shortName, const char* longName,
 }
 
 ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) {
-  Options options = {0, 0, -1, 0};
+  Options options = {0, 0, -1, 0, 0, 0};
   int optionsEnded = 0;
   *culprit = NULL;
 
@@ -63,6 +63,8 @@ ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) 
       optionsEnded = 1;
     } else if (!strcmp(arg, "-p") || !strcmp(arg, "--practice")) {
       options.practice = 1;
+    } else if (!strcmp(arg, "-b") || !strcmp(arg, "--brackets")) {
+      options.brackets = 1;
     } else if (isOption(arg, 't', "time", &attached)) {
       const char* value = attached ? attached : i + 1 < argc ? argv[++i] : NULL;
       long long seconds = value ? wholeNumber(value, 1, TIME_LIMIT_MAX) : -1;
@@ -78,6 +80,14 @@ ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) 
         *culprit = value ? value : arg;
         return ARGS_BAD_SEED;
       }
+    } else if (isOption(arg, 'l', "length", &attached)) {
+      const char* value = attached ? attached : i + 1 < argc ? argv[++i] : NULL;
+      long long length = value ? wholeNumber(value, LENGTH_MIN, LENGTH_MAX) : -1;
+      if (length < 0) {
+        *culprit = value ? value : arg;
+        return ARGS_BAD_LENGTH;
+      }
+      options.length = (int)length;
     } else {
       *culprit = arg;
       return ARGS_BAD_OPTION;

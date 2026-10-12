@@ -18,7 +18,7 @@ $(BIN): $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-getQuestion.o: getQuestion.c getQuestion.h question.h
+getQuestion.o: getQuestion.c getQuestion.h options.h question.h
 checkAnswer.o: checkAnswer.c checkAnswer.h
 input.o: input.c input.h
 options.o: options.c options.h

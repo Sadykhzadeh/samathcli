@@ -311,6 +311,40 @@ for bad in "-s -1 5" "-s 4294967296 5" "-s many 5" "-s"; do
   expect_err "seed"
 done
 
+input=$(right 3)
+run "a length and brackets are passed on with the count" -l 6 -b 3
+expect_status 0
+expect_requests 1
+expect_url "http://api.test/gen?c=true&count=3&length=6&brackets=true"
+expect_out "Fantastic"
+
+input=$(right 1)
+run "one question asks for its length alone" --length=4 1
+expect_status 0
+if [ "$(cat "$CURL_LOG")" = "http://api.test/gen?c=true&length=4" ]; then ok; else fail "asked for $(cat "$CURL_LOG")"; fi
+
+input=$(right 2 9)
+run "a length goes with a seed" -s 9 -l 3 2
+expect_url "http://api.test/gen?c=true&count=2&seed=9&length=3"
+
+input=$(right 3)
+FAKE_IGNORE_COUNT=1
+export FAKE_IGNORE_COUNT
+run "a server that ignores count gets the length every time" -l 5 --brackets 3
+unset FAKE_IGNORE_COUNT
+expect_status 0
+expect_requests 3
+if [ "$(grep -c 'length=5&brackets=true' "$CURL_LOG")" = 3 ]; then ok; else fail "$(cat "$CURL_LOG")"; fi
+
+for bad in "-l 1 5" "-l 13 5" "-l hard 5" "-l"; do
+  input=
+  # shellcheck disable=SC2086
+  run "\"$bad\" is not a length" $bad
+  expect_status 1
+  expect_requests 0
+  expect_err "2 to 12 numbers"
+done
+
 # Questions 1 and 3 are answered wrong, so they come back: the first is wrong
 # again, then right, and the third is right at once.
 input=$(printf 'b\nb\na\nb\nc\na\n')

@@ -35,6 +35,8 @@
   "                       (0 to 4294967295; the API has to take a seed)\n" \
   "  -p, --practice       ask the ones you got wrong again until they are\n" \
   "                       right\n"                                        \
+  "  -l, --length N       how many numbers each question has (2 to 12)\n" \
+  "  -b, --brackets       ask for questions with brackets\n"              \
   "  -h, --help           show this\n"                                    \
   "\n"                                                                    \
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
@@ -175,6 +177,11 @@ int main(int argc, char** argv) {
                      "\"%s\"! :3\n",
                      SEED_MAX, culprit),
              1;
+    case ARGS_BAD_LENGTH:
+      return fprintf(stderr,
+                     "😅 A question has %d to %d numbers, not \"%s\"! :3\n",
+                     LENGTH_MIN, LENGTH_MAX, culprit),
+             1;
     case ARGS_BAD_OPTION:
       return fprintf(stderr,
                      "😅 I do not know the option \"%s\". See samath --help! "
@@ -191,7 +198,7 @@ int main(int argc, char** argv) {
 
   atTerminal = isatty(STDOUT_FILENO);
   Quiz quiz;
-  quizOpen(&quiz, options.questions, options.seed);
+  quizOpen(&quiz, &options);
   inputStart();
 
   Mistake* mistakes = NULL;
