@@ -57,10 +57,13 @@ scriptable: `printf 'abcd' | ./samath 4`.
 
 ### The result
 
-When the run ends you get the mistakes, each with the right answer, and one
-line with the score and the time:
+When the run ends you get the mistakes, each with the right answer and the
+one that was given, and one line with the score and the time:
 
 ```
+Task 4. 2+3*4	= 14	(you said 20)
+Task 9. 18/3-1	= 5	(time ran out)
+
 📊 7 of 10 right (70%), 1 min 12 s, 7.2 s a question
 ```
 
