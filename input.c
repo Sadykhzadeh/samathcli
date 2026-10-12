@@ -71,6 +71,9 @@ void inputStart(void) {
   sigaction(SIGINT, &handler, NULL);
   sigaction(SIGTERM, &handler, NULL);
   sigaction(SIGHUP, &handler, NULL);
+  sigaction(SIGQUIT, &handler, NULL);
+  /* Output piped into something that exits first, as in `samath 10 | head`. */
+  sigaction(SIGPIPE, &handler, NULL);
 }
 
 void inputDiscard(void) {

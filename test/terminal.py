@@ -7,6 +7,7 @@ usage: python3 test/terminal.py ./samath
 import os
 import pty
 import re
+import resource
 import select
 import shutil
 import signal
@@ -29,12 +30,21 @@ os.environ["TERM"] = "xterm"
 open(os.environ["CURL_LOG"], "w").close()
 
 
-def start(argv):
+def start(argv, closed_output=False):
     # Every run starts with question 1, whose right answer is A.
     if os.path.exists(os.environ["CURL_LOG"] + ".served"):
         os.remove(os.environ["CURL_LOG"] + ".served")
     pid, fd = pty.fork()
     if pid == 0:
+        # As a shell would start it: Python ignores SIGPIPE, and the program
+        # would inherit that. No core file from SIGQUIT either.
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        if closed_output:
+            # Output into a pipe nobody reads, as in `samath 3 | true`.
+            reader, writer = os.pipe()
+            os.close(reader)
+            os.dup2(writer, 1)
         os.execv(BINARY, [BINARY] + argv)
     return pid, fd
 
@@ -124,12 +134,15 @@ check("and the real answer is", "Fantastic" in drain(fd))
 reap(pid)
 os.close(fd)
 
-# Ctrl-C and SIGTERM hand the terminal back and end the run by the signal.
-for label, interrupt, sig in (
-    ("Ctrl-C", lambda pid, fd: os.write(fd, b"\x03"), signal.SIGINT),
-    ("SIGTERM", lambda pid, fd: os.kill(pid, signal.SIGTERM), signal.SIGTERM),
+# Ctrl-C, Ctrl-\, SIGTERM and output that nobody reads any more hand the
+# terminal back and end the run by the signal.
+for label, interrupt, sig, closed_output in (
+    ("Ctrl-C", lambda pid, fd: os.write(fd, b"\x03"), signal.SIGINT, False),
+    ("Ctrl-\\", lambda pid, fd: os.write(fd, b"\x1c"), signal.SIGQUIT, False),
+    ("SIGTERM", lambda pid, fd: os.kill(pid, signal.SIGTERM), signal.SIGTERM, False),
+    ("A closed output pipe", lambda pid, fd: None, signal.SIGPIPE, True),
 ):
-    pid, fd = start(["3"])
+    pid, fd = start(["3"], closed_output)
     drain(fd)
     interrupt(pid, fd)
     status = reap(pid)
