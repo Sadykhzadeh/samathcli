@@ -2,6 +2,7 @@
 #define SAMATH_GET_QUESTION_H
 
 #include <stddef.h>
+#include "options.h"
 #include "question.h"
 
 /* The most questions asked for in one request: SaMathAPI's limit on `count`. */
@@ -11,6 +12,8 @@
 typedef struct {
   long total;       /* how many questions the run has */
   long long seed;   /* what to ask the server to seed with, or -1 */
+  int length;       /* how many numbers to ask for, or 0 */
+  int brackets;     /* ask for brackets */
   long asked;       /* how many quizNext has handed out */
   const char* url;
   int batched;      /* the server has answered `count` with that many */
@@ -19,12 +22,13 @@ typedef struct {
   Question batch[QUIZ_BATCH_MAX];
 } Quiz;
 
-/* Starts a run of `total` questions from SAMATH_API_URL, or from
-   http://localhost:3000/gen?c=true when that is not set. A `seed` of 0 or
+/* Starts a run of `options->questions` questions from SAMATH_API_URL, or
+   from http://localhost:3000/gen?c=true when that is not set. A seed of 0 or
    more is passed on to the server, which then sends the same questions each
-   time; -1 leaves it out. Nothing is fetched until the first question is
-   asked for. */
-void quizOpen(Quiz* quiz, long total, long long seed);
+   time; -1 leaves it out. A length and brackets are passed on when asked
+   for, and left to the server otherwise. Nothing is fetched until the first
+   question is asked for. */
+void quizOpen(Quiz* quiz, const Options* options);
 
 /* What quizNext gives back when there is no next question to hand out. */
 #define QUIZ_UNREACHABLE (-1)   /* the server could not be reached */
