@@ -123,7 +123,7 @@ static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
   return urlWithQuery(quiz->url, query, url, capacity);
 }
 
-/* Fetches the next batch into quiz->batch. */
+/* Fetches the next batch into quiz->batch. Returns 0, or a QUIZ_ code. */
 static int loadBatch(Quiz* quiz) {
   long left = quiz->total - quiz->asked;
   int want = quiz->batched && left > 1
@@ -134,7 +134,7 @@ static int loadBatch(Quiz* quiz) {
   char* text = NULL;
   int status;
   for (;;) {
-    if (!requestUrl(quiz, want, url, sizeof url)) return 0;
+    if (!requestUrl(quiz, want, url, sizeof url)) return QUIZ_UNREACHABLE;
     status = fetchText(url, &text);
     /* A server that refuses `count` outright gets the plain request instead. */
     if (status == CURL_HTTP_ERROR && want > 1) {
@@ -144,21 +144,25 @@ static int loadBatch(Quiz* quiz) {
     }
     break;
   }
-  if (status) return 0;
+  if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;
+  if (status) return QUIZ_UNREACHABLE;
 
   int got = parseQuestions(text, quiz->batch, want);
   free(text);
-  if (got == 0) return 0;
+  if (got == 0) return QUIZ_NOT_QUESTIONS;
   /* One question where several were asked for: this server ignores `count`. */
   if (got < want) quiz->batched = 0;
   quiz->size = got;
   quiz->next = 0;
-  return 1;
+  return 0;
 }
 
 int quizNext(Quiz* quiz, Question* out) {
   if (quiz->asked >= quiz->total) return 0;
-  if (quiz->next >= quiz->size && !loadBatch(quiz)) return -1;
+  if (quiz->next >= quiz->size) {
+    int failure = loadBatch(quiz);
+    if (failure) return failure;
+  }
   *out = quiz->batch[quiz->next++];
   quiz->asked++;
   return 1;

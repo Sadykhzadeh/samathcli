@@ -26,9 +26,13 @@ typedef struct {
    asked for. */
 void quizOpen(Quiz* quiz, long total, long long seed);
 
+/* What quizNext gives back when there is no next question to hand out. */
+#define QUIZ_UNREACHABLE (-1)   /* the server could not be reached */
+#define QUIZ_REFUSED (-2)       /* it answered with an HTTP error */
+#define QUIZ_NOT_QUESTIONS (-3) /* it answered, but not with a question */
+
 /* Hands out the next question. Returns 1 and fills `out`, 0 once all `total`
-   have been handed out, and -1 when the server could not be reached or did
-   not send a question.
+   have been handed out, and one of the QUIZ_ codes above otherwise.
 
    The first call asks for the whole run in one request, `count` questions at a
    time. A server that does not know `count` sends one question back, and from

@@ -145,9 +145,18 @@ expect_err "could not reach SaMathAPI"
 expect_no_out "Fantastic"
 
 input=$(right 3)
-run_at "http://api.test/garbage?c=true" "a reply that is not a question is the same message" 3
+run_at "http://api.test/garbage?c=true" "a reply that is not a question says so" 3
 expect_status 1
-expect_err "could not reach SaMathAPI"
+expect_err "answered, but not with questions"
+expect_err "gen?c=true"
+case "$err" in *"could not reach"*) fail "said the server was not there" ;; *) ok ;; esac
+
+input=$(right 3)
+run_at "http://api.test/broken?c=true" "a server that answers with an error says so" 3
+expect_status 1
+expect_requests 2
+expect_err "answered with an error"
+case "$err" in *"could not reach"*) fail "said the server was not there" ;; *) ok ;; esac
 
 input=$(right 100)
 run_at "http://api.test/drops-out?c=true" "a server that goes down mid-run" 150
