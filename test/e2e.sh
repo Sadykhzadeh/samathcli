@@ -116,9 +116,9 @@ input=$(printf 'b\nb\nb\nb\n')
 run "wrong answers are listed with the right ones" 4
 expect_status 0
 expect_out "You have 3 mistakes!"
-expect_out "Task 1. 0+1"
-expect_out "Task 3. 2+1"
-expect_out "Task 4. 3+1"
+expect_out "Task 1. 0+1	= 1	(you said 2)"
+expect_out "Task 3. 2+1	= 3	(you said 6)"
+expect_out "Task 4. 3+1	= 4	(you said 6)"
 expect_no_out "Task 2."
 expect_out "1 of 4 right (25%)"
 
@@ -247,8 +247,8 @@ run "a question left alone runs out of time" -t 1 2
 hold=0
 expect_status 0
 expect_out "You have 1 mistakes!"
-expect_out "Task 2. 1+1"
-expect_out "(time ran out)"
+expect_out "Task 2. 1+1	= 2	(time ran out)"
+expect_no_out "you said"
 expect_no_out "Task 1."
 expect_out "1 of 2 right (50%)"
 

@@ -57,7 +57,7 @@ static const char* fetchFailure(int code) {
 typedef struct {
   long number;
   Question question;
-  int timedOut;
+  int chosen; /* the option picked, 0 to 3, or CHOICE_TIMEOUT */
 } Mistake;
 
 enum { ASKED_WRONG = 0, ASKED_RIGHT = 1, ASKED_STOP = -1, ASKED_TIMEOUT = -2 };
@@ -94,9 +94,10 @@ static void tick(int left) {
    the person stopped or the input ended. The time from showing the question
    to the answer, or to the end of the limit, is added to `*spent`; waiting for
    the server is not the person's time. A `note` is put on a line of its own
-   above the question. */
+   above the question. Unless the person stopped, `*chosen` is set to the
+   option picked or to CHOICE_TIMEOUT; `chosen` may be NULL. */
 static int askQuestion(long number, const Question* q, int limit,
-                       double* spent, const char* note) {
+                       double* spent, const char* note, int* chosen) {
   inputDiscard();
   clearScreen();
   if (note) printf("%s\n\n", note);
@@ -111,6 +112,7 @@ static int askQuestion(long number, const Question* q, int limit,
   int choice = readChoice(limit, tick);
   if (choice == CHOICE_QUIT) return ASKED_STOP;
   *spent += monotonicSeconds() - shown;
+  if (chosen) *chosen = choice;
   if (choice == CHOICE_TIMEOUT) return ASKED_TIMEOUT;
 
   char letter[2] = {(char)('A' + choice), '\0'};
@@ -139,7 +141,7 @@ static long practise(const Mistake* mistakes, long count, int limit,
       snprintf(note, sizeof note, "🔁 Practice, round %ld: %ld to go", *rounds,
                left - i);
       int result = askQuestion(pending[i].number, &pending[i].question, limit,
-                               &notCounted, note);
+                               &notCounted, note, NULL);
       if (result == ASKED_STOP) {
         free(pending);
         return kept + (left - i);
@@ -218,8 +220,9 @@ int main(int argc, char** argv) {
       lost = fetched;
       break;
     }
-    int result =
-        askQuestion(i + 1, &question, options.seconds, &thinking, NULL);
+    int chosen;
+    int result = askQuestion(i + 1, &question, options.seconds, &thinking,
+                             NULL, &chosen);
     if (result == ASKED_STOP) break;
     answered++;
     if (result == ASKED_RIGHT) continue;
@@ -235,7 +238,7 @@ int main(int argc, char** argv) {
     }
     mistakes[numberOfMistakes].number = i + 1;
     mistakes[numberOfMistakes].question = question;
-    mistakes[numberOfMistakes].timedOut = result == ASKED_TIMEOUT;
+    mistakes[numberOfMistakes].chosen = chosen;
     numberOfMistakes++;
   }
 
@@ -261,10 +264,15 @@ int main(int argc, char** argv) {
            options.questions);
   if (numberOfMistakes) {
     printf("😔 You have %ld mistakes!\n\n", numberOfMistakes);
-    for (long i = 0; i < numberOfMistakes; i++)
-      printf("Task %ld. %s\t= %s%s\n", mistakes[i].number,
-             mistakes[i].question.expression, mistakes[i].question.answer,
-             mistakes[i].timedOut ? "\t(time ran out)" : "");
+    for (long i = 0; i < numberOfMistakes; i++) {
+      const Mistake* m = &mistakes[i];
+      printf("Task %ld. %s\t= %s\t", m->number, m->question.expression,
+             m->question.answer);
+      if (m->chosen == CHOICE_TIMEOUT)
+        puts("(time ran out)");
+      else
+        printf("(you said %s)\n", m->question.options[m->chosen]);
+    }
   } else if (answered)
     puts(noErrors);
   if (answered) {
