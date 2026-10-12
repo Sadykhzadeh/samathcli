@@ -9,8 +9,9 @@
 #
 # The URL steers it: "down" fails to connect, "garbage" answers with a page
 # that is not a question, "refuse-count" answers 400 to a request with
-# count. FAKE_IGNORE_COUNT=1 makes it an older server that does not know
-# count and sends one question whatever is asked.
+# count, and "drops-out" answers the first request and fails to connect
+# after that. FAKE_IGNORE_COUNT=1 makes it an older server that does not
+# know count and sends one question whatever is asked.
 
 url=
 while [ $# -gt 0 ]; do
@@ -56,6 +57,15 @@ esac
 
 served=0
 if [ -f "$CURL_LOG.served" ]; then served=$(cat "$CURL_LOG.served"); fi
+
+case "$url" in
+  *drops-out*)
+    if [ "$served" -gt 0 ]; then
+      echo "curl: (7) Failed to connect" >&2
+      exit 7
+    fi
+    ;;
+esac
 
 i=0
 while [ "$i" -lt "$count" ]; do

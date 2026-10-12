@@ -179,12 +179,18 @@ int main(int argc, char** argv) {
   Mistake* mistakes = NULL;
   long numberOfMistakes = 0, room = 0, answered = 0;
   double thinking = 0;
+  /* A server lost after the first question ends the run there, and what was
+     answered until then still gets its result. */
+  int lost = 0;
   for (long i = 0; i < options.questions; i++) {
     Question question;
     if (quizNext(&quiz, &question) < 0) {
-      fputs(apiUnreachable, stderr);
-      free(mistakes);
-      return 1;
+      if (i == 0) {
+        fputs(apiUnreachable, stderr);
+        return 1;
+      }
+      lost = 1;
+      break;
     }
     int result =
         askQuestion(i + 1, &question, options.seconds, &thinking, NULL);
@@ -221,7 +227,10 @@ int main(int argc, char** argv) {
   }
 
   clearScreen();
-  if (answered < options.questions)
+  if (lost)
+    printf("😔 SaMathAPI stopped answering after %ld of %ld questions.\n\n",
+           answered, options.questions);
+  else if (answered < options.questions)
     printf("✋ You stopped after %ld of %ld questions.\n\n", answered,
            options.questions);
   if (numberOfMistakes) {
@@ -246,5 +255,6 @@ int main(int argc, char** argv) {
            stillWrong, numberOfMistakes);
   puts(bye);
   free(mistakes);
-  return 0;
+  if (lost) fputs(apiUnreachable, stderr);
+  return lost;
 }
