@@ -149,6 +149,27 @@ run_at "http://api.test/garbage?c=true" "a reply that is not a question is the s
 expect_status 1
 expect_err "could not reach SaMathAPI"
 
+input=$(right 100)
+run_at "http://api.test/drops-out?c=true" "a server that goes down mid-run" 150
+expect_status 1
+expect_requests 2
+expect_out "SaMathAPI stopped answering after 100 of 150 questions."
+expect_out "100 of 100 right (100%)"
+expect_no_out "You stopped"
+expect_err "could not reach SaMathAPI"
+
+input=$(printf 'b')
+FAKE_IGNORE_COUNT=1
+export FAKE_IGNORE_COUNT
+run_at "http://api.test/drops-out?c=true" "the questions answered so far are kept" -p 4
+unset FAKE_IGNORE_COUNT
+expect_status 1
+expect_out "SaMathAPI stopped answering after 1 of 4 questions."
+expect_out "Task 1. 0+1"
+expect_out "0 of 1 right (0%)"
+expect_no_out "Practice"
+expect_err "could not reach SaMathAPI"
+
 input=$(right 1)
 run "input that ends early ends the quiz, not the server" 3
 expect_status 0

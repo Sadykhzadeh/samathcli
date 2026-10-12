@@ -83,7 +83,9 @@ trip rather than one per question. Against a server on the same machine, twenty 
 went from 193 ms to 6 ms. A SaMathAPI that does not know `count` sends one
 question back, and the run carries on with a request per question, as it
 always did. Nothing is written to disk, and questions that are not
-in the API's format are ignored.
+in the API's format are ignored. A server that stops answering partway
+through ends the run there: the result covers the questions answered so
+far, and `samath` exits with status 1.
 
 ## Development
 
