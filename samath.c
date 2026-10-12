@@ -16,6 +16,12 @@
 #define badArgs "😅 That has to be a whole number of questions, 1 or more! :3\n"
 #define apiUnreachable \
   "😔 I could not reach SaMathAPI. Is it running? See SAMATH_API_URL.\n"
+#define apiRefused                                                  \
+  "😔 SaMathAPI answered with an error instead of questions. See "   \
+  "SAMATH_API_URL.\n"
+#define apiNotQuestions                                             \
+  "😔 SAMATH_API_URL answered, but not with questions. It has to " \
+  "ask for them as text, as http://localhost:3000/gen?c=true does.\n"
 #define noErrors "🥳 Fantastic, you haven't got any mistakes!"
 #define bye "\n😉 Have a nice day!"
 
@@ -33,6 +39,18 @@
   "\n"                                                                    \
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
   "SAMATH_API_URL says where the questions come from.\n"
+
+/* What to say when the questions could not be fetched. */
+static const char* fetchFailure(int code) {
+  switch (code) {
+    case QUIZ_REFUSED:
+      return apiRefused;
+    case QUIZ_NOT_QUESTIONS:
+      return apiNotQuestions;
+    default:
+      return apiUnreachable;
+  }
+}
 
 typedef struct {
   long number;
@@ -184,12 +202,13 @@ int main(int argc, char** argv) {
   int lost = 0;
   for (long i = 0; i < options.questions; i++) {
     Question question;
-    if (quizNext(&quiz, &question) < 0) {
+    int fetched = quizNext(&quiz, &question);
+    if (fetched < 0) {
       if (i == 0) {
-        fputs(apiUnreachable, stderr);
+        fputs(fetchFailure(fetched), stderr);
         return 1;
       }
-      lost = 1;
+      lost = fetched;
       break;
     }
     int result =
@@ -255,6 +274,6 @@ int main(int argc, char** argv) {
            stillWrong, numberOfMistakes);
   puts(bye);
   free(mistakes);
-  if (lost) fputs(apiUnreachable, stderr);
-  return lost;
+  if (lost) fputs(fetchFailure(lost), stderr);
+  return lost != 0;
 }

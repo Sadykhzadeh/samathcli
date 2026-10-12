@@ -8,9 +8,9 @@
 # a request is n = S + i, as the real API does.
 #
 # The URL steers it: "down" fails to connect, "garbage" answers with a page
-# that is not a question, "refuse-count" answers 400 to a request with
-# count, and "drops-out" answers the first request and fails to connect
-# after that. FAKE_IGNORE_COUNT=1 makes it an older server that does not
+# that is not a question, "broken" answers every request with a 500,
+# "refuse-count" answers 400 to a request with count, and "drops-out"
+# answers the first request and fails to connect after that. FAKE_IGNORE_COUNT=1 makes it an older server that does not
 # know count and sends one question whatever is asked.
 
 url=
@@ -31,6 +31,10 @@ case "$url" in
   *garbage*)
     echo "<html><body>502 Bad Gateway</body></html>"
     exit 0
+    ;;
+  *broken*)
+    echo "curl: (22) The requested URL returned error: 500" >&2
+    exit 22
     ;;
   *refuse-count*count=*)
     echo "curl: (22) The requested URL returned error: 400" >&2
