@@ -121,6 +121,8 @@ expect_out "Task 3. 2+1	= 3	(you said 6)"
 expect_out "Task 4. 3+1	= 4	(you said 6)"
 expect_no_out "Task 2."
 expect_out "1 of 4 right (25%)"
+expect_out "1/4	🤔 Solve this expression: 0+1"
+expect_out "4/4	🤔 Solve this expression: 3+1"
 
 input=$(right 3)
 FAKE_IGNORE_COUNT=1
@@ -359,6 +361,7 @@ expect_out "You have 2 mistakes!"
 expect_out "1 of 3 right (33%)"
 expect_out "Practice, round 1: 2 to go"
 expect_out "Practice, round 2: 1 to go"
+expect_out "$(printf 'round 1: 2 to go\n\n1\t🤔 Solve this expression: 0+1')"
 expect_out "Practice: every mistake put right, in 2 rounds."
 
 input=$(printf 'b\nb\na\n')

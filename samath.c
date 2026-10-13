@@ -89,19 +89,23 @@ static void tick(int left) {
   if (atTerminal) showPrompt(left);
 }
 
-/* Shows the question and reads the answer, within `limit` seconds if that is
-   not 0. Returns ASKED_RIGHT, ASKED_WRONG, ASKED_TIMEOUT, or ASKED_STOP when
+/* Shows question `number` of `total`, or only its number when `total` is 0,
+   and reads the answer, within `limit` seconds if that is not 0. Returns ASKED_RIGHT, ASKED_WRONG, ASKED_TIMEOUT, or ASKED_STOP when
    the person stopped or the input ended. The time from showing the question
    to the answer, or to the end of the limit, is added to `*spent`; waiting for
    the server is not the person's time. A `note` is put on a line of its own
    above the question. Unless the person stopped, `*chosen` is set to the
    option picked or to CHOICE_TIMEOUT; `chosen` may be NULL. */
-static int askQuestion(long number, const Question* q, int limit,
+static int askQuestion(long number, long total, const Question* q, int limit,
                        double* spent, const char* note, int* chosen) {
   inputDiscard();
   clearScreen();
   if (note) printf("%s\n\n", note);
-  printf("%ld\t🤔 Solve this expression: %s\n\n", number, q->expression);
+  if (total)
+    printf("%ld/%ld\t🤔 Solve this expression: %s\n\n", number, total,
+           q->expression);
+  else
+    printf("%ld\t🤔 Solve this expression: %s\n\n", number, q->expression);
   printf("\tA) %s", q->options[0]);
   printf("\t\tB) %s\n", q->options[1]);
   printf("\tC) %s", q->options[2]);
@@ -140,8 +144,8 @@ static long practise(const Mistake* mistakes, long count, int limit,
       char note[96];
       snprintf(note, sizeof note, "🔁 Practice, round %ld: %ld to go", *rounds,
                left - i);
-      int result = askQuestion(pending[i].number, &pending[i].question, limit,
-                               &notCounted, note, NULL);
+      int result = askQuestion(pending[i].number, 0, &pending[i].question,
+                               limit, &notCounted, note, NULL);
       if (result == ASKED_STOP) {
         free(pending);
         return kept + (left - i);
@@ -221,8 +225,8 @@ int main(int argc, char** argv) {
       break;
     }
     int chosen;
-    int result = askQuestion(i + 1, &question, options.seconds, &thinking,
-                             NULL, &chosen);
+    int result = askQuestion(i + 1, options.questions, &question,
+                             options.seconds, &thinking, NULL, &chosen);
     if (result == ASKED_STOP) break;
     answered++;
     if (result == ASKED_RIGHT) continue;
