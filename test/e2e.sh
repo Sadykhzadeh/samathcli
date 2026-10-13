@@ -223,6 +223,10 @@ expect_no_out "Fantastic"
 expect_no_out "right ("
 expect_no_out "You have"
 
+run "one question stopped at once is one question" 1
+expect_status 0
+expect_out "You stopped after 0 of 1 question."
+
 input=$(right 5)
 run "nothing is left behind in the directory" 5
 if [ -z "$(ls -A "$work/cwd")" ]; then ok; else fail "left $(ls -A "$work/cwd")"; fi
@@ -246,7 +250,7 @@ input=$(printf 'a')
 run "a question left alone runs out of time" -t 1 2
 hold=0
 expect_status 0
-expect_out "You have 1 mistakes!"
+expect_out "You have 1 mistake!"
 expect_out "Task 2. 1+1	= 2	(time ran out)"
 expect_no_out "you said"
 expect_no_out "Task 1."

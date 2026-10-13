@@ -260,10 +260,12 @@ int main(int argc, char** argv) {
     printf("😔 SaMathAPI stopped answering after %ld of %ld questions.\n\n",
            answered, options.questions);
   else if (answered < options.questions)
-    printf("✋ You stopped after %ld of %ld questions.\n\n", answered,
-           options.questions);
+    printf("✋ You stopped after %ld of %ld %s.\n\n", answered,
+           options.questions,
+           options.questions == 1 ? "question" : "questions");
   if (numberOfMistakes) {
-    printf("😔 You have %ld mistakes!\n\n", numberOfMistakes);
+    printf("😔 You have %ld %s!\n\n", numberOfMistakes,
+           numberOfMistakes == 1 ? "mistake" : "mistakes");
     for (long i = 0; i < numberOfMistakes; i++) {
       const Mistake* m = &mistakes[i];
       printf("Task %ld. %s\t= %s\t", m->number, m->question.expression,
