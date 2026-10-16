@@ -73,20 +73,24 @@ static void clearScreen(void) {
     putchar('\n');
 }
 
-/* The line the answer is typed on. With a time limit it counts down in place
-   at a terminal; elsewhere it is written once. */
-static void showPrompt(int left) {
-  const char* home = atTerminal ? "\r" : "";
-  const char* erase = atTerminal ? "\033[K" : "";
-  if (left > 0)
-    printf("%s\tAnswer (A-D, Q to stop) - %d s left: %s", home, left, erase);
+/* The line the answer is typed on. With a time limit the seconds left come
+   last, and at a terminal the cursor position before them is saved, so that
+   tick() rewrites only them: going back to the start of the line would land
+   on its second half in a terminal narrow enough to wrap it. */
+static void showPrompt(int limit) {
+  if (limit > 0)
+    printf("\tAnswer (A-D, Q to stop) - %s%d s left: ",
+           atTerminal ? "\0337" : "", limit);
   else
-    printf("%s\tAnswer (A-D, Q to stop): %s", home, erase);
+    fputs("\tAnswer (A-D, Q to stop): ", stdout);
   fflush(stdout);
 }
 
+/* Counts the time limit down in place, at a terminal only. */
 static void tick(int left) {
-  if (atTerminal) showPrompt(left);
+  if (!atTerminal) return;
+  printf("\0338%d s left: \033[K", left);
+  fflush(stdout);
 }
 
 /* Shows question `number` of `total`, or only its number when `total` is 0,

@@ -171,8 +171,11 @@ def collect(fd, seconds):
 # A time limit counts down in place, and moves on when it runs out.
 pid, fd = start(["-t", "2", "2"])
 seen = collect(fd, 3.5)  # two seconds to run out, with room for a slow start
-check("the limit is shown", "Answer (A-D, Q to stop) - 2 s left: " in seen, seen[-300:])
-check("it counts down in place", "\r\tAnswer (A-D, Q to stop) - 1 s left: " in seen, seen[-300:])
+check("the limit is shown", "Answer (A-D, Q to stop) - \x1b72 s left: " in seen, seen[-300:])
+check("it counts down in place", "\x1b81 s left: \x1b[K" in seen, seen[-300:])
+# Going back to the start of the line instead would leave a trail of prompts
+# in a terminal narrower than the line, which wraps it.
+check("only the seconds are written again", seen.count("Answer (A-D") == questions(seen), seen[-300:])
 check("a question that runs out moves on to the next", questions(seen) == 2, seen[-300:])
 os.write(fd, b"a")  # the second question is answered by B, so this is a mistake
 summary = collect(fd, 0.5)
