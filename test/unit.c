@@ -225,6 +225,18 @@ static void summarisesARun(void) {
   CHECK_STR(out, "10 of 10 right (100%), 31 s, 3.1 s a question");
 }
 
+static void keepsAMistakeOffAPerfectScore(void) {
+  char out[128];
+  formatStats(199, 200, 600, out, sizeof out);
+  CHECK_STR(out, "199 of 200 right (99%), 10 min 0 s, 3.0 s a question");
+  formatStats(1, 201, 600, out, sizeof out);
+  CHECK_STR(out, "1 of 201 right (1%), 10 min 0 s, 3.0 s a question");
+  formatStats(399, 400, 600, out, sizeof out);
+  CHECK_STR(out, "399 of 400 right (99%), 10 min 0 s, 1.5 s a question");
+  formatStats(198, 200, 600, out, sizeof out);
+  CHECK_STR(out, "198 of 200 right (99%), 10 min 0 s, 3.0 s a question");
+}
+
 static void doesNotRepeatItselfForOneAnswer(void) {
   char out[128];
   formatStats(1, 1, 3.2, out, sizeof out);
@@ -458,6 +470,7 @@ int main(void) {
   saysSoWhenTheURLDoesNotFit();
   saysDurationsTheWayAPersonDoes();
   summarisesARun();
+  keepsAMistakeOffAPerfectScore();
   doesNotRepeatItselfForOneAnswer();
   neverWritesPastTheRoomItWasGiven();
   readsTheNumberOfQuestions();

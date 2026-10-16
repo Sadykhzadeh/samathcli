@@ -19,6 +19,10 @@ void formatDuration(double seconds, char* out, size_t capacity) {
 void formatStats(long right, long answered, double seconds, char* out,
                  size_t capacity) {
   long percent = answered ? (right * 100 + answered / 2) / answered : 0;
+  /* Rounded, but never to a perfect score with a mistake in it, nor to none
+     with a right answer. */
+  if (percent == 100 && right < answered) percent = 99;
+  if (percent == 0 && right > 0) percent = 1;
   char total[32];
   formatDuration(seconds, total, sizeof total);
   int used = snprintf(out, capacity, "%ld of %ld right (%ld%%), %s", right,
