@@ -54,6 +54,9 @@ void inputStart(void) {
 
   struct termios keys = original;
   keys.c_lflag &= (tcflag_t) ~(ICANON | ECHO);
+  /* Ctrl-S would freeze the screen while keys still answered questions that
+     could not be seen; it is one more key to ignore. */
+  keys.c_iflag &= (tcflag_t) ~IXON;
   keys.c_cc[VMIN] = 1;
   keys.c_cc[VTIME] = 0;
 #if defined(VSUSP) && defined(_POSIX_VDISABLE)
