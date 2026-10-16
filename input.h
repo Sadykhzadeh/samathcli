@@ -16,7 +16,9 @@ double monotonicSeconds(void);
 void inputStart(void);
 
 /* Drops keys typed ahead of the question, so that a stray press while the
-   questions were loading does not answer the first one. */
+   questions were loading does not answer the first one, and at a terminal
+   lets no answer through for a quarter of a second after: a key pressed
+   twice would otherwise answer the next question unseen. */
 void inputDiscard(void);
 
 /* Waits for an answer: a to d in either case. Q, Ctrl-D and the end of the

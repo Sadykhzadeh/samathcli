@@ -137,6 +137,22 @@ check("and the real answer is", "Fantastic" in drain(fd))
 reap(pid)
 os.close(fd)
 
+# A key pressed twice answers the question it was pressed for, not the next
+# one as well, which would go by before it could be read.
+pid, fd = start(["3"])
+drain(fd)
+os.write(fd, b"a")
+time.sleep(0.08)
+os.write(fd, b"a")
+twice = drain(fd)
+check("a double press answers one question", questions(twice) == 1 and "2/3" in twice and "3/3" not in twice, twice[-200:])
+os.write(fd, b"b")  # question 2 is answered by B
+check("and the next key answers the next", "3/3" in drain(fd))
+os.write(fd, b"q")
+check("both answers were right", "2 of 2 right" in drain(fd))
+reap(pid)
+os.close(fd)
+
 # Ctrl-C, Ctrl-\, SIGTERM and output that nobody reads any more hand the
 # terminal back and end the run by the signal.
 for label, interrupt, sig, closed_output in (
@@ -185,7 +201,7 @@ os.close(fd)
 
 # Answering in time stops the clock: nothing runs out afterwards.
 pid, fd = start(["-t", "1", "1"])
-drain(fd, 0.2)
+drain(fd, 0.4)
 os.write(fd, b"a")
 check("an answer in time is kept", "Fantastic" in collect(fd, 0.5))
 reap(pid)

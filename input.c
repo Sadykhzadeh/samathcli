@@ -15,6 +15,9 @@
 /* How long the rest of an escape sequence is waited for. A terminal sends it
    in one piece, so this only has to outlast the wire. */
 #define SEQUENCE_WAIT_MS 30
+/* How long after a question is shown a key does not answer it. Nobody reads
+   a sum this fast, but a key pressed twice comes this soon. */
+#define SETTLE_SECONDS 0.25
 
 /* What readByte gives besides a byte. */
 #define BYTE_END (-1)
@@ -22,6 +25,7 @@
 
 static struct termios original;
 static volatile sig_atomic_t taken = 0;
+static double settled = 0; /* when keys start to answer the question */
 
 static void giveBack(void) {
   if (taken) {
@@ -80,7 +84,9 @@ void inputStart(void) {
 }
 
 void inputDiscard(void) {
-  if (taken) tcflush(STDIN_FILENO, TCIFLUSH);
+  if (!taken) return;
+  tcflush(STDIN_FILENO, TCIFLUSH);
+  settled = monotonicSeconds() + SETTLE_SECONDS;
 }
 
 /* One byte of input, BYTE_END at the end of it, or, when `waitMs` is not
@@ -137,6 +143,7 @@ int readChoice(int seconds, void (*tick)(int left)) {
       skipEscapeSequence();
       continue;
     }
+    if (tolower(key) != 'q' && monotonicSeconds() < settled) continue;
     switch (tolower(key)) {
       case 'a':
         return 0;
