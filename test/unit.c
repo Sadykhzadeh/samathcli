@@ -341,6 +341,18 @@ static void takesPractice(void) {
   CHECK(args(&o, &culprit, 2, "-pt5", "5") == ARGS_BAD_OPTION);
 }
 
+static void takesFeedback(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "5") == ARGS_OK && o.feedback == 0);
+  CHECK(args(&o, &culprit, 2, "-f", "5") == ARGS_OK && o.feedback == 1);
+  CHECK(args(&o, &culprit, 2, "5", "--feedback") == ARGS_OK && o.feedback == 1);
+  CHECK(args(&o, &culprit, 4, "-p", "-f", "-b", "5") == ARGS_OK);
+  CHECK(o.feedback == 1 && o.practice == 1 && o.brackets == 1);
+  CHECK(args(&o, &culprit, 2, "--feedback=yes", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "-fp", "5") == ARGS_BAD_OPTION);
+}
+
 static void takesTheLengthAndBrackets(void) {
   Options o;
   const char* culprit;
@@ -481,6 +493,7 @@ int main(void) {
   takesTheLengthAndBrackets();
   refusesALengthItCannotUse();
   takesPractice();
+  takesFeedback();
   refusesATimeLimitItCannotUse();
   refusesOptionsThatDoNotExist();
   refusesASecondNumberOfQuestions();

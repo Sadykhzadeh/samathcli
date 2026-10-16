@@ -390,6 +390,28 @@ input=$(printf 'b\nb\nb\nb\n')
 run "without -p the mistakes are only listed" 4
 expect_no_out "Practice"
 
+# Question 1 is answered right, 2 wrong, and 3 and 4 are left to run out;
+# each answer is spoken of above the next question.
+hold=3
+input=$(printf 'ac')
+run "feedback says how each answer went" -f -t 1 4
+hold=0
+expect_status 0
+expect_out "$(printf '✅ Right: 0+1 = 1\n\n2/4\t🤔 Solve this expression: 1+1')"
+expect_out "$(printf '❌ Wrong: 1+1 = 2 (you said 3)\n\n3/4\t🤔 Solve this expression: 2+1')"
+expect_out "$(printf '❌ Wrong: 2+1 = 3 (time ran out)\n\n4/4\t🤔 Solve this expression: 3+1')"
+expect_out "You have 3 mistakes!"
+
+input=$(printf 'b\na\n')
+run "feedback goes on into the practice" --feedback -p 1
+expect_out "$(printf '❌ Wrong: 0+1 = 1 (you said 2)\n\n🔁 Practice, round 1: 1 to go')"
+expect_out "Practice: every mistake put right, in 1 round."
+
+input=$(printf 'bb')
+run "without -f nothing is said until the end" 2
+expect_no_out "Wrong:"
+expect_no_out "Right:"
+
 input=
 run "help says how to use it" --help
 expect_status 0
