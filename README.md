@@ -39,6 +39,7 @@
 | `-p`, `--practice` | When the run is over and there are mistakes, ask them again, round after round, until each has been put right; the result then says how many rounds it took. `Q` stops the practice, and a run that was stopped does not go on to it. The score above it is still the first attempt. |
 | `-l`, `--length N` | Ask for questions of `N` numbers each, 2 to 12. Without it the API picks a length from its own range. |
 | `-b`, `--brackets` | Ask for questions with brackets. Without it the API's own setting decides. |
+| `-f`, `--feedback` | Say after each answer whether it was right. The next question opens with `✅ Right: 13*1*2/2 = 13` or `❌ Wrong: 1*17*4/4 = 17 (you said 15)`, so the right answer is there while the question is still fresh. Without it nothing is said until the end. |
 | `-h`, `--help` | Print the options. |
 
 `./samath -t 10 20` is twenty questions with ten seconds each, and

@@ -37,6 +37,7 @@
   "                       right\n"                                        \
   "  -l, --length N       how many numbers each question has (2 to 12)\n" \
   "  -b, --brackets       ask for questions with brackets\n"              \
+  "  -f, --feedback       say after each answer whether it was right\n"  \
   "  -h, --help           show this\n"                                    \
   "\n"                                                                    \
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
@@ -63,6 +64,23 @@ typedef struct {
 enum { ASKED_WRONG = 0, ASKED_RIGHT = 1, ASKED_STOP = -1, ASKED_TIMEOUT = -2 };
 
 static int atTerminal;
+
+/* With -f, a line about the answer last given, which the next question shows
+   above itself; empty until there is one. */
+static int giveFeedback;
+static char feedback[QUESTION_EXPRESSION_MAX + 2 * QUESTION_NUMBER_MAX + 32];
+
+static void rememberFeedback(const Question* q, int result, int choice) {
+  if (result == ASKED_RIGHT)
+    snprintf(feedback, sizeof feedback, "✅ Right: %s = %s", q->expression,
+             q->answer);
+  else if (result == ASKED_TIMEOUT)
+    snprintf(feedback, sizeof feedback, "❌ Wrong: %s = %s (time ran out)",
+             q->expression, q->answer);
+  else
+    snprintf(feedback, sizeof feedback, "❌ Wrong: %s = %s (you said %s)",
+             q->expression, q->answer, q->options[choice]);
+}
 
 /* An escape sequence, not a `clear` process for every question, and only for
    a person at a terminal: a pipe or a file gets a blank line instead. */
@@ -98,12 +116,14 @@ static void tick(int left) {
    the person stopped or the input ended. The time from showing the question
    to the answer, or to the end of the limit, is added to `*spent`; waiting for
    the server is not the person's time. A `note` is put on a line of its own
-   above the question. Unless the person stopped, `*chosen` is set to the
-   option picked or to CHOICE_TIMEOUT; `chosen` may be NULL. */
+   above the question, under what -f has to say about the last answer. Unless
+   the person stopped, `*chosen` is set to the option picked or to
+   CHOICE_TIMEOUT; `chosen` may be NULL. */
 static int askQuestion(long number, long total, const Question* q, int limit,
                        double* spent, const char* note, int* chosen) {
   inputDiscard();
   clearScreen();
+  if (*feedback) printf("%s\n\n", feedback);
   if (note) printf("%s\n\n", note);
   if (total)
     printf("%ld/%ld\t🤔 Solve this expression: %s\n\n", number, total,
@@ -121,11 +141,15 @@ static int askQuestion(long number, long total, const Question* q, int limit,
   if (choice == CHOICE_QUIT) return ASKED_STOP;
   *spent += monotonicSeconds() - shown;
   if (chosen) *chosen = choice;
-  if (choice == CHOICE_TIMEOUT) return ASKED_TIMEOUT;
 
-  char letter[2] = {(char)('A' + choice), '\0'};
-  return checkAnswer(letter, q->answer, q->options[0], q->options[1],
-                     q->options[2], q->options[3]);
+  int result = ASKED_TIMEOUT;
+  if (choice != CHOICE_TIMEOUT) {
+    char letter[2] = {(char)('A' + choice), '\0'};
+    result = checkAnswer(letter, q->answer, q->options[0], q->options[1],
+                         q->options[2], q->options[3]);
+  }
+  if (giveFeedback) rememberFeedback(q, result, choice);
+  return result;
 }
 
 /* Asks the mistakes again, round after round, until each has been put right.
@@ -207,6 +231,7 @@ int main(int argc, char** argv) {
   }
 
   atTerminal = isatty(STDOUT_FILENO);
+  giveFeedback = options.feedback;
   Quiz quiz;
   quizOpen(&quiz, &options);
   inputStart();
