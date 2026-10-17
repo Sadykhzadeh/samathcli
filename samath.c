@@ -195,7 +195,6 @@ static long practise(const Mistake* mistakes, long count, int limit,
 }
 
 int main(int argc, char** argv) {
-  puts(welcomeText);
   Options options;
   const char* culprit;
   switch (parseArgs(argc, argv, &options, &culprit)) {
@@ -238,6 +237,7 @@ int main(int argc, char** argv) {
              1;
   }
 
+  puts(welcomeText);
   const char* term = getenv("TERM");
   atTerminal = isatty(STDOUT_FILENO) && !(term && !strcmp(term, "dumb"));
   giveFeedback = options.feedback;
