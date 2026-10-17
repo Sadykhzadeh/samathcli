@@ -243,6 +243,25 @@ static void doesNotRepeatItselfForOneAnswer(void) {
   CHECK_STR(out, "1 of 1 right (100%), 3.2 s");
 }
 
+static void namesTheSlowestQuestionOfALongEnoughRun(void) {
+  char out[64];
+  CHECK(formatSlowest(4, "18/3-1", 21.4, 10, out, sizeof out));
+  CHECK_STR(out, "Task 4. 18/3-1 (21 s)");
+  CHECK(formatSlowest(12, "2+3*4", 2.0, 3, out, sizeof out));
+  CHECK_STR(out, "Task 12. 2+3*4 (2.0 s)");
+}
+
+static void doesNotNameTheSlowestWhenThereIsNoneToName(void) {
+  char out[64] = "untouched";
+  /* Two questions are not enough to pick one out of. */
+  CHECK(!formatSlowest(2, "1+1", 30, 2, out, sizeof out));
+  /* Nor are questions that all went by quickly. */
+  CHECK(!formatSlowest(2, "1+1", 1.9, 10, out, sizeof out));
+  CHECK(!formatSlowest(0, "", 0, 0, out, sizeof out));
+  /* Nor is a line that would be cut short. */
+  CHECK(!formatSlowest(4, "18/3-1", 21, 10, out, 12));
+}
+
 static void neverWritesPastTheRoomItWasGiven(void) {
   char out[12];
   memset(out, 'x', sizeof out);
@@ -495,6 +514,8 @@ int main(void) {
   saysSoWhenTheURLDoesNotFit();
   saysDurationsTheWayAPersonDoes();
   summarisesARun();
+  namesTheSlowestQuestionOfALongEnoughRun();
+  doesNotNameTheSlowestWhenThereIsNoneToName();
   keepsAMistakeOffAPerfectScore();
   doesNotRepeatItselfForOneAnswer();
   neverWritesPastTheRoomItWasGiven();

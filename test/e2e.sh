@@ -310,6 +310,21 @@ expect_no_out "you said"
 expect_no_out "Task 1."
 expect_out "1 of 2 right (50%)"
 
+# Questions 1 and 2 are answered at once and the third runs out its two
+# seconds, so it is the slowest.
+hold=3
+input=$(printf 'ab')
+run "the slowest question is named" -t 2 3
+hold=0
+expect_status 0
+expect_out "2 of 3 right (67%)"
+expect_out "Slowest: Task 3. 2+1 (2."
+
+input=$(right 3)
+run "a run that went by quickly names none" 3
+expect_out "Fantastic"
+expect_no_out "Slowest"
+
 # With a seed, question n of the stand-in is seed + n - 1.
 input=$(right 3 42)
 run "a seed is passed on with the count" -s 42 3

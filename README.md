@@ -68,17 +68,20 @@ counted down. Keys are still read one at a time.
 ### The result
 
 When the run ends you get the mistakes, each with the right answer and the
-one that was given, and one line with the score and the time:
+one that was given, and a line with the score and the time:
 
 ```
 Task 4. 2+3*4	= 14	(you said 20)
 Task 9. 18/3-1	= 5	(time ran out)
 
 📊 7 of 10 right (70%), 1 min 12 s, 7.2 s a question
+🐢 Slowest: Task 4. 2+3*4 (21 s)
 ```
 
 The time is the time spent over the questions, from showing one to the key
-that answered it; waiting for the server is not counted.
+that answered it; waiting for the server is not counted. The last line names
+the question that took longest, but only in a run of three or more where it
+took at least two seconds, so it is left out when nothing was slow.
 
 ### Requirements
 

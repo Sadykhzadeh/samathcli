@@ -33,3 +33,14 @@ void formatStats(long right, long answered, double seconds, char* out,
     snprintf(out + used, capacity - (size_t)used, ", %s a question", each);
   }
 }
+
+int formatSlowest(long number, const char* expression, double seconds,
+                  long answered, char* out, size_t capacity) {
+  if (answered < SLOWEST_MIN_ANSWERED || seconds < SLOWEST_MIN_SECONDS)
+    return 0;
+  char took[32];
+  formatDuration(seconds, took, sizeof took);
+  int written =
+      snprintf(out, capacity, "Task %ld. %s (%s)", number, expression, took);
+  return written >= 0 && (size_t)written < capacity;
+}
