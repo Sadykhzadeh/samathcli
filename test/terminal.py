@@ -30,7 +30,7 @@ os.environ["TERM"] = "xterm"
 open(os.environ["CURL_LOG"], "w").close()
 
 
-def start(argv, closed_output=False):
+def start(argv, closed_output=False, term="xterm"):
     # Every run starts with question 1, whose right answer is A.
     if os.path.exists(os.environ["CURL_LOG"] + ".served"):
         os.remove(os.environ["CURL_LOG"] + ".served")
@@ -45,6 +45,7 @@ def start(argv, closed_output=False):
             reader, writer = os.pipe()
             os.close(reader)
             os.dup2(writer, 1)
+        os.environ["TERM"] = term
         os.execv(BINARY, [BINARY] + argv)
     return pid, fd
 
@@ -208,6 +209,20 @@ pid, fd = start(["-t", "1", "1"])
 drain(fd, 0.4)
 os.write(fd, b"a")
 check("an answer in time is kept", "Fantastic" in collect(fd, 0.5))
+reap(pid)
+os.close(fd)
+
+# A dumb terminal cannot clear the screen or go back to a saved position, so
+# it gets no codes for either: a blank line between questions, and the limit
+# written once.
+pid, fd = start(["-t", "2", "2"], term="dumb")
+seen = collect(fd, 0.6)
+os.write(fd, b"a")
+seen += collect(fd, 2.5)
+check("a dumb terminal gets no escape codes", "\x1b" not in seen, repr(seen[-300:]))
+check("and is still asked both questions", questions(seen) == 2, seen[-300:])
+check("with the limit written once each", seen.count("2 s left: ") == 2 and "1 s left" not in seen, seen[-300:])
+check("and still reads single keys", "(time ran out)" in seen and "Task 1." not in seen, seen[-300:])
 reap(pid)
 os.close(fd)
 

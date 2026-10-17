@@ -64,6 +64,8 @@ typedef struct {
 
 enum { ASKED_WRONG = 0, ASKED_RIGHT = 1, ASKED_STOP = -1, ASKED_TIMEOUT = -2 };
 
+/* Output to a terminal that can clear the screen and move the cursor. One
+   that says it is dumb, as Emacs's M-x shell does, gets what a pipe gets. */
 static int atTerminal;
 
 /* With -f, a line about the answer last given, which the next question shows
@@ -231,7 +233,8 @@ int main(int argc, char** argv) {
              1;
   }
 
-  atTerminal = isatty(STDOUT_FILENO);
+  const char* term = getenv("TERM");
+  atTerminal = isatty(STDOUT_FILENO) && !(term && !strcmp(term, "dumb"));
   giveFeedback = options.feedback;
   Quiz quiz;
   quizOpen(&quiz, &options);

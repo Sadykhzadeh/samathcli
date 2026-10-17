@@ -60,6 +60,11 @@ before it has been seen. When the input is a pipe or a file the same
 letters are read from it as they come, which makes a run scriptable:
 `printf 'abcd' | ./samath 4`.
 
+A terminal with `TERM=dumb`, as in Emacs's `M-x shell`, cannot clear the
+screen or move the cursor, so it is written to the way a pipe is: a blank
+line between questions, and a time limit that is shown on the prompt but not
+counted down. Keys are still read one at a time.
+
 ### The result
 
 When the run ends you get the mistakes, each with the right answer and the
