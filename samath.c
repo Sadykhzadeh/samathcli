@@ -248,6 +248,10 @@ int main(int argc, char** argv) {
   Mistake* mistakes = NULL;
   long numberOfMistakes = 0, room = 0, answered = 0;
   double thinking = 0;
+  /* The question that took longest to answer, and how long. */
+  double slowest = 0;
+  long slowestNumber = 0;
+  Question slowestQuestion;
   /* A server lost after the first question ends the run there, and what was
      answered until then still gets its result. */
   int lost = 0;
@@ -264,10 +268,16 @@ int main(int argc, char** argv) {
       break;
     }
     int chosen;
+    double before = thinking;
     int result = askQuestion(i + 1, options.questions, &question,
                              options.seconds, &thinking, NULL, &chosen);
     if (result == ASKED_STOP) break;
     answered++;
+    if (thinking - before > slowest) {
+      slowest = thinking - before;
+      slowestNumber = i + 1;
+      slowestQuestion = question;
+    }
     if (result == ASKED_RIGHT) continue;
 
     if (numberOfMistakes == room) {
@@ -327,6 +337,10 @@ int main(int argc, char** argv) {
     formatStats(answered - numberOfMistakes, answered, thinking, stats,
                 sizeof stats);
     printf("\n📊 %s\n", stats);
+    char slowestLine[QUESTION_EXPRESSION_MAX + 64];
+    if (formatSlowest(slowestNumber, slowestQuestion.expression, slowest,
+                      answered, slowestLine, sizeof slowestLine))
+      printf("🐢 Slowest: %s\n", slowestLine);
   }
   if (practised && !stillWrong)
     printf("\n🔁 Practice: every mistake put right, in %ld %s.\n", rounds,

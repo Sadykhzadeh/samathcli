@@ -14,4 +14,18 @@ void formatDuration(double seconds, char* out, size_t capacity);
 void formatStats(long right, long answered, double seconds, char* out,
                  size_t capacity);
 
+/* How many questions a run needs for its slowest to be worth naming, and how
+   slow that has to be: with two questions, or none that took long, there is
+   nothing to pick out. */
+#define SLOWEST_MIN_ANSWERED 3
+#define SLOWEST_MIN_SECONDS 2.0
+
+/* The slowest question of a run as one line, "Task 4. 18/3-1 (21 s)": its
+   `number` in the run, its `expression` and the `seconds` it took out of
+   `answered` questions. Returns 0 when the run is too short or the
+   question too quick to be worth a line, or when the line does not fit in
+   `capacity`; `out` is then not to be used. */
+int formatSlowest(long number, const char* expression, double seconds,
+                  long answered, char* out, size_t capacity);
+
 #endif
