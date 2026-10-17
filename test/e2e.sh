@@ -342,6 +342,33 @@ expect_status 0
 expect_requests 3
 if [ "$(grep -c 'length=5&brackets=true' "$CURL_LOG")" = 3 ]; then ok; else fail "$(cat "$CURL_LOG")"; fi
 
+input=$(right 3)
+run "no negatives is passed on with the count" -n 3
+expect_status 0
+expect_requests 1
+expect_url "http://api.test/gen?c=true&count=3&negatives=false"
+expect_out "Fantastic"
+
+input=$(right 1)
+run "one question asks for no negatives alone" --no-negatives 1
+if [ "$(cat "$CURL_LOG")" = "http://api.test/gen?c=true&negatives=false" ]; then ok; else fail "asked for $(cat "$CURL_LOG")"; fi
+
+input=$(right 2 4294967295)
+run "no negatives goes last, after everything else" -n -b -l 12 -s 4294967295 2
+expect_url "http://api.test/gen?c=true&count=2&seed=4294967295&length=12&brackets=true&negatives=false"
+
+input=$(right 3)
+FAKE_IGNORE_COUNT=1
+export FAKE_IGNORE_COUNT
+run "a server that ignores count is asked for no negatives every time" -n 3
+unset FAKE_IGNORE_COUNT
+expect_requests 3
+if [ "$(grep -c 'negatives=false' "$CURL_LOG")" = 3 ]; then ok; else fail "$(cat "$CURL_LOG")"; fi
+
+input=
+run "help mentions no negatives" --help
+expect_out "--no-negatives"
+
 for bad in "-l 1 5" "-l 13 5" "-l hard 5" "-l"; do
   input=
   # shellcheck disable=SC2086
