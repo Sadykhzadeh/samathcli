@@ -83,6 +83,13 @@ that answered it; waiting for the server is not counted. The last line names
 the question that took longest, but only in a run of three or more where it
 took at least two seconds, so it is left out when nothing was slow.
 
+### Exit status
+
+`0` when the run was finished or stopped with `Q`, whatever the score, and for
+`--help`. `1` when the command line is wrong, including no number of
+questions at all, or when the questions could not be fetched, at the start of
+the run or part of the way through.
+
 ### Requirements
 
 * a C11 compiler (`gcc` or `clang`) and `make`

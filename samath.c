@@ -11,8 +11,9 @@
 #include "report.h"
 
 #define welcomeText "👋 Welcome to SaMath System!"
-#define noArgs \
-  "😅 Please, provide me a number of questions that I should output! :3"
+#define noArgs                                                      \
+  "😅 Please, provide me a number of questions that I should output! See " \
+  "samath --help. :3\n"
 #define badArgs "😅 That has to be a whole number of questions, 1 or more! :3\n"
 #define apiUnreachable \
   "😔 I could not reach SaMathAPI. Is it running? See SAMATH_API_URL.\n"
@@ -201,7 +202,7 @@ int main(int argc, char** argv) {
     case ARGS_OK:
       break;
     case ARGS_NONE:
-      return puts(noArgs), 0;
+      return fputs(noArgs, stderr), 1;
     case ARGS_HELP:
       return fputs(helpText, stdout), 0;
     case ARGS_BAD_COUNT:
