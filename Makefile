@@ -31,7 +31,7 @@ check: CFLAGS += -Werror
 check: $(BIN) $(UNIT)
 	./$(UNIT)
 	sh test/e2e.sh
-	@if command -v python3 >/dev/null 2>&1; then python3 test/terminal.py ./$(BIN); else echo "python3 not found: the terminal checks were skipped"; fi
+	@if command -v python3 >/dev/null 2>&1; then python3 test/terminal.py ./$(BIN) && python3 test/realcurl.py ./$(BIN); else echo "python3 not found: the terminal and server checks were skipped"; fi
 
 $(UNIT): test/unit.c $(LIB)
 	$(CC) $(CFLAGS) test/unit.c $(LIB) -o $@

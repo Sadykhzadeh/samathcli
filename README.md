@@ -104,6 +104,12 @@ in the API's format are ignored. A server that stops answering partway
 through ends the run there: the result covers the questions answered so
 far, and `samath` exits with status 1.
 
+A request that gets no connection within 4 seconds, or no answer within 10, is
+given up on, and one that fails in a way that may pass (a 5xx, a timeout, a
+dropped connection) is tried once more, so one hiccup on a busy server does
+not end a class's run; a host that is dead still ends it within about ten
+seconds. A refusal such as a 404 is not asked again.
+
 SaMathAPI asks no question twice in one request, and a longer run does not
 either: a question that an earlier batch had is left out, and every batch
 after the first is a full hundred, so there are enough new ones to go on
@@ -117,8 +123,10 @@ same run.
 `make clean check` rebuilds everything with warnings as errors and runs the
 tests in `test/`: unit checks of the parser, then the program itself against a
 stand-in for `curl`, then (when `python3` is there) on a pseudo-terminal, which
-is the only way to see single-key input working. No server is needed. To
-check for memory errors as well:
+is the only way to see single-key input working, and against a small HTTP
+server on this machine with the real `curl`, which shows what a server that
+fails does to a run. No SaMathAPI is needed. To check for memory errors as
+well:
 
 ```sh
 make clean check CFLAGS='-std=c11 -g -O1 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined'

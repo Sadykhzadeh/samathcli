@@ -54,8 +54,13 @@ static int fetchText(const char* url, char** text) {
     dup2(channel[1], STDOUT_FILENO);
     close(channel[0]);
     close(channel[1]);
-    execlp("curl", "curl", "-fsS", "--max-time", "10", "--url", url,
-           (char*)NULL);
+    /* A host that does not answer is given up on after 4 s, a slow answer after
+       10. A failure that may pass (a 5xx, a timeout, a dropped connection) is
+       tried once more, but not past 8 s in all, so a dead host still ends the
+       run within about ten. Anything else, such as a 4xx or a refused
+       connection, fails at once. */
+    execlp("curl", "curl", "-fsS","--connect-timeout", "4", "--max-time", "10",
+           "--retry", "1", "--retry-max-time", "8", "--url", url, (char*)NULL);
     _exit(CURL_NOT_RUN);
   }
   close(channel[1]);
