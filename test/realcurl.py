@@ -47,7 +47,10 @@ class Server(http.server.BaseHTTPRequestHandler):
         count = int(query.get("count", ["1"])[0])
         seed = int(query.get("seed", ["0"])[0])
         body = b""
-        if status == 200:
+        if status == 200 and "big" in self.path:
+            # More than any run of questions: a web page, say.
+            body = b"<p>not a question</p>\n" * 100000
+        elif status == 200:
             for n in range(seed, seed + count):
                 body += ("%d+1 %d,%d,%d,%d %d\n" % (n, n + 1, n + 2, n + 3, n + 4, n + 1)).encode()
         self.send_response(status)
@@ -92,6 +95,15 @@ check(len(Server.paths) == 1, "a 404 is asked once: %r" % Server.paths)
 status, out, err = run(["1"], failures=[503, 503])
 check(status == 1 and "answered with an error" in err, "a server that stays down: %r" % err)
 check(len(Server.paths) == 2, "a 503 is asked twice and no more: %r" % Server.paths)
+
+# A reply too big to be questions is said not to be questions, not to be out of
+# reach.
+url_ok = url
+url = url.replace("/gen", "/big")
+status, out, err = run(["3"])
+url = url_ok
+check(status == 1 and "not with questions" in err, "a huge reply: %r" % err)
+check("could not reach" not in err, "a huge reply is not a server out of reach: %r" % err)
 
 print("%d checks passed, %d failed" % (passed, failed))
 sys.exit(1 if failed else 0)
