@@ -536,10 +536,12 @@ expect_requests 0
 expect_err "\"6\" is a second one"
 
 input=
-run "no arguments is a hint"
-expect_status 0
+run "no arguments is a mistake with a hint"
+expect_status 1
 expect_requests 0
-expect_out "provide me a number"
+expect_err "provide me a number"
+expect_err "samath --help"
+if [ -z "$out" ]; then ok; else fail "said hello to a wrong command line"; fi
 
 for bad in 0 -3 abc 2.5 ""; do
   input=
