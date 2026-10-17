@@ -109,12 +109,17 @@ static int readByte(int waitMs) {
   }
 }
 
-/* The rest of a key such as an arrow, which arrives as ESC [ A or ESC O A. */
+/* The rest of a key such as an arrow, which arrives as ESC [ A or ESC O A.
+   The Linux console sends F1 to F5 as ESC [ [ A to ESC [ [ E, where the
+   second [ is not the end of the sequence. */
 static void skipEscapeSequence(void) {
   int next = readByte(SEQUENCE_WAIT_MS);
   if (next != '[' && next != 'O') return;
-  while ((next = readByte(SEQUENCE_WAIT_MS)) >= 0)
-    if (next >= 0x40 && next <= 0x7e) return;
+  int opener = next;
+  next = readByte(SEQUENCE_WAIT_MS);
+  if (opener == '[' && next == '[') next = readByte(SEQUENCE_WAIT_MS);
+  while (next >= 0 && (next < 0x40 || next > 0x7e))
+    next = readByte(SEQUENCE_WAIT_MS);
 }
 
 int readChoice(int seconds, void (*tick)(int left)) {
