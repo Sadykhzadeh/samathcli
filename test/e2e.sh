@@ -205,6 +205,12 @@ run "arrow keys are not answers" 2
 expect_status 0
 expect_out "Fantastic"
 
+# The Linux console sends F1 to F4 as ESC [ [ A to ESC [ [ D.
+input=$(printf 'a\033[[A\033[[Bb\033[[C\033[[D\033[[Ec')
+run "function keys on the Linux console are not answers" 3
+expect_status 0
+expect_out "Fantastic"
+
 input=$(printf 'abq')
 run "q stops the quiz and shows the result" 5
 expect_status 0
