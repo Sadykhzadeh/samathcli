@@ -252,6 +252,7 @@ int main(int argc, char** argv) {
     if (fetched < 0) {
       if (i == 0) {
         fputs(fetchFailure(fetched), stderr);
+        quizClose(&quiz);
         return 1;
       }
       lost = fetched;
@@ -269,6 +270,7 @@ int main(int argc, char** argv) {
       Mistake* grown = realloc(mistakes, (size_t)room * sizeof *mistakes);
       if (!grown) {
         free(mistakes);
+        quizClose(&quiz);
         return 1;
       }
       mistakes = grown;
@@ -278,6 +280,7 @@ int main(int argc, char** argv) {
     mistakes[numberOfMistakes].chosen = chosen;
     numberOfMistakes++;
   }
+  quizClose(&quiz);
 
   /* A run that was stopped is over; one that was finished goes on to the
      mistakes if that was asked for. */

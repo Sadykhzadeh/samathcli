@@ -104,6 +104,14 @@ in the API's format are ignored. A server that stops answering partway
 through ends the run there: the result covers the questions answered so
 far, and `samath` exits with status 1.
 
+SaMathAPI asks no question twice in one request, and a longer run does not
+either: a question that an earlier batch had is left out, and every batch
+after the first is a full hundred, so there are enough new ones to go on
+with. A question only comes again once a whole batch has nothing new in it,
+as when two-number questions run out somewhere past 550. A run with a seed
+keeps the questions its seed gives, repeats and all, so that it stays the
+same run.
+
 ## Development
 
 `make clean check` rebuilds everything with warnings as errors and runs the
