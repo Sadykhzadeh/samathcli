@@ -44,6 +44,7 @@ void quizClose(Quiz* quiz);
 #define QUIZ_UNREACHABLE (-1)   /* the server could not be reached */
 #define QUIZ_REFUSED (-2)       /* it answered with an HTTP error */
 #define QUIZ_NOT_QUESTIONS (-3) /* it answered, but not with a question */
+#define QUIZ_NO_CURL (-4)       /* there is no curl to ask with */
 
 /* Hands out the next question. Returns 1 and fills `out`, 0 once all `total`
    have been handed out, and one of the QUIZ_ codes above otherwise.

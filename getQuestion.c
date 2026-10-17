@@ -19,6 +19,8 @@
 
 /* curl's exit status for an HTTP error, which -f turns a 4xx or 5xx into. */
 #define CURL_HTTP_ERROR 22
+/* What the child exits with when there is no curl to run, as a shell does. */
+#define CURL_NOT_RUN 127
 
 int urlWithQuery(const char* url, const char* query, char* out,
                  size_t capacity) {
@@ -54,10 +56,7 @@ static int fetchText(const char* url, char** text) {
     close(channel[1]);
     execlp("curl", "curl", "-fsS", "--max-time", "10", "--url", url,
            (char*)NULL);
-    static const char missing[] = "samath: could not run curl\n";
-    ssize_t ignored = write(STDERR_FILENO, missing, sizeof missing - 1);
-    (void)ignored;
-    _exit(127);
+    _exit(CURL_NOT_RUN);
   }
   close(channel[1]);
 
@@ -213,6 +212,7 @@ static int loadBatch(Quiz* quiz) {
     }
     break;
   }
+  if (status == CURL_NOT_RUN) return QUIZ_NO_CURL;
   if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;
   if (status) return QUIZ_UNREACHABLE;
 
