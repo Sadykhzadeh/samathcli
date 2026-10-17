@@ -45,6 +45,7 @@
   "  -f, --feedback       say after each answer whether it was right\n"  \
   "  -h, --help           show this\n"                                    \
   "\n"                                                                    \
+  "Short options can be joined: -pf, or -pt 30 with a time limit.\n"      \
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
   "SAMATH_API_URL says where the questions come from.\n"
 
