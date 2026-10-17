@@ -272,6 +272,67 @@ static void neverWritesPastTheRoomItWasGiven(void) {
   CHECK(strlen(out) <= 3);
 }
 
+/* Garbage in, nothing out of bounds: random text through the parsers and
+   random room through the formatters. Run it with -fsanitize=address,undefined
+   (see the README) and an overrun is an error; without, the canary bytes after
+   the room given still show one. */
+static unsigned long long randomState = 88172645463325252ULL;
+
+static unsigned randomBelow(unsigned limit) {
+  randomState ^= randomState << 13;
+  randomState ^= randomState >> 7;
+  randomState ^= randomState << 17;
+  return (unsigned)(randomState % limit);
+}
+
+/* Whether nothing after `capacity` was written to, and, when `written` is set,
+   `out` holds a string that ends inside it. */
+static int keptToTheRoom(const char* out, size_t capacity, size_t whole,
+                         int written) {
+  if (!capacity) return 1;
+  if (written && !memchr(out, '\0', capacity)) return 0;
+  for (size_t i = capacity; i < whole; i++)
+    if (out[i] != 'x') return 0;
+  return 1;
+}
+
+static void survivesRandomInput(void) {
+  static const char alphabet[] = "0123456789+-*/() ,\n\r\tab\0";
+  char text[1200];
+  Question questions[8];
+  int safe = 1;
+  for (int round = 0; round < 20000; round++) {
+    size_t length = randomBelow(sizeof text - 1);
+    for (size_t i = 0; i < length; i++)
+      text[i] = alphabet[randomBelow(sizeof alphabet - 1)];
+    text[length] = '\0';
+    Question one;
+    if (parseQuestion(text, &one)) safe &= strlen(one.expression) > 0;
+    safe &= parseQuestions(text, questions, 8) <= 8;
+
+    char out[48];
+    memset(out, 'x', sizeof out);
+    size_t room = randomBelow(sizeof out + 1);
+    urlWithQuery(text, "count=5", out, room);
+    safe &= keptToTheRoom(out, room, sizeof out, 1);
+    memset(out, 'x', sizeof out);
+    room = randomBelow(sizeof out + 1);
+    formatStats((long)randomBelow(300), (long)randomBelow(300),
+                randomBelow(1u << (1 + randomBelow(20))) / 7.0, out, room);
+    safe &= keptToTheRoom(out, room, sizeof out, 1);
+    memset(out, 'x', sizeof out);
+    room = randomBelow(sizeof out + 1);
+    formatDuration(randomBelow(1u << (1 + randomBelow(24))) / 3.0, out, room);
+    safe &= keptToTheRoom(out, room, sizeof out, 1);
+    memset(out, 'x', sizeof out);
+    room = randomBelow(sizeof out + 1);
+    int worth = formatSlowest((long)randomBelow(1000), text, randomBelow(60),
+                              (long)randomBelow(8), out, room);
+    safe &= keptToTheRoom(out, room, sizeof out, worth);
+  }
+  CHECK(safe);
+}
+
 /* The result of parseArgs for a command line given as a list of words. */
 static ArgsResult args(Options* options, const char** culprit, int n, ...) {
   char* argv[16] = {"samath"};
@@ -563,6 +624,7 @@ int main(void) {
   keepsAMistakeOffAPerfectScore();
   doesNotRepeatItselfForOneAnswer();
   neverWritesPastTheRoomItWasGiven();
+  survivesRandomInput();
   readsTheNumberOfQuestions();
   refusesWhatIsNotANumberOfQuestions();
   takesTheTimeLimitInEveryForm();
