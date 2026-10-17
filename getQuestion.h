@@ -14,6 +14,7 @@ typedef struct {
   long long seed;   /* what to ask the server to seed with, or -1 */
   int length;       /* how many numbers to ask for, or 0 */
   int brackets;     /* ask for brackets */
+  int noNegatives;  /* ask for no number below zero */
   long asked;       /* how many quizNext has handed out */
   const char* url;
   int batched;      /* the server has answered `count` with that many */
@@ -25,8 +26,8 @@ typedef struct {
 /* Starts a run of `options->questions` questions from SAMATH_API_URL, or
    from http://localhost:3000/gen?c=true when that is not set. A seed of 0 or
    more is passed on to the server, which then sends the same questions each
-   time; -1 leaves it out. A length and brackets are passed on when asked
-   for, and left to the server otherwise. Nothing is fetched until the first
+   time; -1 leaves it out. A length, brackets and no negative numbers are
+   passed on when asked for, and left to the server otherwise. Nothing is fetched until the first
    question is asked for. */
 void quizOpen(Quiz* quiz, const Options* options);
 

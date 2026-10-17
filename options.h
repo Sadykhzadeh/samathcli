@@ -14,6 +14,7 @@ typedef struct {
   int practice;    /* ask the mistakes again until each is right */
   int length;      /* numbers in each question, or 0 to leave it to the server */
   int brackets;    /* ask for questions with brackets */
+  int noNegatives; /* ask for questions with no number below zero */
   int feedback;    /* say after each answer whether it was right */
 } Options;
 

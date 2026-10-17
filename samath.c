@@ -37,6 +37,7 @@
   "                       right\n"                                        \
   "  -l, --length N       how many numbers each question has (2 to 12)\n" \
   "  -b, --brackets       ask for questions with brackets\n"              \
+  "  -n, --no-negatives   ask for questions with no number below zero\n" \
   "  -f, --feedback       say after each answer whether it was right\n"  \
   "  -h, --help           show this\n"                                    \
   "\n"                                                                    \

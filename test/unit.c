@@ -371,6 +371,19 @@ static void takesTheLengthAndBrackets(void) {
   CHECK(args(&o, &culprit, 2, "--brackets=yes", "5") == ARGS_BAD_OPTION);
 }
 
+static void takesNoNegatives(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "5") == ARGS_OK && o.noNegatives == 0);
+  CHECK(args(&o, &culprit, 2, "-n", "5") == ARGS_OK && o.noNegatives == 1);
+  CHECK(args(&o, &culprit, 2, "5", "--no-negatives") == ARGS_OK);
+  CHECK(o.noNegatives == 1);
+  CHECK(args(&o, &culprit, 5, "-n", "-l", "3", "-b", "5") == ARGS_OK);
+  CHECK(o.noNegatives == 1 && o.length == 3 && o.brackets == 1);
+  CHECK(args(&o, &culprit, 2, "--no-negatives=yes", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "--negatives", "5") == ARGS_BAD_OPTION);
+}
+
 static void refusesALengthItCannotUse(void) {
   Options o;
   const char* culprit;
@@ -492,6 +505,7 @@ int main(void) {
   refusesASeedItCannotUse();
   takesTheLengthAndBrackets();
   refusesALengthItCannotUse();
+  takesNoNegatives();
   takesPractice();
   takesFeedback();
   refusesATimeLimitItCannotUse();

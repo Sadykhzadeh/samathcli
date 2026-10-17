@@ -103,6 +103,7 @@ void quizOpen(Quiz* quiz, const Options* options) {
   quiz->seed = options->seed;
   quiz->length = options->length;
   quiz->brackets = options->brackets;
+  quiz->noNegatives = options->noNegatives;
   quiz->asked = 0;
   quiz->url = url && *url ? url : apiUrlDefault;
   quiz->batched = 1;
@@ -127,7 +128,10 @@ static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
     used += (size_t)snprintf(query + used, sizeof query - used, "%slength=%d",
                              used ? "&" : "", quiz->length);
   if (quiz->brackets)
-    snprintf(query + used, sizeof query - used, "%sbrackets=true",
+    used += (size_t)snprintf(query + used, sizeof query - used,
+                             "%sbrackets=true", used ? "&" : "");
+  if (quiz->noNegatives)
+    snprintf(query + used, sizeof query - used, "%snegatives=false",
              used ? "&" : "");
   return urlWithQuery(quiz->url, query, url, capacity);
 }
