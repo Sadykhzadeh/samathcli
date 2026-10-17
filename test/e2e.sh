@@ -512,6 +512,7 @@ expect_status 0
 expect_requests 0
 expect_out "usage: samath"
 expect_out "--time"
+case "$out" in "usage: samath"*) ok ;; *) fail "the help does not start with the usage" ;; esac
 
 for bad in "-t 0 5" "-t 3601 5" "-t soon 5" "-t"; do
   input=
@@ -527,6 +528,7 @@ run "an option that does not exist" -x 5
 expect_status 1
 expect_requests 0
 expect_err "do not know the option \"-x\""
+if [ -z "$out" ]; then ok; else fail "said hello to a wrong command line"; fi
 
 run "two numbers of questions" 5 6
 expect_status 1
