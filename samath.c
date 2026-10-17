@@ -23,6 +23,7 @@
 #define apiNotQuestions                                             \
   "😔 SAMATH_API_URL answered, but not with questions. It has to " \
   "ask for them as text, as http://localhost:3000/gen?c=true does.\n"
+#define fetching "⏳ Asking SaMathAPI for the questions..."
 #define noCurl                                                          \
   "😔 I need curl to fetch the questions, and could not run it. Is it "  \
   "installed and on your PATH?\n"
@@ -264,7 +265,18 @@ int main(int argc, char** argv) {
   int lost = 0;
   for (long i = 0; i < options.questions; i++) {
     Question question;
+    /* Fetching the first batch can take a few seconds when the server is slow
+       or not there, and nothing else is on the screen to say so. */
+    int waiting = i == 0 && atTerminal;
+    if (waiting) {
+      fputs(fetching, stdout);
+      fflush(stdout);
+    }
     int fetched = quizNext(&quiz, &question);
+    if (waiting) {
+      fputs("\r\033[K", stdout);
+      fflush(stdout);
+    }
     if (fetched < 0) {
       if (i == 0) {
         fputs(fetchFailure(fetched), stderr);
