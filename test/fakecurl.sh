@@ -11,7 +11,9 @@
 # that is not a question, "broken" answers every request with a 500,
 # "refuse-count" answers 400 to a request with count, and "drops-out"
 # answers the first request and fails to connect after that. FAKE_IGNORE_COUNT=1 makes it an older server that does not
-# know count and sends one question whatever is asked.
+# know count and sends one question whatever is asked. "few" knows only 150
+# tasks, n mod 150, and starts a request without a seed at half the number
+# served so far, so the second request of a run repeats half of the first.
 
 url=
 while [ $# -gt 0 ]; do
@@ -74,6 +76,12 @@ esac
 i=0
 while [ "$i" -lt "$count" ]; do
   if [ -n "$seed" ]; then n=$((seed + i)); else n=$((served + i)); fi
+  case "$url" in
+    *few*)
+      if [ -z "$seed" ]; then n=$((served / 2 + i)); fi
+      n=$((n % 150))
+      ;;
+  esac
   answer=$((n + 1))
   place=$((n % 4))
   options=

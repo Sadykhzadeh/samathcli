@@ -108,9 +108,43 @@ input=$(right 250)
 run "more than a hundred questions come in batches of a hundred" 250
 expect_status 0
 expect_requests 3
-expect_url "count=100"
-expect_url "count=50"
+if [ "$(grep -c 'count=100$' "$CURL_LOG")" = 3 ]; then ok; else fail "$(cat "$CURL_LOG")"; fi
 expect_out "Fantastic"
+
+# questions N : how many questions the run asked, and how many of them differ.
+questions() {
+  asked=$(printf '%s\n' "$out" | grep -c 'Solve this expression')
+  different=$(printf '%s\n' "$out" | grep 'Solve this expression' | sed 's/.*: //' | sort -u | wc -l | tr -d ' ')
+}
+
+input=$(right 250 | tr -d '\n')
+run_at "http://api.test/few?c=true" "a later batch does not ask a question again" 150
+questions
+if [ "$asked" = 150 ] && [ "$different" = 150 ]; then ok; else fail "$different different of $asked"; fi
+expect_out "$(printf '101/150\t🤔 Solve this expression: 100+1')"
+expect_requests 2
+
+input=$(right 250 | tr -d '\n')
+run_at "http://api.test/few?c=true" "one question left is asked for with a full batch" 101
+expect_out "$(printf '101/101\t🤔 Solve this expression: 100+1')"
+expect_url "few?c=true&count=100"
+if [ "$(grep -c 'count=100$' "$CURL_LOG")" = 2 ]; then ok; else fail "$(cat "$CURL_LOG")"; fi
+
+input=$(right 250 | tr -d '\n')
+run_at "http://api.test/few?c=true" "a server out of new questions repeats them" 250
+expect_status 0
+questions
+if [ "$asked" = 250 ] && [ "$different" = 150 ]; then ok; else fail "$different different of $asked"; fi
+expect_out "$(printf '150/250\t🤔 Solve this expression: 149+1')"
+expect_requests 3
+
+input=$(right 200 | tr -d '\n')
+run_at "http://api.test/few?c=true" "a run with a seed keeps the questions of its seed" -s 0 200
+questions
+if [ "$asked" = 200 ] && [ "$different" = 150 ]; then ok; else fail "$different different of $asked"; fi
+expect_out "$(printf '151/200\t🤔 Solve this expression: 0+1')"
+expect_url "count=100&seed=100"
+expect_requests 2
 
 input=$(printf 'b\nb\nb\nb\n')
 run "wrong answers are listed with the right ones" 4

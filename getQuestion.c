@@ -109,6 +109,56 @@ void quizOpen(Quiz* quiz, const Options* options) {
   quiz->batched = 1;
   quiz->size = 0;
   quiz->next = 0;
+  quiz->seen = NULL;
+  quiz->seenRoom = 0;
+  quiz->seenCount = 0;
+}
+
+void quizClose(Quiz* quiz) {
+  free(quiz->seen);
+  quiz->seen = NULL;
+  quiz->seenRoom = 0;
+  quiz->seenCount = 0;
+}
+
+/* FNV-1a, never 0, which marks a free slot. */
+static unsigned long long hashText(const char* text) {
+  unsigned long long hash = 14695981039346656037ULL;
+  for (; *text; text++) {
+    hash ^= (unsigned char)*text;
+    hash *= 1099511628211ULL;
+  }
+  return hash ? hash : 1;
+}
+
+/* The slot that holds `hash`, or the free one where it would go. */
+static size_t slotFor(const unsigned long long* slots, size_t room,
+                      unsigned long long hash) {
+  size_t i = (size_t)hash & (room - 1);
+  while (slots[i] && slots[i] != hash) i = (i + 1) & (room - 1);
+  return i;
+}
+
+/* Adds an expression to those seen. Returns 0 when it was seen before, and
+   1 when it is new or there is no memory left to tell. */
+static int remember(Quiz* quiz, const char* expression) {
+  if (2 * (quiz->seenCount + 1) > quiz->seenRoom) {
+    size_t room = quiz->seenRoom ? quiz->seenRoom * 2 : 256;
+    unsigned long long* grown = calloc(room, sizeof *grown);
+    if (!grown) return 1;
+    for (size_t i = 0; i < quiz->seenRoom; i++)
+      if (quiz->seen[i])
+        grown[slotFor(grown, room, quiz->seen[i])] = quiz->seen[i];
+    free(quiz->seen);
+    quiz->seen = grown;
+    quiz->seenRoom = room;
+  }
+  unsigned long long hash = hashText(expression);
+  size_t slot = slotFor(quiz->seen, quiz->seenRoom, hash);
+  if (quiz->seen[slot]) return 0;
+  quiz->seen[slot] = hash;
+  quiz->seenCount++;
+  return 1;
 }
 
 /* The URL that asks for `want` questions. One question with nothing else
@@ -136,9 +186,15 @@ static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
   return urlWithQuery(quiz->url, query, url, capacity);
 }
 
-/* Fetches the next batch into quiz->batch. Returns 0, or a QUIZ_ code. */
+/* Fetches the next batch into quiz->batch. Returns 0, or a QUIZ_ code.
+
+   After the first batch of a run without a seed, a full batch is asked for
+   however few questions are left: some can be ones the run has had, and
+   those that are not needed are never handed out. A batch with nothing new
+   in it is all the server has, and is handed out as it is. */
 static int loadBatch(Quiz* quiz) {
   long left = quiz->total - quiz->asked;
+  if (quiz->seed < 0 && quiz->asked) left = QUIZ_BATCH_MAX;
   int want = quiz->batched && left > 1
                  ? (int)(left < QUIZ_BATCH_MAX ? left : QUIZ_BATCH_MAX)
                  : 1;
@@ -165,6 +221,13 @@ static int loadBatch(Quiz* quiz) {
   if (got == 0) return QUIZ_NOT_QUESTIONS;
   /* One question where several were asked for: this server ignores `count`. */
   if (got < want) quiz->batched = 0;
+  if (quiz->seed < 0) {
+    int fresh = 0;
+    for (int i = 0; i < got; i++)
+      if (remember(quiz, quiz->batch[i].expression))
+        quiz->batch[fresh++] = quiz->batch[i];
+    if (fresh) got = fresh;
+  }
   quiz->size = got;
   quiz->next = 0;
   return 0;
