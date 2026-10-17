@@ -102,6 +102,9 @@ def check(label, ok, detail=""):
 pid, fd = start(["3"])
 first = drain(fd)
 check("the first question is shown", questions(first) == 1, first[-200:])
+check("the wait for the questions is shown, then wiped",
+      "Asking SaMathAPI" in first and first.index("Asking SaMathAPI") < first.index("\r\x1b[K") < first.index("Solve this"),
+      repr(first[:200]))
 echo, canon = modes(fd)
 check("echo and line mode are off while asking", not echo and not canon, "echo=%s canon=%s" % (echo, canon))
 os.write(fd, b"a")  # question 1 is answered by A

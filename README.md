@@ -125,7 +125,8 @@ A request that gets no connection within 4 seconds, or no answer within 10, is
 given up on, and one that fails in a way that may pass (a 5xx, a timeout, a
 dropped connection) is tried once more, so one hiccup on a busy server does
 not end a class's run; a host that is dead still ends it within about ten
-seconds. A refusal such as a 404 is not asked again.
+seconds. A refusal such as a 404 is not asked again. At a terminal a line
+says that the questions are being asked for until the first one is there.
 
 SaMathAPI asks no question twice in one request, and a longer run does not
 either: a question that an earlier batch had is left out, and every batch
