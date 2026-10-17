@@ -9,7 +9,8 @@
 #
 # The URL steers it: "down" fails to connect, "garbage" answers with a page
 # that is not a question, "broken" answers every request with a 500,
-# "refuse-count" answers 400 to a request with count, and "drops-out"
+# "timeout" runs out of time, "refuse-count" answers 400 to a request with
+# count, and "drops-out"
 # answers the first request and fails to connect after that. FAKE_IGNORE_COUNT=1 makes it an older server that does not
 # know count and sends one question whatever is asked. "few" knows only 150
 # tasks, n mod 150, and starts a request without a seed at half the number
@@ -33,6 +34,10 @@ case "$url" in
   *garbage*)
     echo "<html><body>502 Bad Gateway</body></html>"
     exit 0
+    ;;
+  *timeout*)
+    echo "curl: (28) Operation timed out after 10001 milliseconds" >&2
+    exit 28
     ;;
   *broken*)
     echo "curl: (22) The requested URL returned error: 500" >&2

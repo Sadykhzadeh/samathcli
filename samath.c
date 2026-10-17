@@ -26,6 +26,9 @@
 #define noCurl                                                          \
   "😔 I need curl to fetch the questions, and could not run it. Is it "  \
   "installed and on your PATH?\n"
+#define apiTimedOut                                                     \
+  "😔 SaMathAPI did not answer in time. It may be busy, or the network " \
+  "slow. See SAMATH_API_URL.\n"
 #define noErrors "🥳 Fantastic, you haven't got any mistakes!"
 #define bye "\n😉 Have a nice day!"
 
@@ -58,6 +61,8 @@ static const char* fetchFailure(int code) {
       return apiNotQuestions;
     case QUIZ_NO_CURL:
       return noCurl;
+    case QUIZ_TIMED_OUT:
+      return apiTimedOut;
     default:
       return apiUnreachable;
   }

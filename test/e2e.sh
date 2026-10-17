@@ -200,6 +200,12 @@ expect_err "need curl"
 case "$err" in *"could not reach"*) fail "blamed the server" ;; *) ok ;; esac
 
 input=$(right 3)
+run_at "http://api.test/timeout?c=true" "a server that is too slow is said to be slow" 3
+expect_status 1
+expect_err "did not answer in time"
+case "$err" in *"Is it running"*) fail "said the server was not there" ;; *) ok ;; esac
+
+input=$(right 3)
 run_at "http://api.test/broken?c=true" "a server that answers with an error says so" 3
 expect_status 1
 expect_requests 2

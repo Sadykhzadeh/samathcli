@@ -21,6 +21,8 @@
 #define CURL_HTTP_ERROR 22
 /* What the child exits with when there is no curl to run, as a shell does. */
 #define CURL_NOT_RUN 127
+/* curl's exit status for a request that ran out of time. */
+#define CURL_TIMED_OUT 28
 /* What fetchText gives back for a response bigger than RESPONSE_MAX. */
 #define FETCH_TOO_BIG (-2)
 
@@ -226,6 +228,7 @@ static int loadBatch(Quiz* quiz) {
   }
   if (status == FETCH_TOO_BIG) return QUIZ_NOT_QUESTIONS;
   if (status == CURL_NOT_RUN) return QUIZ_NO_CURL;
+  if (status == CURL_TIMED_OUT) return QUIZ_TIMED_OUT;
   if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;
   if (status) return QUIZ_UNREACHABLE;
 
