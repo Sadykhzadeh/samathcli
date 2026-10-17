@@ -355,9 +355,8 @@ static void takesPractice(void) {
   CHECK(args(&o, &culprit, 2, "5", "--practice") == ARGS_OK && o.practice == 1);
   CHECK(args(&o, &culprit, 6, "-p", "-t", "4", "-s", "1", "5") == ARGS_OK);
   CHECK(o.practice == 1 && o.seconds == 4 && o.seed == 1 && o.questions == 5);
-  /* It takes no value, and short options are not run together. */
+  /* It takes no value. */
   CHECK(args(&o, &culprit, 2, "--practice=yes", "5") == ARGS_BAD_OPTION);
-  CHECK(args(&o, &culprit, 2, "-pt5", "5") == ARGS_BAD_OPTION);
 }
 
 static void takesFeedback(void) {
@@ -369,7 +368,6 @@ static void takesFeedback(void) {
   CHECK(args(&o, &culprit, 4, "-p", "-f", "-b", "5") == ARGS_OK);
   CHECK(o.feedback == 1 && o.practice == 1 && o.brackets == 1);
   CHECK(args(&o, &culprit, 2, "--feedback=yes", "5") == ARGS_BAD_OPTION);
-  CHECK(args(&o, &culprit, 2, "-fp", "5") == ARGS_BAD_OPTION);
 }
 
 static void takesTheLengthAndBrackets(void) {
@@ -430,6 +428,52 @@ static void refusesASeedItCannotUse(void) {
   CHECK(args(&o, &culprit, 2, "5", "-s") == ARGS_BAD_SEED);
   CHECK_STR(culprit, "-s");
   CHECK(args(&o, &culprit, 2, "--seed=", "5") == ARGS_BAD_SEED);
+}
+
+static void takesShortOptionsTogether(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 2, "-pf", "5") == ARGS_OK);
+  CHECK(o.practice && o.feedback && !o.brackets && !o.noNegatives);
+  CHECK(args(&o, &culprit, 2, "5", "-nbfp") == ARGS_OK);
+  CHECK(o.practice && o.feedback && o.brackets && o.noNegatives);
+  /* The first that takes a value takes the rest of the word, or the next. */
+  CHECK(args(&o, &culprit, 3, "-pt", "10", "5") == ARGS_OK);
+  CHECK(o.practice && o.seconds == 10 && o.questions == 5);
+  CHECK(args(&o, &culprit, 2, "-pt10", "5") == ARGS_OK && o.seconds == 10);
+  CHECK(args(&o, &culprit, 2, "-fs42", "5") == ARGS_OK);
+  CHECK(o.feedback && o.seed == 42);
+  CHECK(args(&o, &culprit, 3, "-bl", "6", "5") == ARGS_OK);
+  CHECK(o.brackets && o.length == 6);
+  /* A letter after the one that takes a value is part of the value. */
+  CHECK(args(&o, &culprit, 3, "-tp", "10", "5") == ARGS_BAD_TIME);
+  CHECK_STR(culprit, "p");
+  CHECK(args(&o, &culprit, 2, "5", "-pt") == ARGS_BAD_TIME);
+  CHECK_STR(culprit, "-pt");
+  CHECK(args(&o, &culprit, 2, "-px", "5") == ARGS_BAD_OPTION);
+  CHECK_STR(culprit, "-x");
+  CHECK(args(&o, &culprit, 2, "-xp", "5") == ARGS_BAD_OPTION);
+  CHECK_STR(culprit, "-x");
+  CHECK(args(&o, &culprit, 2, "-pé", "5") == ARGS_BAD_OPTION);
+  CHECK_STR(culprit, "-pé");
+  /* Long options are not joined, and take a value only if they take one. */
+  CHECK(args(&o, &culprit, 2, "--practice=1", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "--pf", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 3, "-pf", "--time=9", "5") == ARGS_OK);
+  CHECK(o.seconds == 9 && o.practice && o.feedback);
+}
+
+static void asksForHelpAmongShortOptions(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "-ph") == ARGS_HELP);
+  CHECK(args(&o, &culprit, 2, "-hf", "0") == ARGS_HELP);
+  CHECK(args(&o, &culprit, 2, "-xh", "0") == ARGS_HELP);
+  CHECK(args(&o, &culprit, 3, "-pfh", "-t", "x") == ARGS_HELP);
+  /* After an option that takes a value, h is part of the value. */
+  CHECK(args(&o, &culprit, 2, "-th", "5") == ARGS_BAD_TIME);
+  CHECK(args(&o, &culprit, 3, "--", "-ph", "5") == ARGS_BAD_COUNT);
+  CHECK(args(&o, &culprit, 1, "--help=1") == ARGS_BAD_OPTION);
 }
 
 static void refusesOptionsThatDoNotExist(void) {
@@ -530,6 +574,8 @@ int main(void) {
   takesPractice();
   takesFeedback();
   refusesATimeLimitItCannotUse();
+  takesShortOptionsTogether();
+  asksForHelpAmongShortOptions();
   refusesOptionsThatDoNotExist();
   refusesASecondNumberOfQuestions();
   helpWinsOverEverythingElse();

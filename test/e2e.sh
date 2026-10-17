@@ -416,6 +416,13 @@ expect_requests 1
 expect_url "http://api.test/gen?c=true&count=3&negatives=false"
 expect_out "Fantastic"
 
+input=$(right 3)
+run "short options may be joined" -bn 3
+expect_status 0
+expect_url "http://api.test/gen?c=true&count=3&brackets=true&negatives=false"
+run "a joined option may end in one that takes a value" 3 -fl4
+expect_url "http://api.test/gen?c=true&count=3&length=4"
+
 input=$(right 1)
 run "one question asks for no negatives alone" --no-negatives 1
 if [ "$(cat "$CURL_LOG")" = "http://api.test/gen?c=true&negatives=false" ]; then ok; else fail "asked for $(cat "$CURL_LOG")"; fi

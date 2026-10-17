@@ -43,6 +43,10 @@
 | `-f`, `--feedback` | Say after each answer whether it was right. The next question opens with `✅ Right: 13*1*2/2 = 13` or `❌ Wrong: 1*17*4/4 = 17 (you said 15)`, so the right answer is there while the question is still fresh. Without it nothing is said until the end. |
 | `-h`, `--help` | Print the options. |
 
+Short options can be joined, `-pf` for `-p -f`; one that takes a value goes
+last and gets the rest of the word or the next word, so `-pt 30` and `-pt30`
+both give a time limit of 30 seconds.
+
 `./samath -t 10 20` is twenty questions with ten seconds each, and
 `./samath -l 6 -b 10` is ten harder ones. Question `n` of a run is the one the
 API gives for `seed + n - 1`, so the questions are the same however they were
