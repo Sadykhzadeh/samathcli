@@ -21,6 +21,9 @@ export SAMATH_API_URL
 # How long standard input stays open after the answers; a question left alone
 # can only run out of time while someone might still type.
 hold=0
+# What samath finds on its PATH, when that is not the same as the rest of this
+# script; empty for all of it.
+samath_path=
 passed=0
 failed=0
 
@@ -39,7 +42,7 @@ run() {
   shift
   rm -f "$CURL_LOG" "$CURL_LOG.served"
   : > "$CURL_LOG"
-  (cd "$work/cwd" && { printf '%s' "$input"; sleep "$hold"; } | "$root/samath" "$@" > "$work/out" 2> "$work/err")
+  (cd "$work/cwd" && { printf '%s' "$input"; sleep "$hold"; } | env PATH="${samath_path:-$PATH}" "$root/samath" "$@" > "$work/out" 2> "$work/err")
   status=$?
   out=$(cat "$work/out")
   err=$(cat "$work/err")
@@ -186,6 +189,15 @@ expect_status 1
 expect_err "answered, but not with questions"
 expect_err "gen?c=true"
 case "$err" in *"could not reach"*) fail "said the server was not there" ;; *) ok ;; esac
+
+input=$(right 3)
+samath_path=$work/cwd
+run "a missing curl is said to be missing, not the server" 3
+samath_path=
+expect_status 1
+expect_requests 0
+expect_err "need curl"
+case "$err" in *"could not reach"*) fail "blamed the server" ;; *) ok ;; esac
 
 input=$(right 3)
 run_at "http://api.test/broken?c=true" "a server that answers with an error says so" 3

@@ -22,6 +22,9 @@
 #define apiNotQuestions                                             \
   "😔 SAMATH_API_URL answered, but not with questions. It has to " \
   "ask for them as text, as http://localhost:3000/gen?c=true does.\n"
+#define noCurl                                                          \
+  "😔 I need curl to fetch the questions, and could not run it. Is it "  \
+  "installed and on your PATH?\n"
 #define noErrors "🥳 Fantastic, you haven't got any mistakes!"
 #define bye "\n😉 Have a nice day!"
 
@@ -51,6 +54,8 @@ static const char* fetchFailure(int code) {
       return apiRefused;
     case QUIZ_NOT_QUESTIONS:
       return apiNotQuestions;
+    case QUIZ_NO_CURL:
+      return noCurl;
     default:
       return apiUnreachable;
   }
