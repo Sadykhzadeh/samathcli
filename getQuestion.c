@@ -21,6 +21,8 @@
 #define CURL_HTTP_ERROR 22
 /* What the child exits with when there is no curl to run, as a shell does. */
 #define CURL_NOT_RUN 127
+/* What fetchText gives back for a response bigger than RESPONSE_MAX. */
+#define FETCH_TOO_BIG (-2)
 
 int urlWithQuery(const char* url, const char* query, char* out,
                  size_t capacity) {
@@ -35,9 +37,9 @@ int urlWithQuery(const char* url, const char* query, char* out,
 }
 
 /* Runs curl on `url` and collects what it prints. Returns curl's exit status,
-   0 when `*text` holds the response (the caller frees it). curl is started
-   directly rather than through a shell, so the URL is never read as anything
-   but a URL. */
+   FETCH_TOO_BIG, or 0 when `*text` holds the response (the caller frees it).
+   curl is started directly rather than through a shell, so the URL is never
+   read as anything but a URL. */
 static int fetchText(const char* url, char** text) {
   int channel[2];
   if (pipe(channel)) return -1;
@@ -67,11 +69,12 @@ static int fetchText(const char* url, char** text) {
 
   size_t size = 0, capacity = 4096;
   char* body = malloc(capacity);
-  int complete = body != NULL;
+  int complete = body != NULL, tooBig = 0;
   while (complete) {
     if (size + 1 >= capacity) {
       if (capacity >= RESPONSE_MAX) {
         complete = 0;
+        tooBig = 1;
         break;
       }
       char* grown = realloc(body, capacity * 2);
@@ -91,6 +94,10 @@ static int fetchText(const char* url, char** text) {
 
   int status = 0;
   while (waitpid(child, &status, 0) < 0 && errno == EINTR) {
+  }
+  if (tooBig) {
+    free(body);
+    return FETCH_TOO_BIG;
   }
   if (!complete || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
     free(body);
@@ -217,6 +224,7 @@ static int loadBatch(Quiz* quiz) {
     }
     break;
   }
+  if (status == FETCH_TOO_BIG) return QUIZ_NOT_QUESTIONS;
   if (status == CURL_NOT_RUN) return QUIZ_NO_CURL;
   if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;
   if (status) return QUIZ_UNREACHABLE;
