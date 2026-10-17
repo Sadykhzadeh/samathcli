@@ -96,6 +96,9 @@ the run or part of the way through.
 
 ### Requirements
 
+* a POSIX system: it starts `curl` with `fork` and reads single keys with
+  `termios`, so it builds on Linux and other Unix-like systems. On Windows,
+  run it in WSL; a native build, with MinGW for one, is not supported
 * a C11 compiler (`gcc` or `clang`) and `make`
 * `curl` on `PATH`
 * a running [SaMathAPI](https://github.com/Sadykhzadeh/samathapi) instance
