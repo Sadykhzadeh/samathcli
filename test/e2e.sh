@@ -184,6 +184,12 @@ expect_status 1
 expect_err "could not reach SaMathAPI"
 expect_no_out "Fantastic"
 
+input=$(right 2)
+run_at "http://api.test/nul?c=true" "a reply with a NUL byte is not read past it" 2
+expect_status 1
+expect_err "answered, but not with questions"
+expect_no_out "Fantastic"
+
 input=$(right 3)
 run_at "http://api.test/garbage?c=true" "a reply that is not a question says so" 3
 expect_status 1
