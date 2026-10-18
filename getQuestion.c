@@ -23,8 +23,10 @@
 #define CURL_NOT_RUN 127
 /* curl's exit status for a request that ran out of time. */
 #define CURL_TIMED_OUT 28
-/* What fetchText gives back for a response bigger than RESPONSE_MAX. */
+/* What fetchText gives back for a response bigger than RESPONSE_MAX, and for
+   one with a NUL byte in it, which is not text. */
 #define FETCH_TOO_BIG (-2)
+#define FETCH_NOT_TEXT (-3)
 
 int urlWithQuery(const char* url, const char* query, char* out,
                  size_t capacity) {
@@ -39,7 +41,8 @@ int urlWithQuery(const char* url, const char* query, char* out,
 }
 
 /* Runs curl on `url` and collects what it prints. Returns curl's exit status,
-   FETCH_TOO_BIG, or 0 when `*text` holds the response (the caller frees it).
+   FETCH_TOO_BIG, FETCH_NOT_TEXT, or 0 when `*text` holds the response (the
+   caller frees it).
    curl is started directly rather than through a shell, so the URL is never
    read as anything but a URL. */
 static int fetchText(const char* url, char** text) {
@@ -107,6 +110,10 @@ static int fetchText(const char* url, char** text) {
   if (!complete || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
     free(body);
     return WIFEXITED(status) && WEXITSTATUS(status) ? WEXITSTATUS(status) : -1;
+  }
+  if (memchr(body, '\0', size)) {
+    free(body);
+    return FETCH_NOT_TEXT;
   }
   body[size] = '\0';
   *text = body;
@@ -229,7 +236,8 @@ static int loadBatch(Quiz* quiz) {
     }
     break;
   }
-  if (status == FETCH_TOO_BIG) return QUIZ_NOT_QUESTIONS;
+  if (status == FETCH_TOO_BIG || status == FETCH_NOT_TEXT)
+    return QUIZ_NOT_QUESTIONS;
   if (status == CURL_NOT_RUN) return QUIZ_NO_CURL;
   if (status == CURL_TIMED_OUT) return QUIZ_TIMED_OUT;
   if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;

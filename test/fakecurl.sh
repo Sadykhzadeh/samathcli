@@ -38,6 +38,10 @@ case "$url" in
     echo "<html><body>502 Bad Gateway</body></html>"
     exit 0
     ;;
+  *nul*)
+    printf '1+1 2,3,4,5 2\n2+2 4,5,6,7 4\000\n3+3 9,8,7,6 6\n'
+    exit 0
+    ;;
   *timeout*)
     echo "curl: (28) Operation timed out after 10001 milliseconds" >&2
     exit 28
