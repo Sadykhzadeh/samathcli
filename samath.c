@@ -30,6 +30,7 @@
 #define apiTimedOut                                                     \
   "😔 SaMathAPI did not answer in time. It may be busy, or the network " \
   "slow. See SAMATH_API_URL.\n"
+#define writeFailure "😔 I could not write the result out. Is the disk full?\n"
 #define noErrors "🥳 Fantastic, you haven't got any mistakes!"
 #define bye "\n😉 Have a nice day!"
 
@@ -369,6 +370,10 @@ int main(int argc, char** argv) {
            stillWrong, numberOfMistakes);
   puts(bye);
   free(mistakes);
+  /* Output that did not get out, as to a full disk, is not a finished run,
+     whatever the score. */
+  int written = fflush(stdout) == 0 && !ferror(stdout);
+  if (!written) fputs(writeFailure, stderr);
   if (lost) fputs(fetchFailure(lost), stderr);
-  return lost != 0;
+  return lost != 0 || !written;
 }
