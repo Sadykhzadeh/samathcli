@@ -207,8 +207,14 @@ check("and counts as a mistake", "You have 2 mistakes!" in summary and "(time ra
 reap(pid)
 os.close(fd)
 
-# Answering in time stops the clock: nothing runs out afterwards.
+# Answering in time stops the clock: nothing runs out afterwards. The key goes
+# in only once the question is on the screen: a key typed while the questions
+# are still being fetched is thrown away, so a slow fetch would fail this.
 pid, fd = start(["-t", "1", "1"])
+shown = ""
+deadline = time.time() + 10
+while "Solve this expression" not in shown and time.time() < deadline:
+    shown += drain(fd, 0.05)
 drain(fd, 0.4)
 os.write(fd, b"a")
 check("an answer in time is kept", "Fantastic" in collect(fd, 0.5))
