@@ -251,6 +251,16 @@ expect_status 0
 expect_out "You stopped after 0 of 2 questions."
 expect_no_out "mistake"
 
+# A result that cannot be written out is not a finished run.
+if [ -w /dev/full ]; then
+  name="result on a full disk"
+  (cd "$work/cwd" && "$root/samath" 2 < /dev/null > /dev/full 2> "$work/err")
+  status=$?
+  err=$(cat "$work/err")
+  expect_status 1
+  expect_err "could not write the result"
+fi
+
 input=$(printf 'abcD')
 run "an answer is one letter, no Enter" 4
 expect_status 0
