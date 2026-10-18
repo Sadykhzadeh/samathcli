@@ -25,6 +25,9 @@ while [ $# -gt 0 ]; do
   shift
 done
 echo "$url" >> "$CURL_LOG"
+# Descriptors, other than standard input, that are open on /dev/null: curl is
+# not meant to inherit any.
+ls -l /dev/fd/ | awk '$NF == "/dev/null" && $(NF - 2) != 0' > "$CURL_LOG.fds"
 
 case "$url" in
   *down*)
