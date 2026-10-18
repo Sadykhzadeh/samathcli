@@ -40,7 +40,7 @@ ok() { passed=$((passed + 1)); }
 run() {
   name=$1
   shift
-  rm -f "$CURL_LOG" "$CURL_LOG.served"
+  rm -f "$CURL_LOG" "$CURL_LOG.served" "$CURL_LOG.fds"
   : > "$CURL_LOG"
   (cd "$work/cwd" && { printf '%s' "$input"; sleep "$hold"; } | env PATH="${samath_path:-$PATH}" "$root/samath" "$@" > "$work/out" 2> "$work/err")
   status=$?
@@ -99,6 +99,7 @@ expect_requests 1
 expect_url "http://api.test/gen?c=true&count=10"
 expect_out "Fantastic"
 expect_no_out "You have"
+if [ -s "$CURL_LOG.fds" ]; then fail "curl inherited a descriptor on /dev/null: $(cat "$CURL_LOG.fds")"; else ok; fi
 
 input=$(right 1)
 run "one question is the plain request" 1

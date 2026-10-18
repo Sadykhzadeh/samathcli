@@ -54,7 +54,10 @@ static int fetchText(const char* url, char** text) {
   }
   if (child == 0) {
     int silence = open("/dev/null", O_RDONLY);
-    if (silence >= 0) dup2(silence, STDIN_FILENO);
+    if (silence >= 0 && silence != STDIN_FILENO) {
+      dup2(silence, STDIN_FILENO);
+      close(silence);
+    }
     dup2(channel[1], STDOUT_FILENO);
     close(channel[0]);
     close(channel[1]);
