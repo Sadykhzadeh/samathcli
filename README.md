@@ -91,8 +91,9 @@ took at least two seconds, so it is left out when nothing was slow.
 
 `0` when the run was finished or stopped with `Q`, whatever the score, and for
 `--help`. `1` when the command line is wrong, including no number of
-questions at all, or when the questions could not be fetched, at the start of
-the run or part of the way through.
+questions at all, when the questions could not be fetched, at the start of
+the run or part of the way through, or when there is not the memory to keep
+the mistakes or to practise them.
 
 ### Requirements
 
