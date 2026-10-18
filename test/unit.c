@@ -1,8 +1,10 @@
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "../checkAnswer.h"
 #include "../getQuestion.h"
+#include "../mistakes.h"
 #include "../options.h"
 #include "../question.h"
 #include "../report.h"
@@ -598,6 +600,41 @@ static void refusesAnythingButOneLetter(void) {
   CHECK(!checkAnswer("A", NULL, o[0], o[1], o[2], o[3]));
 }
 
+static void keepsEveryMistakeInOrder(void) {
+  Mistakes list = {NULL, 0, 0};
+  Mistake m;
+  memset(&m, 0, sizeof m);
+  for (long i = 1; i <= 20; i++) {
+    m.number = i;
+    m.chosen = (int)(i % 4);
+    CHECK(mistakesAdd(&list, &m));
+  }
+  CHECK(list.count == 20);
+  CHECK(list.items[0].number == 1);
+  CHECK(list.items[19].number == 20);
+  CHECK(list.items[6].chosen == 3);
+  mistakesFree(&list);
+  CHECK(list.items == NULL && list.count == 0 && list.room == 0);
+}
+
+static void keepsTheMistakesWhenTheListCannotGrow(void) {
+  Mistakes list = {NULL, 0, 0};
+  Mistake m;
+  memset(&m, 0, sizeof m);
+  m.number = 1;
+  CHECK(mistakesAdd(&list, &m));
+  m.number = 2;
+  CHECK(mistakesAdd(&list, &m));
+  /* A list at the most it could hold has no memory to grow into. */
+  long most = (long)(SIZE_MAX / sizeof(Mistake) / 2);
+  Mistakes full = {list.items, most, most};
+  m.number = 3;
+  CHECK(!mistakesAdd(&full, &m));
+  CHECK(full.items == list.items && full.count == most);
+  CHECK(list.items[0].number == 1 && list.items[1].number == 2);
+  mistakesFree(&list);
+}
+
 int main(void) {
   parsesAWellFormedLine();
   keepsNegativesAndBrackets();
@@ -642,6 +679,8 @@ int main(void) {
   refusesASecondNumberOfQuestions();
   helpWinsOverEverythingElse();
   aDoubleDashEndsTheOptions();
+  keepsEveryMistakeInOrder();
+  keepsTheMistakesWhenTheListCannotGrow();
 
   if (failures) {
     fprintf(stderr, "%d of %d checks failed\n", failures, checks);

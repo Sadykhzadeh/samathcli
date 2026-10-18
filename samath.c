@@ -7,6 +7,7 @@
 #include "checkAnswer.h"
 #include "getQuestion.h"
 #include "input.h"
+#include "mistakes.h"
 #include "options.h"
 #include "report.h"
 
@@ -31,6 +32,11 @@
   "😔 SaMathAPI did not answer in time. It may be busy, or the network " \
   "slow. See SAMATH_API_URL.\n"
 #define writeFailure "😔 I could not write the result out. Is the disk full?\n"
+#define noMemory                                                          \
+  "😔 I ran out of memory to keep the mistakes, so the run stopped there.\n"
+#define noPractice                                                        \
+  "😔 I ran out of memory for practice, so the mistakes were not asked "  \
+  "again.\n"
 #define noErrors "🥳 Fantastic, you haven't got any mistakes!"
 #define bye "\n😉 Have a nice day!"
 
@@ -69,12 +75,6 @@ static const char* fetchFailure(int code) {
       return apiUnreachable;
   }
 }
-
-typedef struct {
-  long number;
-  Question question;
-  int chosen; /* the option picked, 0 to 3, or CHOICE_TIMEOUT */
-} Mistake;
 
 enum { ASKED_WRONG = 0, ASKED_RIGHT = 1, ASKED_STOP = -1, ASKED_TIMEOUT = -2 };
 
@@ -254,16 +254,18 @@ int main(int argc, char** argv) {
   quizOpen(&quiz, &options);
   inputStart();
 
-  Mistake* mistakes = NULL;
-  long numberOfMistakes = 0, room = 0, answered = 0;
+  Mistakes mistakes = {NULL, 0, 0};
+  long answered = 0;
   double thinking = 0;
   /* The question that took longest to answer, and how long. */
   double slowest = 0;
   long slowestNumber = 0;
   Question slowestQuestion;
   /* A server lost after the first question ends the run there, and what was
-     answered until then still gets its result. */
-  int lost = 0;
+     answered until then still gets its result. Running out of memory for a
+     mistake ends it the same way, before the question that could not be
+     kept is counted. */
+  int lost = 0, outOfMemory = 0;
   for (long i = 0; i < options.questions; i++) {
     Question question;
     /* Fetching the first batch can take a few seconds when the server is slow
@@ -292,41 +294,35 @@ int main(int argc, char** argv) {
     int result = askQuestion(i + 1, options.questions, &question,
                              options.seconds, &thinking, NULL, &chosen);
     if (result == ASKED_STOP) break;
+    if (result != ASKED_RIGHT) {
+      Mistake wrong = {i + 1, question, chosen};
+      if (!mistakesAdd(&mistakes, &wrong)) {
+        thinking = before;
+        outOfMemory = 1;
+        break;
+      }
+    }
     answered++;
     if (thinking - before > slowest) {
       slowest = thinking - before;
       slowestNumber = i + 1;
       slowestQuestion = question;
     }
-    if (result == ASKED_RIGHT) continue;
-
-    if (numberOfMistakes == room) {
-      room = room ? room * 2 : 8;
-      Mistake* grown = realloc(mistakes, (size_t)room * sizeof *mistakes);
-      if (!grown) {
-        free(mistakes);
-        quizClose(&quiz);
-        return 1;
-      }
-      mistakes = grown;
-    }
-    mistakes[numberOfMistakes].number = i + 1;
-    mistakes[numberOfMistakes].question = question;
-    mistakes[numberOfMistakes].chosen = chosen;
-    numberOfMistakes++;
   }
   quizClose(&quiz);
 
   /* A run that was stopped is over; one that was finished goes on to the
      mistakes if that was asked for. */
   long stillWrong = 0, rounds = 0;
-  int practised = options.practice && numberOfMistakes &&
+  int practised = options.practice && mistakes.count &&
                   answered == options.questions;
+  int practiceLost = 0;
   if (practised) {
-    stillWrong = practise(mistakes, numberOfMistakes, options.seconds, &rounds);
+    stillWrong =
+        practise(mistakes.items, mistakes.count, options.seconds, &rounds);
     if (stillWrong < 0) {
-      free(mistakes);
-      return 1;
+      practised = 0;
+      practiceLost = 1;
     }
   }
 
@@ -334,15 +330,19 @@ int main(int argc, char** argv) {
   if (lost)
     printf("😔 SaMathAPI stopped answering after %ld of %ld questions.\n\n",
            answered, options.questions);
+  else if (outOfMemory)
+    printf("😔 I ran out of memory after %ld of %ld %s.\n\n", answered,
+           options.questions,
+           options.questions == 1 ? "question" : "questions");
   else if (answered < options.questions)
     printf("✋ You stopped after %ld of %ld %s.\n\n", answered,
            options.questions,
            options.questions == 1 ? "question" : "questions");
-  if (numberOfMistakes) {
-    printf("😔 You have %ld %s!\n\n", numberOfMistakes,
-           numberOfMistakes == 1 ? "mistake" : "mistakes");
-    for (long i = 0; i < numberOfMistakes; i++) {
-      const Mistake* m = &mistakes[i];
+  if (mistakes.count) {
+    printf("😔 You have %ld %s!\n\n", mistakes.count,
+           mistakes.count == 1 ? "mistake" : "mistakes");
+    for (long i = 0; i < mistakes.count; i++) {
+      const Mistake* m = &mistakes.items[i];
       printf("Task %ld. %s\t= %s\t", m->number, m->question.expression,
              m->question.answer);
       if (m->chosen == CHOICE_TIMEOUT)
@@ -350,11 +350,11 @@ int main(int argc, char** argv) {
       else
         printf("(you said %s)\n", m->question.options[m->chosen]);
     }
-  } else if (answered)
+  } else if (answered && !outOfMemory)
     puts(noErrors);
   if (answered) {
     char stats[128];
-    formatStats(answered - numberOfMistakes, answered, thinking, stats,
+    formatStats(answered - mistakes.count, answered, thinking, stats,
                 sizeof stats);
     printf("\n📊 %s\n", stats);
     char slowestLine[QUESTION_EXPRESSION_MAX + 64];
@@ -367,13 +367,15 @@ int main(int argc, char** argv) {
            rounds == 1 ? "round" : "rounds");
   else if (practised)
     printf("\n🔁 Practice stopped with %ld of %ld still to put right.\n",
-           stillWrong, numberOfMistakes);
+           stillWrong, mistakes.count);
   puts(bye);
-  free(mistakes);
+  mistakesFree(&mistakes);
   /* Output that did not get out, as to a full disk, is not a finished run,
      whatever the score. */
   int written = fflush(stdout) == 0 && !ferror(stdout);
   if (!written) fputs(writeFailure, stderr);
   if (lost) fputs(fetchFailure(lost), stderr);
-  return lost != 0 || !written;
+  if (outOfMemory) fputs(noMemory, stderr);
+  if (practiceLost) fputs(noPractice, stderr);
+  return lost != 0 || outOfMemory || practiceLost || !written;
 }
