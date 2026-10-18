@@ -42,10 +42,11 @@ int urlWithQuery(const char* url, const char* query, char* out,
 
 /* Runs curl on `url` and collects what it prints. Returns curl's exit status,
    FETCH_TOO_BIG, FETCH_NOT_TEXT, or 0 when `*text` holds the response (the
-   caller frees it).
+   caller frees it). `*code` is the HTTP status curl got, 0 when it got none.
    curl is started directly rather than through a shell, so the URL is never
    read as anything but a URL. */
-static int fetchText(const char* url, char** text) {
+static int fetchText(const char* url, char** text, long* code) {
+  *code = 0;
   int channel[2];
   if (pipe(channel)) return -1;
 
@@ -70,7 +71,8 @@ static int fetchText(const char* url, char** text) {
        run within about ten. Anything else, such as a 4xx or a refused
        connection, fails at once. */
     execlp("curl", "curl", "-fsS","--connect-timeout", "4", "--max-time", "10",
-           "--retry", "1", "--retry-max-time", "8", "--url", url, (char*)NULL);
+           "--retry", "1", "--retry-max-time", "8", "-w", "%{http_code}",
+           "--url", url, (char*)NULL);
     _exit(CURL_NOT_RUN);
   }
   close(channel[1]);
@@ -106,6 +108,13 @@ static int fetchText(const char* url, char** text) {
   if (tooBig) {
     free(body);
     return FETCH_TOO_BIG;
+  }
+  /* curl prints the HTTP status after whatever it sent, always three digits,
+     and sends no body at all when it fails with one. */
+  if (complete && size >= 3) {
+    body[size] = '\0';
+    *code = strtol(body + size - 3, NULL, 10);
+    size -= 3;
   }
   if (!complete || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
     free(body);
@@ -225,16 +234,23 @@ static int loadBatch(Quiz* quiz) {
   char url[URL_MAX];
   char* text = NULL;
   int status;
+  long code = 0;
+  int retried = 0;
   for (;;) {
     if (!requestUrl(quiz, want, url, sizeof url)) return QUIZ_UNREACHABLE;
-    status = fetchText(url, &text);
-    /* A server that refuses `count` outright gets the plain request instead. */
-    if (status == CURL_HTTP_ERROR && want > 1) {
+    status = fetchText(url, &text, &code);
+    if (status != CURL_HTTP_ERROR || want == 1) break;
+    /* A 4xx is a server refusing `count`, which is not asked again: plain
+       requests from now on. A 5xx, 408 or 429 may pass, so the batch is
+       tried once more before it is given up on, and batching stays on. */
+    if (code >= 400 && code < 500 && code != 408 && code != 429) {
       quiz->batched = 0;
       want = 1;
-      continue;
+    } else if (retried) {
+      break;
+    } else {
+      retried = 1;
     }
-    break;
   }
   if (status == FETCH_TOO_BIG || status == FETCH_NOT_TEXT)
     return QUIZ_NOT_QUESTIONS;

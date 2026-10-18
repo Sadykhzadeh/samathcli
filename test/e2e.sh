@@ -40,7 +40,7 @@ ok() { passed=$((passed + 1)); }
 run() {
   name=$1
   shift
-  rm -f "$CURL_LOG" "$CURL_LOG.served" "$CURL_LOG.fds"
+  rm -f "$CURL_LOG" "$CURL_LOG.served" "$CURL_LOG.fds" "$CURL_LOG.flaky"
   : > "$CURL_LOG"
   (cd "$work/cwd" && { printf '%s' "$input"; sleep "$hold"; } | env PATH="${samath_path:-$PATH}" "$root/samath" "$@" > "$work/out" 2> "$work/err")
   status=$?
@@ -176,6 +176,20 @@ input=$(right 3)
 run_at "http://api.test/refuse-count?c=true" "a server that refuses count gets plain requests" 3
 expect_status 0
 expect_requests 4
+expect_out "Fantastic"
+
+input=$(right 3)
+run_at "http://api.test/flaky?c=true" "one error on a batch is tried again, batching stays on" 3
+expect_status 0
+expect_requests 2
+expect_url "count=3"
+expect_out "Fantastic"
+
+input=$(right 3)
+run_at "http://api.test/limited?c=true" "a server that is busy once keeps batching" 3
+expect_status 0
+expect_requests 2
+expect_url "count=3"
 expect_out "Fantastic"
 
 input=$(right 3)
