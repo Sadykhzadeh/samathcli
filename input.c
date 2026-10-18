@@ -98,6 +98,10 @@ static int readByte(int waitMs) {
     FD_SET(STDIN_FILENO, &readable);
     struct timeval timeout = {waitMs / 1000, (waitMs % 1000) * 1000};
     int ready = select(STDIN_FILENO + 1, &readable, NULL, NULL, &timeout);
+    /* A standard input that cannot be waited on, as when it is closed, is
+       no input: answering it with BYTE_NONE would wait out the time limit
+       again and again. */
+    if (ready < 0 && errno != EINTR) return BYTE_END;
     if (ready <= 0) return BYTE_NONE;
   }
   unsigned char byte;

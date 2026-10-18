@@ -240,6 +240,17 @@ expect_requests 1
 expect_out "Fantastic"
 case "$err" in *"could not reach"*) fail "blamed the server" ;; *) ok ;; esac
 
+# Standard input closed cannot answer anything: the run stops at once, instead
+# of every question running out of time while the input refuses to be read.
+name="closed standard input"
+(cd "$work/cwd" && "$root/samath" -t 1 2 <&- > "$work/out" 2> "$work/err")
+status=$?
+out=$(cat "$work/out")
+err=$(cat "$work/err")
+expect_status 0
+expect_out "You stopped after 0 of 2 questions."
+expect_no_out "mistake"
+
 input=$(printf 'abcD')
 run "an answer is one letter, no Enter" 4
 expect_status 0
