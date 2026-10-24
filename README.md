@@ -39,6 +39,8 @@
 | `-p`, `--practice` | When the run is over and there are mistakes, ask them again, round after round, until each has been put right; the result then says how many rounds it took. `Q` stops the practice, and a run that was stopped does not go on to it. The score above it is still the first attempt. |
 | `-l`, `--length N` | Ask for questions of `N` numbers each, 2 to 12. Without it the API picks a length from its own range. |
 | `-b`, `--brackets` | Ask for questions with brackets. Without it the API's own setting decides. |
+| `-m`, `--max N` | Keep every number within `N`, 10 to 10000, and every step of working a question out and the answer as well: `-m 20` is for a class that counts within twenty. Without it the API's own limit decides. |
+| `-o`, `--operators LIST` | Use only these operators, `add`, `subtract`, `multiply` and `divide` separated by commas, each once: `-o add,subtract` for a class that has not met multiplication yet. Without it a question may use all four. |
 | `-n`, `--no-negatives` | Ask for questions with no number below zero, in the question or on the way to its answer, for a class that has not met negative numbers yet: `-29+47` and `2-5+15` are left out, `20-5-3` is kept. Without it the API's own `negatives` setting decides. |
 | `-f`, `--feedback` | Say after each answer whether it was right. The next question opens with `✅ Right: 13*1*2/2 = 13` or `❌ Wrong: 1*17*4/4 = 17 (you said 15)`, so the right answer is there while the question is still fresh. Without it nothing is said until the end. |
 | `-h`, `--help` | Print the options. |
@@ -47,11 +49,15 @@ Short options can be joined, `-pf` for `-p -f`; one that takes a value goes
 last and gets the rest of the word or the next word, so `-pt 30` and `-pt30`
 both give a time limit of 30 seconds.
 
-`./samath -t 10 20` is twenty questions with ten seconds each, and
-`./samath -l 6 -b 10` is ten harder ones. Question `n` of a run is the one the
+`./samath -t 10 20` is twenty questions with ten seconds each,
+`./samath -l 6 -b 10` is ten harder ones, and
+`./samath -m 20 -o add,subtract -n 10` is ten questions of adding and taking
+away within twenty. Question `n` of a run is the one the
 API gives for `seed + n - 1`, so the questions are the same however they were
-fetched. The seed, the length, brackets and `-n` are passed on to the API,
-which has to be a SaMathAPI that takes them; an older one ignores them.
+fetched. The seed, the length, brackets, `-m`, `-o` and `-n` are passed on to
+the API, which has to be a SaMathAPI that takes them; an older one ignores
+them. A combination that no question can be built from is refused by the API,
+and the run then says that it answered with an error.
 
 ### Answering
 

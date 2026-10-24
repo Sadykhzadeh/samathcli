@@ -6,6 +6,11 @@
 /* How many numbers a question may have: the bounds SaMathAPI takes. */
 #define LENGTH_MIN 2
 #define LENGTH_MAX 12
+/* How far from zero a number may be: the bounds SaMathAPI takes for `max`. */
+#define MAX_MIN 10
+#define MAX_MAX 10000
+/* "add,subtract,multiply,divide", the longest list of operators there is. */
+#define OPERATORS_SIZE 32
 
 typedef struct {
   long questions;  /* how many to ask: 1 or more */
@@ -16,6 +21,8 @@ typedef struct {
   int brackets;    /* ask for questions with brackets */
   int noNegatives; /* ask for questions with no number below zero */
   int feedback;    /* say after each answer whether it was right */
+  int max;         /* no number further from zero than this, or 0 to leave it to the server */
+  char operators[OPERATORS_SIZE]; /* "add,subtract" and the like, or "" for all four */
 } Options;
 
 typedef enum {
@@ -26,6 +33,8 @@ typedef enum {
   ARGS_BAD_TIME,   /* -t without a whole number of seconds, 1 to TIME_LIMIT_MAX */
   ARGS_BAD_SEED,   /* -s without a whole number from 0 to SEED_MAX */
   ARGS_BAD_LENGTH, /* -l without a whole number, LENGTH_MIN to LENGTH_MAX */
+  ARGS_BAD_MAX,    /* -m without a whole number, MAX_MIN to MAX_MAX */
+  ARGS_BAD_OPERATORS, /* -o without some of add, subtract, multiply and divide */
   ARGS_BAD_OPTION, /* an option there is no such thing as */
   ARGS_EXTRA       /* more than one number of questions */
 } ArgsResult;

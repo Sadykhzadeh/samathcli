@@ -491,6 +491,55 @@ input=
 run "help mentions no negatives" --help
 expect_out "--no-negatives"
 
+input=$(right 3)
+run "max and operators are passed on with the count" -m 20 -o add,subtract 3
+expect_status 0
+expect_requests 1
+expect_url "http://api.test/gen?c=true&count=3&max=20&operators=add,subtract"
+
+input=$(right 2 7)
+run "they go after the brackets and before no negatives" -n -o divide -m 10000 -b -l 5 -s 7 2
+expect_url "http://api.test/gen?c=true&count=2&seed=7&length=5&brackets=true&max=10000&operators=divide&negatives=false"
+
+input=$(right 1)
+run "one question asks for max and operators alone" --max=15 --operators=multiply,divide 1
+if [ "$(cat "$CURL_LOG")" = "http://api.test/gen?c=true&max=15&operators=multiply,divide" ]; then ok; else fail "asked for $(cat "$CURL_LOG")"; fi
+
+input=$(right 3)
+FAKE_IGNORE_COUNT=1
+export FAKE_IGNORE_COUNT
+run "a server that ignores count gets them every time" -m 30 -o add 3
+unset FAKE_IGNORE_COUNT
+expect_requests 3
+if [ "$(grep -c 'max=30&operators=add$' "$CURL_LOG")" = 3 ]; then ok; else fail "$(cat "$CURL_LOG")"; fi
+
+input=
+run "all four operators, the longest query there is" -n -b -l 12 -s 4294967295 -m 10000 -o add,subtract,multiply,divide 100
+expect_url "http://api.test/gen?c=true&count=100&seed=4294967295&length=12&brackets=true&max=10000&operators=add,subtract,multiply,divide&negatives=false"
+
+input=
+run "help mentions max and operators" --help
+expect_out "--max"
+expect_out "--operators"
+
+for bad in "-m 9 5" "-m 10001 5" "-m big 5" "-m"; do
+  input=
+  # shellcheck disable=SC2086
+  run "\"$bad\" is not a largest number" $bad
+  expect_status 1
+  expect_requests 0
+  expect_err "largest number"
+done
+
+for bad in "-o plus 5" "-o add,add 5" "-o add, 5" "-o"; do
+  input=
+  # shellcheck disable=SC2086
+  run "\"$bad\" is not a list of operators" $bad
+  expect_status 1
+  expect_requests 0
+  expect_err "Operators are some of"
+done
+
 for bad in "-l 1 5" "-l 13 5" "-l hard 5" "-l"; do
   input=
   # shellcheck disable=SC2086
