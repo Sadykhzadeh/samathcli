@@ -8,7 +8,25 @@
    a value. -h is read before anything else, so it is no more than a letter
    to skip here. */
 #define SWITCHES "pbnfh"
-#define VALUED "tsl"
+#define VALUED "tslmo"
+
+/* Whether `text` is some of the operators SaMathAPI names, each once and
+   separated by commas, as in "add,subtract". */
+static int operatorList(const char* text) {
+  static const char* const names[] = {"add", "subtract", "multiply", "divide"};
+  unsigned seen = 0;
+  for (;;) {
+    size_t length = strcspn(text, ",");
+    int found = -1;
+    for (int i = 0; i < 4; i++)
+      if (strlen(names[i]) == length && !strncmp(text, names[i], length))
+        found = i;
+    if (found < 0 || seen >> found & 1) return 0;
+    seen |= 1u << found;
+    if (!text[length]) return 1;
+    text += length + 1;
+  }
+}
 
 /* The whole of `text` as a whole number from `low` to `high`, or -1. */
 static long long wholeNumber(const char* text, long long low, long long high) {
@@ -24,7 +42,7 @@ static const struct {
   char letter;
 } longOptions[] = {{"practice", 'p'}, {"brackets", 'b'}, {"no-negatives", 'n'},
                    {"feedback", 'f'}, {"time", 't'},     {"seed", 's'},
-                   {"length", 'l'}};
+                   {"length", 'l'},   {"max", 'm'},      {"operators", 'o'}};
 
 /* The letter of the long option `--name` or `--name=value` in `arg`, or 0 when
    it is none. A value that came attached is left in `*attached`, otherwise
@@ -72,7 +90,7 @@ static void setSwitch(char letter, Options* options) {
   }
 }
 
-/* Sets what -t, -s or -l (`letter`) asks for from `value`, which is NULL when
+/* Sets what -t, -s, -l, -m or -o (`letter`) asks for from `value`, which is NULL when
    the option was the last word. `word` is the argument that held the option. */
 static ArgsResult setValue(char letter, const char* value, const char* word,
                            Options* options, const char** culprit) {
@@ -89,6 +107,19 @@ static ArgsResult setValue(char letter, const char* value, const char* word,
       failure = ARGS_BAD_SEED;
       if (number >= 0) options->seed = number;
       break;
+    case 'm':
+      number = value ? wholeNumber(value, MAX_MIN, MAX_MAX) : -1;
+      failure = ARGS_BAD_MAX;
+      if (number >= 0) options->max = (int)number;
+      break;
+    case 'o':
+      /* Whatever is longer than the longest list is not one. */
+      number = value && strlen(value) < OPERATORS_SIZE && operatorList(value)
+                   ? 0
+                   : -1;
+      failure = ARGS_BAD_OPERATORS;
+      if (number >= 0) strcpy(options->operators, value);
+      break;
     default:
       number = value ? wholeNumber(value, LENGTH_MIN, LENGTH_MAX) : -1;
       failure = ARGS_BAD_LENGTH;
@@ -101,7 +132,7 @@ static ArgsResult setValue(char letter, const char* value, const char* word,
 }
 
 ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) {
-  Options options = {0, 0, -1, 0, 0, 0, 0, 0};
+  Options options = {0, 0, -1, 0, 0, 0, 0, 0, 0, ""};
   int optionsEnded = 0;
   /* The option that is not one, when it is one letter among several. */
   static char unknown[3] = {'-', '\0', '\0'};

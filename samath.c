@@ -52,6 +52,9 @@
   "                       right\n"                                        \
   "  -l, --length N       how many numbers each question has (2 to 12)\n" \
   "  -b, --brackets       ask for questions with brackets\n"              \
+  "  -m, --max N          no number further from zero than N (10-10000)\n" \
+  "  -o, --operators LIST only these: add, subtract, multiply, divide,\n" \
+  "                       separated by commas\n"                         \
   "  -n, --no-negatives   ask for questions with no number below zero\n" \
   "  -f, --feedback       say after each answer whether it was right\n"  \
   "  -h, --help           show this\n"                                    \
@@ -231,6 +234,19 @@ int main(int argc, char** argv) {
       return fprintf(stderr,
                      "😅 A question has %d to %d numbers, not \"%s\"! :3\n",
                      LENGTH_MIN, LENGTH_MAX, culprit),
+             1;
+    case ARGS_BAD_MAX:
+      return fprintf(stderr,
+                     "😅 The largest number is a whole number from %d to %d, "
+                     "not \"%s\"! :3\n",
+                     MAX_MIN, MAX_MAX, culprit),
+             1;
+    case ARGS_BAD_OPERATORS:
+      return fprintf(stderr,
+                     "😅 Operators are some of add, subtract, multiply and "
+                     "divide, each once and separated by commas, not "
+                     "\"%s\"! :3\n",
+                     culprit),
              1;
     case ARGS_BAD_OPTION:
       return fprintf(stderr,

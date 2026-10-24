@@ -464,6 +464,65 @@ static void takesNoNegatives(void) {
   CHECK(args(&o, &culprit, 2, "--negatives", "5") == ARGS_BAD_OPTION);
 }
 
+static void takesMaxAndOperators(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "5") == ARGS_OK);
+  CHECK(o.max == 0 && !strcmp(o.operators, ""));
+  CHECK(args(&o, &culprit, 3, "-m", "20", "5") == ARGS_OK && o.max == 20);
+  CHECK(args(&o, &culprit, 2, "5", "-m10") == ARGS_OK && o.max == 10);
+  CHECK(args(&o, &culprit, 2, "--max=10000", "5") == ARGS_OK);
+  CHECK(o.max == 10000);
+  CHECK(args(&o, &culprit, 3, "-o", "add,subtract", "5") == ARGS_OK);
+  CHECK_STR(o.operators, "add,subtract");
+  CHECK(args(&o, &culprit, 2, "5", "--operators=divide") == ARGS_OK);
+  CHECK_STR(o.operators, "divide");
+  CHECK(args(&o, &culprit, 3, "-o", "divide,multiply,subtract,add", "5") ==
+        ARGS_OK);
+  CHECK_STR(o.operators, "divide,multiply,subtract,add");
+  CHECK(args(&o, &culprit, 3, "-pm20o", "multiply", "5") == ARGS_BAD_MAX);
+  CHECK(args(&o, &culprit, 3, "-pfom", "add", "5") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 3, "-pm", "20", "5") == ARGS_OK && o.practice);
+  CHECK(args(&o, &culprit, 6, "-m", "20", "-o", "add", "-n", "5") == ARGS_OK);
+  CHECK(o.max == 20 && o.noNegatives && !strcmp(o.operators, "add"));
+}
+
+static void refusesAMaxItCannotUse(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 3, "-m", "9", "5") == ARGS_BAD_MAX);
+  CHECK_STR(culprit, "9");
+  CHECK(args(&o, &culprit, 3, "-m", "10001", "5") == ARGS_BAD_MAX);
+  CHECK(args(&o, &culprit, 3, "-m", "-20", "5") == ARGS_BAD_MAX);
+  CHECK(args(&o, &culprit, 3, "-m", "twenty", "5") == ARGS_BAD_MAX);
+  CHECK(args(&o, &culprit, 3, "-m", "2.5e1", "5") == ARGS_BAD_MAX);
+  CHECK(args(&o, &culprit, 2, "5", "-m") == ARGS_BAD_MAX);
+  CHECK_STR(culprit, "-m");
+  CHECK(args(&o, &culprit, 2, "--max=", "5") == ARGS_BAD_MAX);
+}
+
+static void refusesOperatorsItCannotUse(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 3, "-o", "plus", "5") == ARGS_BAD_OPERATORS);
+  CHECK_STR(culprit, "plus");
+  CHECK(args(&o, &culprit, 3, "-o", "add,add", "5") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 3, "-o", "add,", "5") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 3, "-o", ",add", "5") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 3, "-o", "add,,divide", "5") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 3, "-o", "add, divide", "5") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 3, "-o", "Add", "5") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 3, "-o", "addd", "5") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 3, "-o", "ad", "5") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 3, "-o", "", "5") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 3, "-o", "+", "5") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 3, "-o",
+             "add,subtract,multiply,divide,add,subtract,multiply,divide", "5") ==
+        ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 2, "5", "-o") == ARGS_BAD_OPERATORS);
+  CHECK_STR(culprit, "-o");
+}
+
 static void refusesALengthItCannotUse(void) {
   Options o;
   const char* culprit;
@@ -670,6 +729,9 @@ int main(void) {
   takesTheLengthAndBrackets();
   refusesALengthItCannotUse();
   takesNoNegatives();
+  takesMaxAndOperators();
+  refusesAMaxItCannotUse();
+  refusesOperatorsItCannotUse();
   takesPractice();
   takesFeedback();
   refusesATimeLimitItCannotUse();

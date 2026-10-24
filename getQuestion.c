@@ -136,6 +136,8 @@ void quizOpen(Quiz* quiz, const Options* options) {
   quiz->length = options->length;
   quiz->brackets = options->brackets;
   quiz->noNegatives = options->noNegatives;
+  quiz->max = options->max;
+  strcpy(quiz->operators, options->operators);
   quiz->asked = 0;
   quiz->url = url && *url ? url : apiUrlDefault;
   quiz->batched = 1;
@@ -199,7 +201,7 @@ static int remember(Quiz* quiz, const char* expression) {
    plus the questions already handed out, so a run is the same questions
    however they were batched. */
 static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
-  char query[96] = "";
+  char query[160] = "";
   size_t used = 0;
   if (want > 1) used = (size_t)snprintf(query, sizeof query, "count=%d", want);
   if (quiz->seed >= 0)
@@ -212,6 +214,13 @@ static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
   if (quiz->brackets)
     used += (size_t)snprintf(query + used, sizeof query - used,
                              "%sbrackets=true", used ? "&" : "");
+  if (quiz->max)
+    used += (size_t)snprintf(query + used, sizeof query - used, "%smax=%d",
+                             used ? "&" : "", quiz->max);
+  if (*quiz->operators)
+    used += (size_t)snprintf(query + used, sizeof query - used,
+                             "%soperators=%s", used ? "&" : "",
+                             quiz->operators);
   if (quiz->noNegatives)
     snprintf(query + used, sizeof query - used, "%snegatives=false",
              used ? "&" : "");
