@@ -103,7 +103,8 @@ took at least two seconds, so it is left out when nothing was slow.
 `--help`. `1` when the command line is wrong, including no number of
 questions at all, when the questions could not be fetched, at the start of
 the run or part of the way through, or when there is not the memory to keep
-the mistakes or to practise them.
+the mistakes or to practise them. A run ended by a signal, Ctrl-C included,
+has the status of that signal: 130 for Ctrl-C.
 
 ### Requirements
 
