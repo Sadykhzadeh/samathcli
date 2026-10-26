@@ -7,6 +7,9 @@
 # Without a seed n counts the questions served so far; with seed=S, task i of
 # a request is n = S + i, as the real API does.
 #
+# Like curl without -f, it exits 0 whatever the status, and the body of an
+# error is what the server said.
+#
 # The URL steers it: "down" fails to connect, "garbage" answers with a page
 # that is not a question, "broken" answers every request with a 500,
 # "timeout" runs out of time, "refuse-count" answers 400 to a request with
@@ -57,21 +60,21 @@ case "$url" in
     finish 000 28
     ;;
   *broken*)
-    echo "curl: (22) The requested URL returned error: 500" >&2
-    finish 500 22
+    echo "the server is broken"
+    finish 500 0
     ;;
   *refuse-count*count=*)
-    echo "curl: (22) The requested URL returned error: 400" >&2
-    finish 400 22
+    echo "count is not a thing here"
+    finish 400 0
     ;;
   *flaky*|*limited*)
     if [ ! -f "$CURL_LOG.flaky" ]; then
       : > "$CURL_LOG.flaky"
       case "$url" in
-        *limited*) echo "curl: (22) The requested URL returned error: 429" >&2
-                   finish 429 22 ;;
-        *) echo "curl: (22) The requested URL returned error: 500" >&2
-           finish 500 22 ;;
+        *limited*) echo "slow down"
+                   finish 429 0 ;;
+        *) echo "try again"
+           finish 500 0 ;;
       esac
     fi
     ;;

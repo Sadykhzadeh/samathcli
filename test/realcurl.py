@@ -33,7 +33,8 @@ def check(condition, what):
 
 
 class Server(http.server.BaseHTTPRequestHandler):
-    # The statuses to answer the next requests with; 200 once they are used up.
+    # The (status, body) to answer the next requests with; 200 once they are
+    # used up.
     failures = []
     paths = []
 
@@ -42,11 +43,11 @@ class Server(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         Server.paths.append(self.path)
-        status = Server.failures.pop(0) if Server.failures else 200
+        status, said = Server.failures.pop(0) if Server.failures else (200, b"")
         query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         count = int(query.get("count", ["1"])[0])
         seed = int(query.get("seed", ["0"])[0])
-        body = b""
+        body = said
         if status == 200 and "big" in self.path:
             # More than any run of questions: a web page, say.
             body = b"<p>not a question</p>\n" * 100000
@@ -65,7 +66,7 @@ url = "http://127.0.0.1:%d/gen?c=true" % server.server_address[1]
 
 
 def run(args, failures=(), stdin=b"aaaaaaaaaa"):
-    Server.failures = list(failures)
+    Server.failures = [f if isinstance(f, tuple) else (f, b"") for f in failures]
     Server.paths = []
     env = dict(os.environ, SAMATH_API_URL=url)
     done = subprocess.run([BINARY] + args, input=stdin, capture_output=True, env=env, timeout=60)
@@ -95,6 +96,23 @@ check(len(Server.paths) == 1, "a 404 is asked once: %r" % Server.paths)
 status, out, err = run(["1"], failures=[503, 503])
 check(status == 1 and "answered with an error" in err, "a server that stays down: %r" % err)
 check(len(Server.paths) == 2, "a 503 is asked twice and no more: %r" % Server.paths)
+
+# What the server says is said, so that a request it cannot do is fixed from
+# the message and not by guessing.
+said = b'length must be a whole number from 2 to 12, not "40"'
+status, out, err = run(["1"], failures=[(400, said)])
+check(status == 1 and "answered with an error" in err, "a 400 is said so: %r" % err)
+check(said.decode() in err, "what a 400 says is shown: %r" % err)
+check(len(Server.paths) == 1, "a 400 is asked once: %r" % Server.paths)
+
+status, out, err = run(["1"], failures=[(503, b"busy"), (503, b"busy")])
+check("busy" in err, "what a 503 says is shown: %r" % err)
+
+# A message with control characters in it, and a long one, are not let through
+# as they are.
+status, out, err = run(["1"], failures=[(400, b"\x1b[2Jbad\x07\n" + b"x" * 5000)])
+check("\x1b" not in err and "\x07" not in err, "control characters are left out: %r" % err)
+check(len(err) < 600, "a long message is cut: %d bytes" % len(err))
 
 # A reply too big to be questions is said not to be questions, not to be out of
 # reach.

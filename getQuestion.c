@@ -70,7 +70,7 @@ static int fetchText(const char* url, char** text, long* code) {
        tried once more, but not past 8 s in all, so a dead host still ends the
        run within about ten. Anything else, such as a 4xx or a refused
        connection, fails at once. */
-    execlp("curl", "curl", "-fsS","--connect-timeout", "4", "--max-time", "10",
+    execlp("curl", "curl", "-sS", "--connect-timeout", "4", "--max-time", "10",
            "--retry", "1", "--retry-max-time", "8", "-w", "%{http_code}",
            "--url", url, (char*)NULL);
     _exit(CURL_NOT_RUN);
@@ -120,13 +120,37 @@ static int fetchText(const char* url, char** text, long* code) {
     free(body);
     return WIFEXITED(status) && WEXITSTATUS(status) ? WEXITSTATUS(status) : -1;
   }
+  body[size] = '\0';
+  if (*code >= 400) {
+    *text = body;
+    return CURL_HTTP_ERROR;
+  }
   if (memchr(body, '\0', size)) {
     free(body);
     return FETCH_NOT_TEXT;
   }
-  body[size] = '\0';
   *text = body;
   return 0;
+}
+
+/* Keeps what a refusing server said, its first line, for the person to read:
+   without the control characters that would move the cursor, and not past
+   REFUSAL_MAX bytes, or part of a UTF-8 character. */
+static void rememberRefusal(Quiz* quiz, const char* body) {
+  size_t length = 0;
+  for (const char* c = body; *c && *c != '\n'; c++) {
+    if (length + 1 >= REFUSAL_MAX) {
+      if (((unsigned char)*c & 0xC0) == 0x80) {
+        while (length && ((unsigned char)quiz->said[length - 1] & 0xC0) == 0x80)
+          length--;
+        if (length) length--;
+      }
+      break;
+    }
+    if ((unsigned char)*c >= ' ' && *c != 0x7f) quiz->said[length++] = *c;
+  }
+  while (length && quiz->said[length - 1] == ' ') length--;
+  quiz->said[length] = '\0';
 }
 
 void quizOpen(Quiz* quiz, const Options* options) {
@@ -146,6 +170,7 @@ void quizOpen(Quiz* quiz, const Options* options) {
   quiz->seen = NULL;
   quiz->seenRoom = 0;
   quiz->seenCount = 0;
+  quiz->said[0] = '\0';
 }
 
 void quizClose(Quiz* quiz) {
@@ -248,6 +273,10 @@ static int loadBatch(Quiz* quiz) {
   for (;;) {
     if (!requestUrl(quiz, want, url, sizeof url)) return QUIZ_UNREACHABLE;
     status = fetchText(url, &text, &code);
+    if (status == CURL_HTTP_ERROR) {
+      rememberRefusal(quiz, text);
+      free(text);
+    }
     if (status != CURL_HTTP_ERROR || want == 1) break;
     /* A 4xx is a server refusing `count`, which is not asked again: plain
        requests from now on. A 5xx, 408 or 429 may pass, so the batch is
