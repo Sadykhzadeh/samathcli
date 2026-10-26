@@ -231,6 +231,7 @@ run_at "http://api.test/broken?c=true" "a server that answers with an error says
 expect_status 1
 expect_requests 2
 expect_err "answered with an error"
+expect_err "It said: the server is broken"
 case "$err" in *"could not reach"*) fail "said the server was not there" ;; *) ok ;; esac
 
 input=$(right 100)

@@ -79,6 +79,14 @@ static const char* fetchFailure(int code) {
   }
 }
 
+/* Says why the questions could not be fetched, and what the server said
+   when it refused, as that tells which option or URL it did not like. */
+static void sayFetchFailure(int code, const Quiz* quiz) {
+  fputs(fetchFailure(code), stderr);
+  if (code == QUIZ_REFUSED && *quiz->said)
+    fprintf(stderr, "   It said: %s\n", quiz->said);
+}
+
 enum { ASKED_WRONG = 0, ASKED_RIGHT = 1, ASKED_STOP = -1, ASKED_TIMEOUT = -2 };
 
 /* Output to a terminal that can clear the screen and move the cursor. One
@@ -298,7 +306,7 @@ int main(int argc, char** argv) {
     }
     if (fetched < 0) {
       if (i == 0) {
-        fputs(fetchFailure(fetched), stderr);
+        sayFetchFailure(fetched, &quiz);
         quizClose(&quiz);
         return 1;
       }
@@ -390,7 +398,7 @@ int main(int argc, char** argv) {
      whatever the score. */
   int written = fflush(stdout) == 0 && !ferror(stdout);
   if (!written) fputs(writeFailure, stderr);
-  if (lost) fputs(fetchFailure(lost), stderr);
+  if (lost) sayFetchFailure(lost, &quiz);
   if (outOfMemory) fputs(noMemory, stderr);
   if (practiceLost) fputs(noPractice, stderr);
   return lost != 0 || outOfMemory || practiceLost || !written;

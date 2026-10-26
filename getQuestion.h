@@ -5,6 +5,9 @@
 #include "options.h"
 #include "question.h"
 
+/* The most bytes of what a refusing server said that are kept. */
+#define REFUSAL_MAX 160
+
 /* The most questions asked for in one request: SaMathAPI's limit on `count`. */
 #define QUIZ_BATCH_MAX 100
 
@@ -28,6 +31,9 @@ typedef struct {
   unsigned long long* seen;
   size_t seenRoom;  /* slots in `seen`, a power of two, or 0 */
   size_t seenCount;
+  /* What the server said when it refused a request, as one line of text, or
+     "" when it said nothing. */
+  char said[REFUSAL_MAX];
 } Quiz;
 
 /* Starts a run of `options->questions` questions from SAMATH_API_URL, or
@@ -45,7 +51,8 @@ void quizClose(Quiz* quiz);
 
 /* What quizNext gives back when there is no next question to hand out. */
 #define QUIZ_UNREACHABLE (-1)   /* the server could not be reached */
-#define QUIZ_REFUSED (-2)       /* it answered with an HTTP error */
+#define QUIZ_REFUSED (-2)       /* it answered with an HTTP error; what it
+                                   said, if anything, is in quiz->said */
 #define QUIZ_NOT_QUESTIONS (-3) /* it answered, but not with a question */
 #define QUIZ_NO_CURL (-4)       /* there is no curl to ask with */
 #define QUIZ_TIMED_OUT (-5)     /* it was there, but did not answer in time */
