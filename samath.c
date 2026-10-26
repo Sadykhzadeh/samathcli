@@ -304,6 +304,7 @@ int main(int argc, char** argv) {
       fputs("\r\033[K", stdout);
       fflush(stdout);
     }
+    if (inputInterrupted()) break;
     if (fetched < 0) {
       if (i == 0) {
         sayFetchFailure(fetched, &quiz);
@@ -401,5 +402,6 @@ int main(int argc, char** argv) {
   if (lost) sayFetchFailure(lost, &quiz);
   if (outOfMemory) fputs(noMemory, stderr);
   if (practiceLost) fputs(noPractice, stderr);
+  if (inputInterrupted()) inputDie();
   return lost != 0 || outOfMemory || practiceLost || !written;
 }

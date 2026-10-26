@@ -25,6 +25,7 @@
 
 static struct termios original;
 static volatile sig_atomic_t taken = 0;
+static volatile sig_atomic_t interrupted = 0;
 static double settled = 0; /* when keys start to answer the question */
 
 static void giveBack(void) {
@@ -45,6 +46,17 @@ static void onSignal(int signal) {
   sigaction(signal, &fallback, NULL);
   raise(signal);
 }
+
+/* Ctrl-C ends the run like Q does, and is a signal only in the end, so that
+   the result gets printed first. A second one does not wait for that. */
+static void onInterrupt(int signal) {
+  if (interrupted) onSignal(signal);
+  interrupted = 1;
+}
+
+int inputInterrupted(void) { return interrupted; }
+
+void inputDie(void) { onSignal(SIGINT); }
 
 double monotonicSeconds(void) {
   struct timespec time;
@@ -75,12 +87,15 @@ void inputStart(void) {
   handler.sa_handler = onSignal;
   sigemptyset(&handler.sa_mask);
   handler.sa_flags = 0;
-  sigaction(SIGINT, &handler, NULL);
   sigaction(SIGTERM, &handler, NULL);
   sigaction(SIGHUP, &handler, NULL);
   sigaction(SIGQUIT, &handler, NULL);
   /* Output piped into something that exits first, as in `samath 10 | head`. */
   sigaction(SIGPIPE, &handler, NULL);
+
+  /* No SA_RESTART: the wait for a key has to end when this arrives. */
+  handler.sa_handler = onInterrupt;
+  sigaction(SIGINT, &handler, NULL);
 }
 
 void inputDiscard(void) {
@@ -101,14 +116,14 @@ static int readByte(int waitMs) {
     /* A standard input that cannot be waited on, as when it is closed, is
        no input: answering it with BYTE_NONE would wait out the time limit
        again and again. */
-    if (ready < 0 && errno != EINTR) return BYTE_END;
+    if (interrupted || (ready < 0 && errno != EINTR)) return BYTE_END;
     if (ready <= 0) return BYTE_NONE;
   }
   unsigned char byte;
   for (;;) {
     ssize_t got = read(STDIN_FILENO, &byte, 1);
     if (got == 1) return byte;
-    if (got < 0 && errno == EINTR) continue;
+    if (got < 0 && errno == EINTR && !interrupted) continue;
     return BYTE_END;
   }
 }

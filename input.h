@@ -15,6 +15,15 @@ double monotonicSeconds(void);
    read as it comes and this does nothing. */
 void inputStart(void);
 
+/* Whether Ctrl-C, or an INT signal, has come in since inputStart. It makes
+   readChoice give CHOICE_QUIT, so that the run can show its result; after
+   that, inputDie ends the run the way the signal would have. Only a run at
+   a terminal is told: anywhere else Ctrl-C ends the run at once. */
+int inputInterrupted(void);
+
+/* Hands the terminal back and dies of SIGINT, as an interrupted run does. */
+void inputDie(void);
+
 /* Drops keys typed ahead of the question, so that a stray press while the
    questions were loading does not answer the first one, and at a terminal
    lets no answer through for a quarter of a second after: a key pressed
