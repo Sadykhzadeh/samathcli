@@ -12,8 +12,9 @@
 #
 # The URL steers it: "down" fails to connect, "garbage" answers with a page
 # that is not a question, "broken" answers every request with a 500,
-# "timeout" runs out of time, "refuse-count" answers 400 to a request with
-# count, "flaky" answers its first request with a 500 and the rest normally
+# "timeout" runs out of time, "slow" answers after five seconds, "refuse-count"
+# answers 400 to a request with count,
+# "flaky" answers its first request with a 500 and the rest normally
 # ("limited" with a 429),
 # and "drops-out" answers the first request and fails to connect after that.
 # FAKE_IGNORE_COUNT=1 makes it an older server that does not know count and
@@ -41,6 +42,10 @@ finish() {
   if [ -n "$writeout" ]; then printf '%s' "$1"; fi
   exit "$2"
 }
+
+case "$url" in
+  *slow*) sleep 5 ;;
+esac
 
 case "$url" in
   *down*)

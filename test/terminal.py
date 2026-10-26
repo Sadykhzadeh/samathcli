@@ -178,6 +178,36 @@ for label, interrupt, sig, closed_output in (
     check(label + " ends the run by the signal", status is not None and os.WIFSIGNALED(status) and os.WTERMSIG(status) == sig, str(status))
     os.close(fd)
 
+# Ctrl-C part of the way through gives the result so far, as Q does, and then
+# ends the run by SIGINT, so that a shell sees it was interrupted.
+pid, fd = start(["3", "-t", "30"])
+drain(fd)
+os.write(fd, b"a")
+drain(fd)
+os.write(fd, b"\x03")
+after = drain(fd)
+status = reap(pid)
+check("Ctrl-C gives the result so far", "You stopped after 1 of 3 question" in after and "1 of 1 right" in after, repr(after[-300:]))
+check("Ctrl-C then ends the run by SIGINT", status is not None and os.WIFSIGNALED(status) and os.WTERMSIG(status) == signal.SIGINT, str(status))
+echo, canon = modes(fd)
+check("the terminal is handed back after Ctrl-C with a result", echo and canon, "echo=%s canon=%s" % (echo, canon))
+os.close(fd)
+
+# Ctrl-C while the questions are still being asked for ends the run as well,
+# and does not blame the server.
+os.environ["SAMATH_API_URL"] = "http://api.test/slow?c=true"
+pid, fd = start(["3"])
+time.sleep(0.5)
+os.write(fd, b"\x03")
+began = time.time()
+after = drain(fd)
+status = reap(pid)
+os.environ["SAMATH_API_URL"] = "http://api.test/gen?c=true"
+check("Ctrl-C while waiting gives the result", "You stopped after 0 of 3 questions." in after, repr(after[-300:]))
+check("Ctrl-C while waiting does not blame the server", "could not reach" not in after and "SaMathAPI" not in after.replace("Asking SaMathAPI", ""), repr(after[-300:]))
+check("Ctrl-C while waiting ends the run by SIGINT, at once", status is not None and os.WIFSIGNALED(status) and os.WTERMSIG(status) == signal.SIGINT and time.time() - began < 3, str(status))
+os.close(fd)
+
 def collect(fd, seconds):
     """Everything printed in the next `seconds`, quiet or not."""
     out = b""

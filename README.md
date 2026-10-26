@@ -66,7 +66,9 @@ can be built from / without brackets`.
 Each question says how far into the run it is, as `3/10`. At a terminal one
 key is one answer: `A`, `B`, `C` or `D`, in either case, with no Enter. `Q`
 or Ctrl-D stops the run and shows the result so far; any other key, arrow
-keys included, is ignored. For a quarter of a second after a question appears
+keys included, is ignored. Ctrl-C does the same, also while the questions are
+being fetched, and then ends the run by SIGINT, so a shell sees it was
+interrupted (status 130). For a quarter of a second after a question appears
 no key answers it, so a key pressed twice does not answer the next question
 before it has been seen. When the input is a pipe or a file the same
 letters are read from it as they come, which makes a run scriptable:
