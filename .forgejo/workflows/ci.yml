@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: docker
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: sudo apt-get update && sudo apt-get install -y build-essential python3 curl
       - name: it has to build without a warning, and the checks have to pass
         run: make clean check
