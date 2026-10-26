@@ -16,6 +16,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: it has to build without a warning, and the checks have to pass
         run: make clean check
