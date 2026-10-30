@@ -43,6 +43,14 @@ class Server(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         Server.paths.append(self.path)
+        if self.path.startswith("/moved"):
+            # A server that has moved: http:// sent on to https:// is the
+            # usual case, here it is a new path on the same server.
+            self.send_response(301)
+            self.send_header("Location", self.path.replace("/moved", "/gen", 1))
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         status, said = Server.failures.pop(0) if Server.failures else (200, b"")
         query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         count = int(query.get("count", ["1"])[0])
@@ -113,6 +121,15 @@ check("busy" in err, "what a 503 says is shown: %r" % err)
 status, out, err = run(["1"], failures=[(400, b"\x1b[2Jbad\x07\n" + b"x" * 5000)])
 check("\x1b" not in err and "\x07" not in err, "control characters are left out: %r" % err)
 check(len(err) < 600, "a long message is cut: %d bytes" % len(err))
+
+# A URL that has moved is followed, not mistaken for an answer that is not
+# questions.
+url_ok = url
+url = url.replace("/gen", "/moved")
+status, out, err = run(["3"])
+url = url_ok
+check(status == 0 and "3 of 3 right" in out, "a moved URL is followed: %r %r" % (out, err))
+check(Server.paths == ["/moved?c=true&count=3", "/gen?c=true&count=3"], "the redirect is followed once: %r" % Server.paths)
 
 # A reply too big to be questions is said not to be questions, not to be out of
 # reach.
