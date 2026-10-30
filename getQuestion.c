@@ -69,10 +69,13 @@ static int fetchText(const char* url, char** text, long* code) {
        10. A failure that may pass (a 5xx, a timeout, a dropped connection) is
        tried once more, but not past 8 s in all, so a dead host still ends the
        run within about ten. Anything else, such as a 4xx or a refused
-       connection, fails at once. */
+       connection, fails at once. A URL that has moved, as http:// does when a
+       server wants https://, is followed a few times, to another web address
+       and nowhere else. */
     execlp("curl", "curl", "-sS", "--connect-timeout", "4", "--max-time", "10",
-           "--retry", "1", "--retry-max-time", "8", "-w", "%{http_code}",
-           "--url", url, (char*)NULL);
+           "--retry", "1", "--retry-max-time", "8", "-L", "--max-redirs", "5",
+           "--proto-redir", "=http,https", "-w", "%{http_code}", "--url", url,
+           (char*)NULL);
     _exit(CURL_NOT_RUN);
   }
   close(channel[1]);
