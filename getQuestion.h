@@ -17,7 +17,7 @@ typedef struct {
   long long seed;   /* what to ask the server to seed with, or -1 */
   int length;       /* how many numbers to ask for, or 0 */
   int brackets;     /* BRACKETS_ASK or BRACKETS_NEVER, or 0 */
-  int noNegatives;  /* ask for no number below zero */
+  int noNegatives;  /* 1 to ask for no number below zero, NEGATIVES_ASK to ask for them */
   int max;          /* the furthest from zero a number may be, or 0 */
   char operators[OPERATORS_SIZE]; /* the operators to use, or "" */
   int ranged;       /* the answers come from rangeLow to rangeHigh */

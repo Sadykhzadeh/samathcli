@@ -44,6 +44,7 @@
 | `-o`, `--operators LIST` | Use only these operators, `add`, `subtract`, `multiply` and `divide` separated by commas, each once: `-o add,subtract` for a class that has not met multiplication yet. Without it a question may use all four. |
 | `-r`, `--range LOW-HIGH` | Draw every answer from `LOW` to `HIGH`, the ends included, as in `-r 50-100` for a class that is further on than the 10 to 20 the API gives by default. Whole numbers from 0 to 10000 with at most 100 between them; `-m` bounds it from above. Without it the API's own range decides, and an older API ignores it. |
 | `-n`, `--no-negatives` | Ask for questions with no number below zero, in the question or on the way to its answer, for a class that has not met negative numbers yet: `-29+47` and `2-5+15` are left out, `20-5-3` is kept. Without it the API's own `negatives` setting decides. |
+| `-N`, `--negatives` | Ask for questions that may have negative numbers, for an API that was started with `negatives=false` and so leaves them out unless told. Of `-n` and `-N`, the one given last counts. |
 | `-f`, `--feedback` | Say after each answer whether it was right. The next question opens with `✅ Right: 13*1*2/2 = 13` or `❌ Wrong: 1*17*4/4 = 17 (you said 15)`, so the right answer is there while the question is still fresh. Without it nothing is said until the end. |
 | `-h`, `--help` | Print the options. |
 

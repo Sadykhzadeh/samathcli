@@ -258,8 +258,8 @@ static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
                              "%sanswerMin=%d&answerMax=%d", used ? "&" : "",
                              quiz->rangeLow, quiz->rangeHigh);
   if (quiz->noNegatives)
-    snprintf(query + used, sizeof query - used, "%snegatives=false",
-             used ? "&" : "");
+    snprintf(query + used, sizeof query - used, "%snegatives=%s",
+             used ? "&" : "", quiz->noNegatives == NEGATIVES_ASK ? "true" : "false");
   return urlWithQuery(quiz->url, query, url, capacity);
 }
 

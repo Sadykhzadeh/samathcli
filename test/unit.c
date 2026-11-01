@@ -469,7 +469,14 @@ static void takesNoNegatives(void) {
   CHECK(args(&o, &culprit, 5, "-n", "-l", "3", "-b", "5") == ARGS_OK);
   CHECK(o.noNegatives == 1 && o.length == 3 && o.brackets == 1);
   CHECK(args(&o, &culprit, 2, "--no-negatives=yes", "5") == ARGS_BAD_OPTION);
-  CHECK(args(&o, &culprit, 2, "--negatives", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "-N", "5") == ARGS_OK && o.noNegatives == NEGATIVES_ASK);
+  CHECK(args(&o, &culprit, 2, "5", "--negatives") == ARGS_OK);
+  CHECK(o.noNegatives == NEGATIVES_ASK);
+  CHECK(args(&o, &culprit, 3, "-pN", "-l4", "5") == ARGS_OK);
+  CHECK(o.noNegatives == NEGATIVES_ASK && o.practice == 1 && o.length == 4);
+  CHECK(args(&o, &culprit, 3, "-n", "-N", "5") == ARGS_OK && o.noNegatives == NEGATIVES_ASK);
+  CHECK(args(&o, &culprit, 3, "-N", "-n", "5") == ARGS_OK && o.noNegatives == 1);
+  CHECK(args(&o, &culprit, 2, "--negatives=yes", "5") == ARGS_BAD_OPTION);
 }
 
 static void takesAnAnswerRange(void) {

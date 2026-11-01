@@ -59,6 +59,8 @@
   "  -r, --range LOW-HIGH answers from LOW to HIGH (0-10000, at most\n"    \
   "                       100 apart)\n"                                  \
   "  -n, --no-negatives   ask for questions with no number below zero\n" \
+  "  -N, --negatives      ask for questions that may have them, when the API\n" \
+  "                       leaves them out\n"                             \
   "  -f, --feedback       say after each answer whether it was right\n"  \
   "  -h, --help           show this\n"                                    \
   "\n"                                                                    \

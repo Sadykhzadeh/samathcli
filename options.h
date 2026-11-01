@@ -16,6 +16,9 @@
    apart they may be. */
 #define RANGE_MAX 10000
 #define RANGE_WIDTH 100
+/* What `noNegatives` can be besides 0 and 1: negative numbers asked for, for a
+   server that leaves them out unless told otherwise. */
+#define NEGATIVES_ASK 2
 #define BRACKETS_ASK 1
 #define BRACKETS_NEVER 2
 
@@ -26,7 +29,7 @@ typedef struct {
   int practice;    /* ask the mistakes again until each is right */
   int length;      /* numbers in each question, or 0 to leave it to the server */
   int brackets;    /* BRACKETS_ASK for questions with brackets, BRACKETS_NEVER for none */
-  int noNegatives; /* ask for questions with no number below zero */
+  int noNegatives; /* 1 for questions with no number below zero, NEGATIVES_ASK for ones that may have */
   int feedback;    /* say after each answer whether it was right */
   int max;         /* no number further from zero than this, or 0 to leave it to the server */
   char operators[OPERATORS_SIZE]; /* "add,subtract" and the like, or "" for all four */

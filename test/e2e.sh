@@ -503,6 +503,20 @@ run "help mentions no negatives" --help
 expect_out "--no-negatives"
 
 input=$(right 3)
+run "negatives are asked for when the server leaves them out" -N 3
+expect_status 0
+expect_requests 1
+expect_url "http://api.test/gen?c=true&count=3&negatives=true"
+
+input=$(right 3)
+run "the later of -n and -N counts" -N --no-negatives 3
+expect_url "http://api.test/gen?c=true&count=3&negatives=false"
+
+input=
+run "help mentions negatives" --help
+expect_out "--negatives"
+
+input=$(right 3)
 run "max and operators are passed on with the count" -m 20 -o add,subtract 3
 expect_status 0
 expect_requests 1
