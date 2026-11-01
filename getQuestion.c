@@ -241,7 +241,8 @@ static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
                              used ? "&" : "", quiz->length);
   if (quiz->brackets)
     used += (size_t)snprintf(query + used, sizeof query - used,
-                             "%sbrackets=true", used ? "&" : "");
+                             "%sbrackets=%s", used ? "&" : "",
+                             quiz->brackets == BRACKETS_NEVER ? "never" : "true");
   if (quiz->max)
     used += (size_t)snprintf(query + used, sizeof query - used, "%smax=%d",
                              used ? "&" : "", quiz->max);

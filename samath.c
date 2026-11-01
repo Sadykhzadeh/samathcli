@@ -52,6 +52,7 @@
   "                       right\n"                                        \
   "  -l, --length N       how many numbers each question has (2 to 12)\n" \
   "  -b, --brackets       ask for questions with brackets\n"              \
+  "  -B, --no-brackets    ask for questions with no group in brackets\n" \
   "  -m, --max N          no number further from zero than N (10-10000)\n" \
   "  -o, --operators LIST only these: add, subtract, multiply, divide,\n" \
   "                       separated by commas\n"                         \

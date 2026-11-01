@@ -7,7 +7,7 @@
 /* The letters of the options that stand on their own, and of those that take
    a value. -h is read before anything else, so it is no more than a letter
    to skip here. */
-#define SWITCHES "pbnfh"
+#define SWITCHES "pbBnfh"
 #define VALUED "tslmo"
 
 /* Whether `text` is some of the operators SaMathAPI names, each once and
@@ -40,8 +40,9 @@ static long long wholeNumber(const char* text, long long low, long long high) {
 static const struct {
   const char* name;
   char letter;
-} longOptions[] = {{"practice", 'p'}, {"brackets", 'b'}, {"no-negatives", 'n'},
-                   {"feedback", 'f'}, {"time", 't'},     {"seed", 's'},
+} longOptions[] = {{"practice", 'p'}, {"brackets", 'b'}, {"no-brackets", 'B'},
+                   {"no-negatives", 'n'}, {"feedback", 'f'},
+                   {"time", 't'},     {"seed", 's'},
                    {"length", 'l'},   {"max", 'm'},      {"operators", 'o'}};
 
 /* The letter of the long option `--name` or `--name=value` in `arg`, or 0 when
@@ -79,7 +80,10 @@ static void setSwitch(char letter, Options* options) {
       options->practice = 1;
       break;
     case 'b':
-      options->brackets = 1;
+      options->brackets = BRACKETS_ASK;
+      break;
+    case 'B':
+      options->brackets = BRACKETS_NEVER;
       break;
     case 'n':
       options->noNegatives = 1;

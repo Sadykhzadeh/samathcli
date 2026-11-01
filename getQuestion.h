@@ -16,7 +16,7 @@ typedef struct {
   long total;       /* how many questions the run has */
   long long seed;   /* what to ask the server to seed with, or -1 */
   int length;       /* how many numbers to ask for, or 0 */
-  int brackets;     /* ask for brackets */
+  int brackets;     /* BRACKETS_ASK or BRACKETS_NEVER, or 0 */
   int noNegatives;  /* ask for no number below zero */
   int max;          /* the furthest from zero a number may be, or 0 */
   char operators[OPERATORS_SIZE]; /* the operators to use, or "" */

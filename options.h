@@ -11,6 +11,9 @@
 #define MAX_MAX 10000
 /* "add,subtract,multiply,divide", the longest list of operators there is. */
 #define OPERATORS_SIZE 32
+/* What `brackets` can be besides 0, which leaves it to the server. */
+#define BRACKETS_ASK 1
+#define BRACKETS_NEVER 2
 
 typedef struct {
   long questions;  /* how many to ask: 1 or more */
@@ -18,7 +21,7 @@ typedef struct {
   long long seed;  /* 0 to SEED_MAX, or -1 for questions that differ every run */
   int practice;    /* ask the mistakes again until each is right */
   int length;      /* numbers in each question, or 0 to leave it to the server */
-  int brackets;    /* ask for questions with brackets */
+  int brackets;    /* BRACKETS_ASK for questions with brackets, BRACKETS_NEVER for none */
   int noNegatives; /* ask for questions with no number below zero */
   int feedback;    /* say after each answer whether it was right */
   int max;         /* no number further from zero than this, or 0 to leave it to the server */

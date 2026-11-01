@@ -440,6 +440,16 @@ expect_requests 1
 expect_url "http://api.test/gen?c=true&count=3&length=6&brackets=true"
 expect_out "Fantastic"
 
+input=$(right 3)
+run "no brackets is passed on as never" -B -l 4 3
+expect_status 0
+expect_requests 1
+expect_url "http://api.test/gen?c=true&count=3&length=4&brackets=never"
+
+input=$(right 3)
+run "the later of -b and -B counts" -b --no-brackets 3
+expect_url "http://api.test/gen?c=true&count=3&brackets=never"
+
 input=$(right 1)
 run "one question asks for its length alone" --length=4 1
 expect_status 0
@@ -517,6 +527,10 @@ if [ "$(grep -c 'max=30&operators=add$' "$CURL_LOG")" = 3 ]; then ok; else fail 
 input=
 run "all four operators, the longest query there is" -n -b -l 12 -s 4294967295 -m 10000 -o add,subtract,multiply,divide 100
 expect_url "http://api.test/gen?c=true&count=100&seed=4294967295&length=12&brackets=true&max=10000&operators=add,subtract,multiply,divide&negatives=false"
+
+input=
+run "help mentions no brackets" --help
+expect_out "--no-brackets"
 
 input=
 run "help mentions max and operators" --help

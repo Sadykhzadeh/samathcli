@@ -449,6 +449,14 @@ static void takesTheLengthAndBrackets(void) {
   CHECK(args(&o, &culprit, 5, "-b", "-l", "4", "-p", "5") == ARGS_OK);
   CHECK(o.brackets == 1 && o.length == 4 && o.practice == 1);
   CHECK(args(&o, &culprit, 2, "--brackets=yes", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "-B", "5") == ARGS_OK && o.brackets == BRACKETS_NEVER);
+  CHECK(args(&o, &culprit, 2, "5", "--no-brackets") == ARGS_OK);
+  CHECK(o.brackets == BRACKETS_NEVER);
+  CHECK(args(&o, &culprit, 3, "-pB", "-l4", "5") == ARGS_OK);
+  CHECK(o.brackets == BRACKETS_NEVER && o.practice == 1 && o.length == 4);
+  CHECK(args(&o, &culprit, 3, "-B", "-b", "5") == ARGS_OK && o.brackets == BRACKETS_ASK);
+  CHECK(args(&o, &culprit, 3, "-b", "-B", "5") == ARGS_OK && o.brackets == BRACKETS_NEVER);
+  CHECK(args(&o, &culprit, 2, "--no-brackets=yes", "5") == ARGS_BAD_OPTION);
 }
 
 static void takesNoNegatives(void) {
