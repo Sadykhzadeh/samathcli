@@ -20,6 +20,9 @@ typedef struct {
   int noNegatives;  /* ask for no number below zero */
   int max;          /* the furthest from zero a number may be, or 0 */
   char operators[OPERATORS_SIZE]; /* the operators to use, or "" */
+  int ranged;       /* the answers come from rangeLow to rangeHigh */
+  int rangeLow;
+  int rangeHigh;
   long asked;       /* how many quizNext has handed out */
   const char* url;
   int batched;      /* the server has answered `count` with that many */

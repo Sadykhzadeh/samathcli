@@ -12,6 +12,10 @@
 /* "add,subtract,multiply,divide", the longest list of operators there is. */
 #define OPERATORS_SIZE 32
 /* What `brackets` can be besides 0, which leaves it to the server. */
+/* The bounds SaMathAPI takes for `answerMin` and `answerMax`, and how far
+   apart they may be. */
+#define RANGE_MAX 10000
+#define RANGE_WIDTH 100
 #define BRACKETS_ASK 1
 #define BRACKETS_NEVER 2
 
@@ -26,6 +30,9 @@ typedef struct {
   int feedback;    /* say after each answer whether it was right */
   int max;         /* no number further from zero than this, or 0 to leave it to the server */
   char operators[OPERATORS_SIZE]; /* "add,subtract" and the like, or "" for all four */
+  int ranged;      /* the answers come from rangeLow to rangeHigh */
+  int rangeLow;
+  int rangeHigh;
 } Options;
 
 typedef enum {
@@ -38,6 +45,7 @@ typedef enum {
   ARGS_BAD_LENGTH, /* -l without a whole number, LENGTH_MIN to LENGTH_MAX */
   ARGS_BAD_MAX,    /* -m without a whole number, MAX_MIN to MAX_MAX */
   ARGS_BAD_OPERATORS, /* -o without some of add, subtract, multiply and divide */
+  ARGS_BAD_RANGE,  /* -r without LOW-HIGH, RANGE_MAX at most and RANGE_WIDTH apart */
   ARGS_BAD_OPTION, /* an option there is no such thing as */
   ARGS_EXTRA       /* more than one number of questions */
 } ArgsResult;

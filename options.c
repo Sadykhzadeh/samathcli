@@ -8,7 +8,7 @@
    a value. -h is read before anything else, so it is no more than a letter
    to skip here. */
 #define SWITCHES "pbBnfh"
-#define VALUED "tslmo"
+#define VALUED "tslmor"
 
 /* Whether `text` is some of the operators SaMathAPI names, each once and
    separated by commas, as in "add,subtract". */
@@ -37,13 +37,29 @@ static long long wholeNumber(const char* text, long long low, long long high) {
   return value;
 }
 
+/* Whether `text` is LOW-HIGH, whole numbers up to RANGE_MAX with at most
+   RANGE_WIDTH between them; the two are left in `*low` and `*high`. */
+static int answerRange(const char* text, int* low, int* high) {
+  char* dash;
+  if (*text < '0' || *text > '9') return 0;
+  long long first = strtoll(text, &dash, 10);
+  if (*dash != '-' || dash[1] < '0' || dash[1] > '9') return 0;
+  long long second = wholeNumber(dash + 1, 0, RANGE_MAX);
+  if (first > RANGE_MAX || second < first || second - first > RANGE_WIDTH)
+    return 0;
+  *low = (int)first;
+  *high = (int)second;
+  return 1;
+}
+
 static const struct {
   const char* name;
   char letter;
 } longOptions[] = {{"practice", 'p'}, {"brackets", 'b'}, {"no-brackets", 'B'},
                    {"no-negatives", 'n'}, {"feedback", 'f'},
                    {"time", 't'},     {"seed", 's'},
-                   {"length", 'l'},   {"max", 'm'},      {"operators", 'o'}};
+                   {"length", 'l'},   {"max", 'm'},      {"operators", 'o'},
+                   {"range", 'r'}};
 
 /* The letter of the long option `--name` or `--name=value` in `arg`, or 0 when
    it is none. A value that came attached is left in `*attached`, otherwise
@@ -124,6 +140,13 @@ static ArgsResult setValue(char letter, const char* value, const char* word,
       failure = ARGS_BAD_OPERATORS;
       if (number >= 0) strcpy(options->operators, value);
       break;
+    case 'r':
+      number = value && answerRange(value, &options->rangeLow, &options->rangeHigh)
+                   ? 0
+                   : -1;
+      failure = ARGS_BAD_RANGE;
+      if (number >= 0) options->ranged = 1;
+      break;
     default:
       number = value ? wholeNumber(value, LENGTH_MIN, LENGTH_MAX) : -1;
       failure = ARGS_BAD_LENGTH;
@@ -136,7 +159,7 @@ static ArgsResult setValue(char letter, const char* value, const char* word,
 }
 
 ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) {
-  Options options = {0, 0, -1, 0, 0, 0, 0, 0, 0, ""};
+  Options options = {0, 0, -1, 0, 0, 0, 0, 0, 0, "", 0, 0, 0};
   int optionsEnded = 0;
   /* The option that is not one, when it is one letter among several. */
   static char unknown[3] = {'-', '\0', '\0'};

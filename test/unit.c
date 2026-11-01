@@ -472,6 +472,30 @@ static void takesNoNegatives(void) {
   CHECK(args(&o, &culprit, 2, "--negatives", "5") == ARGS_BAD_OPTION);
 }
 
+static void takesAnAnswerRange(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "5") == ARGS_OK && o.ranged == 0);
+  CHECK(args(&o, &culprit, 3, "-r", "50-100", "5") == ARGS_OK);
+  CHECK(o.ranged == 1 && o.rangeLow == 50 && o.rangeHigh == 100);
+  CHECK(args(&o, &culprit, 2, "5", "-r0-20") == ARGS_OK);
+  CHECK(o.ranged == 1 && o.rangeLow == 0 && o.rangeHigh == 20);
+  CHECK(args(&o, &culprit, 2, "--range=9900-10000", "5") == ARGS_OK);
+  CHECK(o.rangeLow == 9900 && o.rangeHigh == 10000);
+  CHECK(args(&o, &culprit, 3, "--range", "7-7", "5") == ARGS_OK);
+  CHECK(o.rangeLow == 7 && o.rangeHigh == 7);
+  CHECK(args(&o, &culprit, 3, "-pr", "1-5", "5") == ARGS_OK && o.practice);
+  const char* const bad[] = {"20-10", "0-101", "10", "10-", "-10", "a-b",
+                             "1-2-3", "10000-10001", "1 - 5", "+1-5",
+                             "1e1-20", ""};
+  for (size_t i = 0; i < sizeof bad / sizeof *bad; i++) {
+    CHECK(args(&o, &culprit, 3, "-r", bad[i], "5") == ARGS_BAD_RANGE);
+    CHECK_STR(culprit, bad[i]);
+  }
+  CHECK(args(&o, &culprit, 2, "5", "-r") == ARGS_BAD_RANGE);
+  CHECK(args(&o, &culprit, 2, "--range=", "5") == ARGS_BAD_RANGE);
+}
+
 static void takesMaxAndOperators(void) {
   Options o;
   const char* culprit;
@@ -737,6 +761,7 @@ int main(void) {
   takesTheLengthAndBrackets();
   refusesALengthItCannotUse();
   takesNoNegatives();
+  takesAnAnswerRange();
   takesMaxAndOperators();
   refusesAMaxItCannotUse();
   refusesOperatorsItCannotUse();

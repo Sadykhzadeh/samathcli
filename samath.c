@@ -56,6 +56,8 @@
   "  -m, --max N          no number further from zero than N (10-10000)\n" \
   "  -o, --operators LIST only these: add, subtract, multiply, divide,\n" \
   "                       separated by commas\n"                         \
+  "  -r, --range LOW-HIGH answers from LOW to HIGH (0-10000, at most\n"    \
+  "                       100 apart)\n"                                  \
   "  -n, --no-negatives   ask for questions with no number below zero\n" \
   "  -f, --feedback       say after each answer whether it was right\n"  \
   "  -h, --help           show this\n"                                    \
@@ -256,6 +258,12 @@ int main(int argc, char** argv) {
                      "divide, each once and separated by commas, not "
                      "\"%s\"! :3\n",
                      culprit),
+             1;
+    case ARGS_BAD_RANGE:
+      return fprintf(stderr,
+                     "😅 An answer range is LOW-HIGH, whole numbers from 0 to "
+                     "%d with at most %d between them, not \"%s\"! :3\n",
+                     RANGE_MAX, RANGE_WIDTH, culprit),
              1;
     case ARGS_BAD_OPTION:
       return fprintf(stderr,

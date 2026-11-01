@@ -555,6 +555,33 @@ for bad in "-o plus 5" "-o add,add 5" "-o add, 5" "-o"; do
   expect_err "Operators are some of"
 done
 
+for bad in "-r 20-10 5" "-r 0-101 5" "-r 10 5" "-r a-b 5" "-r"; do
+  input=
+  # shellcheck disable=SC2086
+  run "\"$bad\" is not an answer range" $bad
+  expect_status 1
+  expect_requests 0
+  expect_err "answer range"
+done
+
+input=$(right 3)
+run "an answer range is passed on with the count" -r 50-100 3
+expect_status 0
+expect_requests 1
+expect_url "http://api.test/gen?c=true&count=3&answerMin=50&answerMax=100"
+
+input=$(right 2 7)
+run "the range goes after the operators and before no negatives" -n -o add -m 10000 -r 0-100 -l 5 -s 7 2
+expect_url "http://api.test/gen?c=true&count=2&seed=7&length=5&max=10000&operators=add&answerMin=0&answerMax=100&negatives=false"
+
+input=$(right 100)
+run "the longest query there is still fits" -n -B -l 12 -s 4294967295 -m 10000 -r 9900-10000 -o add,subtract,multiply,divide 100
+expect_url "http://api.test/gen?c=true&count=100&seed=4294967295&length=12&brackets=never&max=10000&operators=add,subtract,multiply,divide&answerMin=9900&answerMax=10000&negatives=false"
+
+input=
+run "help mentions the answer range" --help
+expect_out "--range"
+
 for bad in "-l 1 5" "-l 13 5" "-l hard 5" "-l"; do
   input=
   # shellcheck disable=SC2086

@@ -165,6 +165,9 @@ void quizOpen(Quiz* quiz, const Options* options) {
   quiz->noNegatives = options->noNegatives;
   quiz->max = options->max;
   strcpy(quiz->operators, options->operators);
+  quiz->ranged = options->ranged;
+  quiz->rangeLow = options->rangeLow;
+  quiz->rangeHigh = options->rangeHigh;
   quiz->asked = 0;
   quiz->url = url && *url ? url : apiUrlDefault;
   quiz->batched = 1;
@@ -250,6 +253,10 @@ static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
     used += (size_t)snprintf(query + used, sizeof query - used,
                              "%soperators=%s", used ? "&" : "",
                              quiz->operators);
+  if (quiz->ranged)
+    used += (size_t)snprintf(query + used, sizeof query - used,
+                             "%sanswerMin=%d&answerMax=%d", used ? "&" : "",
+                             quiz->rangeLow, quiz->rangeHigh);
   if (quiz->noNegatives)
     snprintf(query + used, sizeof query - used, "%snegatives=false",
              used ? "&" : "");
