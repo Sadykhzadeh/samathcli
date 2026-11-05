@@ -63,6 +63,7 @@
   "                       leaves them out\n"                             \
   "  -f, --feedback       say after each answer whether it was right\n"  \
   "  -h, --help           show this\n"                                    \
+  "      --version        print the version\n"                           \
   "\n"                                                                    \
   "Short options can be joined: -pf, or -pt 30 with a time limit.\n"      \
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
@@ -229,6 +230,8 @@ int main(int argc, char** argv) {
       return fputs(noArgs, stderr), 1;
     case ARGS_HELP:
       return fputs(helpText, stdout), 0;
+    case ARGS_VERSION:
+      return puts("samath " SAMATH_VERSION), 0;
     case ARGS_BAD_COUNT:
       return fputs(badArgs, stderr), 1;
     case ARGS_BAD_TIME:

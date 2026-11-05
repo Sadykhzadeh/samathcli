@@ -47,6 +47,7 @@
 | `-N`, `--negatives` | Ask for questions that may have negative numbers, for an API that was started with `negatives=false` and so leaves them out unless told. Of `-n` and `-N`, the one given last counts. |
 | `-f`, `--feedback` | Say after each answer whether it was right. The next question opens with `✅ Right: 13*1*2/2 = 13` or `❌ Wrong: 1*17*4/4 = 17 (you said 15)`, so the right answer is there while the question is still fresh. Without it nothing is said until the end. |
 | `-h`, `--help` | Print the options. |
+| `--version` | Print the version and exit. |
 
 Short options can be joined, `-pf` for `-p -f`; one that takes a value goes
 last and gets the rest of the word or the next word, so `-pt 30` and `-pt30`

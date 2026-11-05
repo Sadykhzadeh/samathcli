@@ -227,6 +227,8 @@ ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) 
   /* Asking for help wins over anything else that is wrong with the line. */
   for (int i = 1; i < argc && strcmp(argv[i], "--"); i++)
     if (asksForHelp(argv[i])) return ARGS_HELP;
+  for (int i = 1; i < argc && strcmp(argv[i], "--"); i++)
+    if (!strcmp(argv[i], "--version")) return ARGS_VERSION;
 
   for (int i = 1; i < argc; i++) {
     const char* arg = argv[i];

@@ -1,6 +1,7 @@
 #ifndef SAMATH_OPTIONS_H
 #define SAMATH_OPTIONS_H
 
+#define SAMATH_VERSION "1.0.0"
 #define TIME_LIMIT_MAX 3600
 #define SEED_MAX 4294967295LL
 /* How many numbers a question may have: the bounds SaMathAPI takes. */
@@ -42,6 +43,7 @@ typedef enum {
   ARGS_OK,
   ARGS_NONE,       /* nothing at all was given */
   ARGS_HELP,       /* -h or --help */
+  ARGS_VERSION,    /* --version */
   ARGS_BAD_COUNT,  /* the number of questions is not a whole number of 1 or more */
   ARGS_BAD_TIME,   /* -t without a whole number of seconds, 1 to TIME_LIMIT_MAX */
   ARGS_BAD_SEED,   /* -s without a whole number from 0 to SEED_MAX */

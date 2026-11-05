@@ -648,6 +648,16 @@ static void refusesOptionsThatDoNotExist(void) {
   CHECK(args(&o, &culprit, 2, "--seeds=5", "5") == ARGS_BAD_OPTION);
 }
 
+static void asksForTheVersion(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "--version") == ARGS_VERSION);
+  CHECK(args(&o, &culprit, 2, "5", "--version") == ARGS_VERSION);
+  CHECK(args(&o, &culprit, 2, "--", "--version") == ARGS_BAD_COUNT);
+  CHECK(args(&o, &culprit, 2, "--version", "-h") == ARGS_HELP);
+  CHECK(args(&o, &culprit, 1, "--version=1") == ARGS_BAD_OPTION);
+}
+
 static void suggestsTheOptionThatWasMeant(void) {
   CHECK_STR(nearestOption("--practise"), "--practice");
   CHECK_STR(nearestOption("--timeout=5"), "--time");
@@ -790,6 +800,7 @@ int main(void) {
   takesShortOptionsTogether();
   asksForHelpAmongShortOptions();
   refusesOptionsThatDoNotExist();
+  asksForTheVersion();
   suggestsTheOptionThatWasMeant();
   refusesASecondNumberOfQuestions();
   helpWinsOverEverythingElse();

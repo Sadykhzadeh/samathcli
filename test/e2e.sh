@@ -689,6 +689,14 @@ expect_status 1
 expect_requests 0
 expect_err "do not know the option \"-x\""
 
+input=
+run "--version prints the version and exits 0" --version
+expect_status 0
+expect_requests 0
+expect_out "samath 1."
+run "help mentions the version" --help
+expect_out "--version"
+
 run "a misspelt long option names the one meant" --practise 5
 expect_status 1
 expect_requests 0
