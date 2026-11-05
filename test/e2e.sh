@@ -688,6 +688,13 @@ run "an option that does not exist" -x 5
 expect_status 1
 expect_requests 0
 expect_err "do not know the option \"-x\""
+
+run "a misspelt long option names the one meant" --practise 5
+expect_status 1
+expect_requests 0
+expect_err "Did you mean --practice?"
+run "a short option that does not exist is not guessed at" -x 5
+case "$err" in *"Did you mean"*) fail "guessed at a short option" ;; *) ok ;; esac
 if [ -z "$out" ]; then ok; else fail "said hello to a wrong command line"; fi
 
 run "two numbers of questions" 5 6

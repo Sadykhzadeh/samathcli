@@ -52,6 +52,9 @@ Short options can be joined, `-pf` for `-p -f`; one that takes a value goes
 last and gets the rest of the word or the next word, so `-pt 30` and `-pt30`
 both give a time limit of 30 seconds.
 
+A long option that is not one but is near one is named back: `--practise` is
+answered with `Did you mean --practice?`.
+
 `./samath -t 10 20` is twenty questions with ten seconds each,
 `./samath -l 6 -b 10` is ten harder ones, and
 `./samath -m 20 -o add,subtract -n 10` is ten questions of adding and taking

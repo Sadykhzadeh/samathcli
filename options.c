@@ -1,5 +1,7 @@
+#include <ctype.h>
 #include <errno.h>
 #include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "options.h"
@@ -79,6 +81,59 @@ static char longOption(const char* arg, const char** attached) {
     return equals && !strchr(VALUED, letter) ? 0 : letter;
   }
   return 0;
+}
+
+/* No long option has a name this long, so a word longer than this is not
+   compared with them. */
+#define NAME_LONGEST 24
+
+/* The number of single-letter changes it takes to turn `a` into `b`, both at
+   most NAME_LONGEST long. */
+static size_t editDistance(const char* a, const char* b) {
+  size_t rows[2][NAME_LONGEST + 1];
+  size_t lengthA = strlen(a), lengthB = strlen(b);
+  for (size_t j = 0; j <= lengthB; j++) rows[0][j] = j;
+  for (size_t i = 1; i <= lengthA; i++) {
+    const size_t* previous = rows[(i - 1) % 2];
+    size_t* row = rows[i % 2];
+    row[0] = i;
+    for (size_t j = 1; j <= lengthB; j++) {
+      size_t best = previous[j] + 1;
+      if (row[j - 1] + 1 < best) best = row[j - 1] + 1;
+      size_t replace = previous[j - 1] + (a[i - 1] == b[j - 1] ? 0 : 1);
+      row[j] = replace < best ? replace : best;
+    }
+  }
+  return rows[lengthA % 2][lengthB];
+}
+
+const char* nearestOption(const char* arg) {
+  if (strncmp(arg, "--", 2)) return NULL;
+  const char* name = arg + 2;
+  size_t length = strcspn(name, "=");
+  if (length < 3 || length > NAME_LONGEST) return NULL;
+  char lower[NAME_LONGEST + 1];
+  for (size_t i = 0; i < length; i++)
+    lower[i] = (char)tolower((unsigned char)name[i]);
+  lower[length] = '\0';
+
+  static char suggestion[NAME_LONGEST + 3];
+  size_t limit = length < 5 ? 1 : 2;
+  size_t nearest = limit + 1;
+  for (size_t i = 0; i < sizeof longOptions / sizeof *longOptions; i++) {
+    const char* known = longOptions[i].name;
+    size_t shorter = strlen(known) < length ? strlen(known) : length;
+    /* One that runs on past a name, as --timeout does past --time, or stops
+       short of one, as --no-negative does, is as good as a letter off. */
+    size_t apart = shorter >= 3 && !strncmp(lower, known, shorter)
+                       ? 1
+                       : editDistance(lower, known);
+    if (apart < nearest) {
+      nearest = apart;
+      snprintf(suggestion, sizeof suggestion, "--%s", known);
+    }
+  }
+  return nearest <= limit ? suggestion : NULL;
 }
 
 /* Whether `arg` is --help, or short options with an h among the letters that

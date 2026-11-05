@@ -267,12 +267,12 @@ int main(int argc, char** argv) {
                      "%d with at most %d between them, not \"%s\"! :3\n",
                      RANGE_MAX, RANGE_WIDTH, culprit),
              1;
-    case ARGS_BAD_OPTION:
-      return fprintf(stderr,
-                     "😅 I do not know the option \"%s\". See samath --help! "
-                     ":3\n",
-                     culprit),
-             1;
+    case ARGS_BAD_OPTION: {
+      const char* meant = nearestOption(culprit);
+      fprintf(stderr, "😅 I do not know the option \"%s\".", culprit);
+      if (meant) fprintf(stderr, " Did you mean %s?", meant);
+      return fputs(" See samath --help! :3\n", stderr), 1;
+    }
     case ARGS_EXTRA:
       return fprintf(stderr,
                      "😅 One number of questions is enough, and \"%s\" is a "

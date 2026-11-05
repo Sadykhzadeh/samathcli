@@ -648,6 +648,18 @@ static void refusesOptionsThatDoNotExist(void) {
   CHECK(args(&o, &culprit, 2, "--seeds=5", "5") == ARGS_BAD_OPTION);
 }
 
+static void suggestsTheOptionThatWasMeant(void) {
+  CHECK_STR(nearestOption("--practise"), "--practice");
+  CHECK_STR(nearestOption("--timeout=5"), "--time");
+  CHECK_STR(nearestOption("--Feedbak"), "--feedback");
+  CHECK_STR(nearestOption("--no-negative"), "--no-negatives");
+  CHECK_STR(nearestOption("--bracket"), "--brackets");
+  CHECK(nearestOption("--nope") == NULL);
+  CHECK(nearestOption("--zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz") == NULL);
+  CHECK(nearestOption("-x") == NULL);
+  CHECK(nearestOption("--") == NULL);
+}
+
 static void refusesASecondNumberOfQuestions(void) {
   Options o;
   const char* culprit;
@@ -778,6 +790,7 @@ int main(void) {
   takesShortOptionsTogether();
   asksForHelpAmongShortOptions();
   refusesOptionsThatDoNotExist();
+  suggestsTheOptionThatWasMeant();
   refusesASecondNumberOfQuestions();
   helpWinsOverEverythingElse();
   aDoubleDashEndsTheOptions();

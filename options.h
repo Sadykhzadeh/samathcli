@@ -59,4 +59,9 @@ typedef enum {
    `-t 10`, `-t10`, `--time 10` or `--time=10`; `--` ends the options. */
 ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit);
 
+/* The long option that a misspelt `arg` most likely meant, as "--practice" for
+   "--practise" and "--time" for "--timeout=5", or NULL when none is near or
+   `arg` is not a long option. It stays valid until the next call. */
+const char* nearestOption(const char* arg);
+
 #endif
