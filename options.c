@@ -120,8 +120,12 @@ const char* nearestOption(const char* arg) {
   static char suggestion[NAME_LONGEST + 3];
   size_t limit = length < 5 ? 1 : 2;
   size_t nearest = limit + 1;
-  for (size_t i = 0; i < sizeof longOptions / sizeof *longOptions; i++) {
-    const char* known = longOptions[i].name;
+  /* --help and --version are read before the rest, so they are not in the
+     table. */
+  static const char* const alone[] = {"help", "version"};
+  size_t tabled = sizeof longOptions / sizeof *longOptions;
+  for (size_t i = 0; i < tabled + 2; i++) {
+    const char* known = i < tabled ? longOptions[i].name : alone[i - tabled];
     size_t shorter = strlen(known) < length ? strlen(known) : length;
     /* One that runs on past a name, as --timeout does past --time, or stops
        short of one, as --no-negative does, is as good as a letter off. */

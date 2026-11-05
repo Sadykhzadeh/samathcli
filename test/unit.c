@@ -664,6 +664,8 @@ static void suggestsTheOptionThatWasMeant(void) {
   CHECK_STR(nearestOption("--Feedbak"), "--feedback");
   CHECK_STR(nearestOption("--no-negative"), "--no-negatives");
   CHECK_STR(nearestOption("--bracket"), "--brackets");
+  CHECK_STR(nearestOption("--helpp"), "--help");
+  CHECK_STR(nearestOption("--versoin"), "--version");
   CHECK(nearestOption("--nope") == NULL);
   CHECK(nearestOption("--zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz") == NULL);
   CHECK(nearestOption("-x") == NULL);
