@@ -726,5 +726,26 @@ for bad in 0 -3 abc 2.5 ""; do
   expect_err "whole number"
 done
 
+# What the completion script offers for the words given, the last of them
+# being the one completed.
+complete_words() {
+  bash -c '. "$1"; shift; COMP_WORDS=(samath "$@"); COMP_CWORD=$#; _samath; echo "${COMPREPLY[*]}"' _ "$root/contrib/samath.bash" "$@"
+}
+
+# The completion script offers every long option the help lists, and the
+# names of operators after -o.
+if command -v bash >/dev/null 2>&1; then
+  input=
+  run "help for the completion check" --help
+  for option in $(printf '%s\n' "$out" | grep -o -e '--[a-z-]*' | sort -u); do
+    case "$(complete_words "$option")" in
+      *"$option"*) ok ;;
+      *) name="completion"; fail "$option is not completed" ;;
+    esac
+  done
+  operators=$(complete_words -o add,su)
+  if [ "$operators" = "add,subtract" ]; then ok; else name="completion"; fail "-o add,su completed to \"$operators\""; fi
+fi
+
 echo "$passed checks passed, $failed failed"
 [ "$failed" = 0 ]

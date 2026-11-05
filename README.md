@@ -122,6 +122,11 @@ has the status of that signal: 130 for Ctrl-C.
 * `curl` on `PATH`
 * a running [SaMathAPI](https://github.com/Sadykhzadeh/samathapi) instance
 
+### Shell completion
+
+`contrib/samath.bash` completes the options, and the operator names after
+`-o`. Source it from `~/.bashrc`, or copy it to bash-completion's directory.
+
 ### Configuration
 
 | Variable | Default | Meaning |
