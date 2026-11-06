@@ -47,6 +47,7 @@ int urlWithQuery(const char* url, const char* query, char* out,
    read as anything but a URL. */
 static int fetchText(const char* url, char** text, long* code) {
   *code = 0;
+  *text = NULL;
   int channel[2];
   if (pipe(channel)) return -1;
 
@@ -284,7 +285,9 @@ static int loadBatch(Quiz* quiz) {
   for (;;) {
     if (!requestUrl(quiz, want, url, sizeof url)) return QUIZ_UNREACHABLE;
     status = fetchText(url, &text, &code);
-    if (status == CURL_HTTP_ERROR) {
+    /* curl exits with this status itself when its configuration says `fail`,
+       and then there is no body to read. */
+    if (status == CURL_HTTP_ERROR && text) {
       rememberRefusal(quiz, text);
       free(text);
     }

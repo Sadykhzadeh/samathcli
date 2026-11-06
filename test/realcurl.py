@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import urllib.parse
 
@@ -73,10 +74,10 @@ threading.Thread(target=server.serve_forever, daemon=True).start()
 url = "http://127.0.0.1:%d/gen?c=true" % server.server_address[1]
 
 
-def run(args, failures=(), stdin=b"aaaaaaaaaa"):
+def run(args, failures=(), stdin=b"aaaaaaaaaa", **more):
     Server.failures = [f if isinstance(f, tuple) else (f, b"") for f in failures]
     Server.paths = []
-    env = dict(os.environ, SAMATH_API_URL=url)
+    env = dict(os.environ, SAMATH_API_URL=url, **more)
     done = subprocess.run([BINARY] + args, input=stdin, capture_output=True, env=env, timeout=60)
     return done.returncode, done.stdout.decode(), done.stderr.decode()
 
@@ -139,6 +140,17 @@ status, out, err = run(["3"])
 url = url_ok
 check(status == 1 and "not with questions" in err, "a huge reply: %r" % err)
 check("could not reach" not in err, "a huge reply is not a server out of reach: %r" % err)
+
+# A curlrc with `fail` in it makes curl itself exit with 22 on an HTTP error,
+# and it then sends no body. That is a refusal like any other.
+home = tempfile.mkdtemp()
+with open(os.path.join(home, ".curlrc"), "w") as rc:
+    rc.write("fail\n")
+status, out, err = run(["1"], failures=[404, 404], CURL_HOME=home)
+check(status == 1 and "answered with an error" in err, "a refusal with fail in the curlrc: %d %r" % (status, err))
+status, out, err = run(["3"], failures=[404], CURL_HOME=home)
+check(status == 0 and "3 of 3 right" in out, "a count refused with fail in the curlrc: %d %r %r" % (status, out, err))
+shutil.rmtree(home)
 
 print("%d checks passed, %d failed" % (passed, failed))
 sys.exit(1 if failed else 0)
