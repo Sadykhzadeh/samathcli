@@ -578,6 +578,12 @@ for bad in "-r 20-10 5" "-r 0-101 5" "-r 10 5" "-r a-b 5" "-r"; do
   expect_err "answer range"
 done
 
+input=
+run "a range that starts above -m has no question" -m 20 -r 50-100 5
+expect_status 1
+expect_requests 0
+expect_err "-m 20, so -r 50-100 has no question"
+
 input=$(right 3)
 run "an answer range is passed on with the count" -r 50-100 3
 expect_status 0

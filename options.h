@@ -51,12 +51,14 @@ typedef enum {
   ARGS_BAD_MAX,    /* -m without a whole number, MAX_MIN to MAX_MAX */
   ARGS_BAD_OPERATORS, /* -o without some of add, subtract, multiply and divide */
   ARGS_BAD_RANGE,  /* -r without LOW-HIGH, RANGE_MAX at most and RANGE_WIDTH apart */
+  ARGS_RANGE_ABOVE_MAX, /* -r that starts above the largest number -m allows */
   ARGS_BAD_OPTION, /* an option there is no such thing as */
   ARGS_EXTRA       /* more than one number of questions */
 } ArgsResult;
 
 /* Reads the command line. Anything but ARGS_OK, ARGS_NONE and ARGS_HELP
-   leaves the offending argument in `*culprit`. Options may come before or
+   leaves the offending argument in `*culprit`; ARGS_RANGE_ABOVE_MAX has none,
+   and leaves the options it read in `*out`. Options may come before or
    after the number of questions; one that takes a value takes it as
    `-t 10`, `-t10`, `--time 10` or `--time=10`; `--` ends the options. */
 ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit);

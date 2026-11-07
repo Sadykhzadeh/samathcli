@@ -270,6 +270,12 @@ int main(int argc, char** argv) {
                      "%d with at most %d between them, not \"%s\"! :3\n",
                      RANGE_MAX, RANGE_WIDTH, culprit),
              1;
+    case ARGS_RANGE_ABOVE_MAX:
+      return fprintf(stderr,
+                     "😅 No answer is above the largest number, -m %d, so "
+                     "-r %d-%d has no question! :3\n",
+                     options.max, options.rangeLow, options.rangeHigh),
+             1;
     case ARGS_BAD_OPTION: {
       const char* meant = nearestOption(culprit);
       fprintf(stderr, "😅 I do not know the option \"%s\".", culprit);

@@ -289,6 +289,12 @@ ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) 
   }
 
   if (!options.questions) return ARGS_NONE;
+  /* No answer is above the largest number, so a range that starts there has
+     no question. The API would refuse it, after a round trip. */
+  if (options.ranged && options.max && options.rangeLow > options.max) {
+    *out = options;
+    return ARGS_RANGE_ABOVE_MAX;
+  }
   *out = options;
   return ARGS_OK;
 }
