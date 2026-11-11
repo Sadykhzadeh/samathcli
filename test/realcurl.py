@@ -6,6 +6,7 @@ usage: python3 test/realcurl.py ./samath
 """
 import http.server
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -35,7 +36,7 @@ def check(condition, what):
 
 class Server(http.server.BaseHTTPRequestHandler):
     # The (status, body) to answer the next requests with; 200 once they are
-    # used up.
+    # used up. A status of 0 is a connection dropped with no answer at all.
     failures = []
     paths = []
 
@@ -53,6 +54,9 @@ class Server(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             return
         status, said = Server.failures.pop(0) if Server.failures else (200, b"")
+        if status == 0:
+            self.close_connection = True
+            return
         query = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
         count = int(query.get("count", ["1"])[0])
         seed = int(query.get("seed", ["0"])[0])
@@ -97,6 +101,30 @@ for failing in (500, 502, 503):
     check(status == 0 and "4 of 4 right" in out, "%d once is got over: %r %r" % (failing, out, err))
     check(Server.paths == ["/gen?c=true&count=4"] * 2, "%d is asked again: %r" % (failing, Server.paths))
 
+# What a failing server says does not end in a new line, as SaMathAPI's
+# "could not generate a task" does not. It is no part of the answer that
+# comes after it: a run with a seed asks its own questions, each once, and
+# the server is asked nothing more.
+said = b"could not generate a task"
+status, out, err = run(["4", "-s", "40"], failures=[(500, said)])
+asked = re.findall(r"(\d+)\+1", out)
+check(status == 0 and asked == ["40", "41", "42", "43"], "the questions after a 500 that said something: %r %r" % (out, err))
+check(Server.paths == ["/gen?c=true&count=4&seed=40"] * 2, "a 500 that said something is asked again and no more: %r" % Server.paths)
+
+status, out, err = run(["1", "-s", "40"], failures=[(500, said)])
+asked = re.findall(r"(\d+)\+1", out)
+check(status == 0 and asked == ["40"], "one question after a 500 that said something: %r %r" % (out, err))
+check(Server.paths == ["/gen?c=true&seed=40"] * 2, "one question is asked again and no more: %r" % Server.paths)
+
+# A connection that is dropped is asked again too, once.
+status, out, err = run(["4"], failures=[0])
+check(status == 0 and "4 of 4 right" in out, "a dropped connection is got over: %r %r" % (out, err))
+check(Server.paths == ["/gen?c=true&count=4"] * 2, "a dropped connection is asked again: %r" % Server.paths)
+
+status, out, err = run(["4"], failures=[0, 0])
+check(status == 1 and "could not reach" in err, "a server that keeps dropping the connection: %r" % err)
+check(len(Server.paths) == 2, "a dropped connection is asked twice and no more: %r" % Server.paths)
+
 # A refusal that will not change is not asked again.
 status, out, err = run(["1"], failures=[404, 404])
 check(status == 1 and "answered with an error" in err, "a 404 is said so: %r" % err)
@@ -105,6 +133,10 @@ check(len(Server.paths) == 1, "a 404 is asked once: %r" % Server.paths)
 status, out, err = run(["1"], failures=[503, 503])
 check(status == 1 and "answered with an error" in err, "a server that stays down: %r" % err)
 check(len(Server.paths) == 2, "a 503 is asked twice and no more: %r" % Server.paths)
+
+status, out, err = run(["4"], failures=[503, 503])
+check(status == 1 and "answered with an error" in err, "a server that stays down for a batch: %r" % err)
+check(len(Server.paths) == 2, "a batch is asked twice and no more: %r" % Server.paths)
 
 # What the server says is said, so that a request it cannot do is fixed from
 # the message and not by guessing.
@@ -150,6 +182,14 @@ status, out, err = run(["1"], failures=[404, 404], CURL_HOME=home)
 check(status == 1 and "answered with an error" in err, "a refusal with fail in the curlrc: %d %r" % (status, err))
 status, out, err = run(["3"], failures=[404], CURL_HOME=home)
 check(status == 0 and "3 of 3 right" in out, "a count refused with fail in the curlrc: %d %r %r" % (status, out, err))
+shutil.rmtree(home)
+
+# Nor does a curlrc with `retry` in it make curl try again by itself.
+home = tempfile.mkdtemp()
+with open(os.path.join(home, ".curlrc"), "w") as rc:
+    rc.write("retry = 3\n")
+status, out, err = run(["4", "-s", "40"], failures=[(500, said), (500, said)], CURL_HOME=home)
+check(status == 1 and len(Server.paths) == 2, "a 500 with retry in the curlrc is asked twice: %d %r" % (status, Server.paths))
 shutil.rmtree(home)
 
 print("%d checks passed, %d failed" % (passed, failed))

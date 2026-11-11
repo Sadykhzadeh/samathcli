@@ -15,7 +15,7 @@
 # "timeout" runs out of time, "slow" answers after five seconds, "refuse-count"
 # answers 400 to a request with count,
 # "flaky" answers its first request with a 500 and the rest normally
-# ("limited" with a 429),
+# ("limited" with a 429, "hangs-up" by dropping the connection),
 # and "drops-out" answers the first request and fails to connect after that.
 # FAKE_IGNORE_COUNT=1 makes it an older server that does not know count and
 # sends one question whatever is asked. "few" knows only 150 tasks, n mod 150,
@@ -72,12 +72,14 @@ case "$url" in
     echo "count is not a thing here"
     finish 400 0
     ;;
-  *flaky*|*limited*)
+  *flaky*|*limited*|*hangs-up*)
     if [ ! -f "$CURL_LOG.flaky" ]; then
       : > "$CURL_LOG.flaky"
       case "$url" in
         *limited*) echo "slow down"
                    finish 429 0 ;;
+        *hangs-up*) echo "curl: (56) Recv failure: Connection reset by peer" >&2
+                    finish 000 56 ;;
         *) echo "try again"
            finish 500 0 ;;
       esac

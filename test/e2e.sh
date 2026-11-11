@@ -192,9 +192,23 @@ expect_requests 2
 expect_url "count=3"
 expect_out "Fantastic"
 
+input=$(right 1)
+run_at "http://api.test/flaky?c=true" "one error on a single question is tried again" 1
+expect_status 0
+expect_requests 2
+expect_out "Fantastic"
+
+input=$(right 3)
+run_at "http://api.test/hangs-up?c=true" "a dropped connection is tried again" 3
+expect_status 0
+expect_requests 2
+expect_url "count=3"
+expect_out "Fantastic"
+
 input=$(right 3)
 run_at "http://api.test/down?c=true" "an unreachable server is one clear message" 3
 expect_status 1
+expect_requests 1
 expect_err "could not reach SaMathAPI"
 expect_no_out "Fantastic"
 
@@ -223,6 +237,7 @@ case "$err" in *"could not reach"*) fail "blamed the server" ;; *) ok ;; esac
 input=$(right 3)
 run_at "http://api.test/timeout?c=true" "a server that is too slow is said to be slow" 3
 expect_status 1
+expect_requests 2
 expect_err "did not answer in time"
 case "$err" in *"Is it running"*) fail "said the server was not there" ;; *) ok ;; esac
 
