@@ -584,6 +584,12 @@ expect_status 1
 expect_requests 0
 expect_err "-m 20, so -r 50-100 has no question"
 
+input=
+run "a range that ends above -m has answers too big" -m 20 -r 15-30 5
+expect_status 1
+expect_requests 0
+expect_err "-m 20, so -r 15-30 cannot be asked for"
+
 input=$(right 3)
 run "an answer range is passed on with the count" -r 50-100 3
 expect_status 0

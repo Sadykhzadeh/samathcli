@@ -511,9 +511,14 @@ static void refusesRangeAboveMax(void) {
   CHECK(o.max == 20 && o.rangeLow == 50 && o.rangeHigh == 100);
   CHECK(args(&o, &culprit, 4, "5", "-r", "21-30", "-m20") ==
         ARGS_RANGE_ABOVE_MAX);
+  CHECK(args(&o, &culprit, 5, "-m", "20", "-r", "15-30", "5") ==
+        ARGS_RANGE_HIGH_ABOVE_MAX);
+  CHECK(o.max == 20 && o.rangeLow == 15 && o.rangeHigh == 30);
+  CHECK(args(&o, &culprit, 5, "-m", "20", "-r", "0-100", "5") ==
+        ARGS_RANGE_HIGH_ABOVE_MAX);
   /* Answers up to the largest number, and no -m at all, are fine. */
-  CHECK(args(&o, &culprit, 5, "-m", "20", "-r", "20-100", "5") == ARGS_OK);
-  CHECK(args(&o, &culprit, 5, "-m", "20", "-r", "0-100", "5") == ARGS_OK);
+  CHECK(args(&o, &culprit, 5, "-m", "20", "-r", "10-20", "5") == ARGS_OK);
+  CHECK(args(&o, &culprit, 5, "-m", "20", "-r", "0-20", "5") == ARGS_OK);
   CHECK(args(&o, &culprit, 3, "-r", "50-100", "5") == ARGS_OK);
 }
 
