@@ -295,6 +295,11 @@ ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) 
     *out = options;
     return ARGS_RANGE_ABOVE_MAX;
   }
+  /* The API refuses an answer above max, so a range that ends past it too. */
+  if (options.ranged && options.max && options.rangeHigh > options.max) {
+    *out = options;
+    return ARGS_RANGE_HIGH_ABOVE_MAX;
+  }
   *out = options;
   return ARGS_OK;
 }

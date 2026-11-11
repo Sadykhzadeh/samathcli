@@ -276,6 +276,12 @@ int main(int argc, char** argv) {
                      "-r %d-%d has no question! :3\n",
                      options.max, options.rangeLow, options.rangeHigh),
              1;
+    case ARGS_RANGE_HIGH_ABOVE_MAX:
+      return fprintf(stderr,
+                     "😅 Some answers are above the largest number, -m %d, so "
+                     "-r %d-%d cannot be asked for! :3\n",
+                     options.max, options.rangeLow, options.rangeHigh),
+             1;
     case ARGS_BAD_OPTION: {
       const char* meant = nearestOption(culprit);
       fprintf(stderr, "😅 I do not know the option \"%s\".", culprit);
