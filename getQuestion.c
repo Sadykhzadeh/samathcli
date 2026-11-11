@@ -151,6 +151,12 @@ static void rememberRefusal(Quiz* quiz, const char* body) {
       }
       break;
     }
+    /* The C1 controls, which UTF-8 spells as 0xC2 0x80 to 0xC2 0x9F. */
+    if ((unsigned char)*c == 0xC2 && (unsigned char)c[1] >= 0x80 &&
+        (unsigned char)c[1] <= 0x9F) {
+      c++;
+      continue;
+    }
     if ((unsigned char)*c >= ' ' && *c != 0x7f) quiz->said[length++] = *c;
   }
   while (length && quiz->said[length - 1] == ' ') length--;

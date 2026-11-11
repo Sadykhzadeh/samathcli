@@ -123,6 +123,12 @@ status, out, err = run(["1"], failures=[(400, b"\x1b[2Jbad\x07\n" + b"x" * 5000)
 check("\x1b" not in err and "\x07" not in err, "control characters are left out: %r" % err)
 check(len(err) < 600, "a long message is cut: %d bytes" % len(err))
 
+# The C1 controls, which UTF-8 spells as two bytes, are left out too; the
+# copyright sign, which is not one, is kept.
+status, out, err = run(["1"], failures=[(400, b"bad\xc2\x9b2J\xc2\x9d\xc2\xa9 ok")])
+check("\u009b" not in err and "\u009d" not in err, "C1 controls are left out: %r" % err)
+check("bad2J© ok" in err, "the text around them is kept: %r" % err)
+
 # A URL that has moved is followed, not mistaken for an answer that is not
 # questions.
 url_ok = url
