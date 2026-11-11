@@ -23,6 +23,12 @@
 #define CURL_NOT_RUN 127
 /* curl's exit status for a request that ran out of time. */
 #define CURL_TIMED_OUT 28
+/* curl's exit statuses for a connection that was dropped: before all of the
+   answer had come, before any of it had, and while sending or receiving. */
+#define CURL_CUT_SHORT 18
+#define CURL_NO_REPLY 52
+#define CURL_SEND_FAILED 55
+#define CURL_RECEIVE_FAILED 56
 /* What fetchText gives back for a response bigger than RESPONSE_MAX, and for
    one with a NUL byte in it, which is not text. */
 #define FETCH_TOO_BIG (-2)
@@ -67,16 +73,15 @@ static int fetchText(const char* url, char** text, long* code) {
     close(channel[0]);
     close(channel[1]);
     /* A host that does not answer is given up on after 4 s, a slow answer after
-       10. A failure that may pass (a 5xx, a timeout, a dropped connection) is
-       tried once more, but not past 8 s in all, so a dead host still ends the
-       run within about ten. Anything else, such as a 4xx or a refused
-       connection, fails at once. A URL that has moved, as http:// does when a
-       server wants https://, is followed a few times, to another web address
-       and nowhere else. */
+       10. curl is told not to try again by itself, whatever its configuration
+       says: into a pipe it prints the body of the attempt that failed and then
+       that of the next one, with nothing to tell them apart. loadBatch does
+       the trying again. A URL that has moved, as http:// does when a server
+       wants https://, is followed a few times, to another web address and
+       nowhere else. */
     execlp("curl", "curl", "-sS", "--connect-timeout", "4", "--max-time", "10",
-           "--retry", "1", "--retry-max-time", "8", "-L", "--max-redirs", "5",
-           "--proto-redir", "=http,https", "-w", "%{http_code}", "--url", url,
-           (char*)NULL);
+           "--retry", "0", "-L", "--max-redirs", "5", "--proto-redir",
+           "=http,https", "-w", "%{http_code}", "--url", url, (char*)NULL);
     _exit(CURL_NOT_RUN);
   }
   close(channel[1]);
@@ -264,7 +269,23 @@ static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
   return urlWithQuery(quiz->url, query, url, capacity);
 }
 
+/* Whether a request that failed with `status` and HTTP status `code` may pass
+   if it is made again: a 5xx, 408 or 429, a timeout, a dropped connection.
+   Anything else, such as another 4xx or a refused connection, will not. */
+static int mayPass(int status, long code) {
+  if (status == CURL_HTTP_ERROR)
+    return code < 400 || code >= 500 || code == 408 || code == 429;
+  return status == CURL_TIMED_OUT || status == CURL_CUT_SHORT ||
+         status == CURL_NO_REPLY || status == CURL_SEND_FAILED ||
+         status == CURL_RECEIVE_FAILED;
+}
+
 /* Fetches the next batch into quiz->batch. Returns 0, or a QUIZ_ code.
+
+   A request that fails in a way that may pass is made once more, a second
+   later, before the batch is given up on: with 4 s to connect and 10 to
+   answer, a dead host ends the run within about ten seconds and a slow one
+   within about twenty.
 
    After the first batch of a run without a seed, a full batch is asked for
    however few questions are left: some can be ones the run has had, and
@@ -291,17 +312,18 @@ static int loadBatch(Quiz* quiz) {
       rememberRefusal(quiz, text);
       free(text);
     }
-    if (status != CURL_HTTP_ERROR || want == 1) break;
-    /* A 4xx is a server refusing `count`, which is not asked again: plain
-       requests from now on. A 5xx, 408 or 429 may pass, so the batch is
-       tried once more before it is given up on, and batching stays on. */
-    if (code >= 400 && code < 500 && code != 408 && code != 429) {
+    if (mayPass(status, code)) {
+      /* The same request again, so batching stays on. A signal that ends the
+         wait is the person ending the run. */
+      if (retried || sleep(1)) break;
+      retried = 1;
+    } else if (status == CURL_HTTP_ERROR && want > 1) {
+      /* A 4xx is a server refusing `count`, which is not asked again: plain
+         requests from now on. */
       quiz->batched = 0;
       want = 1;
-    } else if (retried) {
-      break;
     } else {
-      retried = 1;
+      break;
     }
   }
   if (status == FETCH_TOO_BIG || status == FETCH_NOT_TEXT)
