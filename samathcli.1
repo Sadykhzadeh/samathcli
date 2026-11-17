@@ -1,0 +1,131 @@
+.\" Kept in step with `samath --help` and the options table in README.md:
+.\" test/docs.sh fails when an option is in one of them and not the others.
+.TH SAMATH 1 "" "samath 1.0.0" "User Commands"
+.SH NAME
+samath \- ask arithmetic questions from a SaMathAPI and mark the answers
+.SH SYNOPSIS
+.B samath
+.RI [ options ]
+.I QUESTIONS
+.SH DESCRIPTION
+.B samath
+fetches
+.I QUESTIONS
+arithmetic tasks from a SaMathAPI server and asks them one at a time. Each
+answer is a single key, A, B, C or D, with no Enter needed. At the end it
+lists the mistakes, each with the right answer and the one given, and the
+score and the time taken.
+.PP
+Options may come before or after the number of questions. Short options can
+be joined, as in
+.BR \-pf ,
+or a value can follow the option letter directly, as in
+.BR \-pt30 .
+.SH OPTIONS
+.TP
+\fB\-t\fR, \fB\-\-time\fR \fISECONDS\fR
+Give each question that many seconds to answer, from 1 to 3600. A question
+that runs out of time counts as a mistake.
+.TP
+\fB\-s\fR, \fB\-\-seed\fR \fINUMBER\fR
+Ask the same questions every time, from 0 to 4294967295. The seed is passed
+to the API, which has to support it.
+.TP
+\fB\-p\fR, \fB\-\-practice\fR
+When the run is over, ask the mistakes again, round after round, until each
+has been put right.
+.TP
+\fB\-l\fR, \fB\-\-length\fR \fIN\fR
+Ask for questions of
+.I N
+numbers each, from 2 to 12.
+.TP
+\fB\-b\fR, \fB\-\-brackets\fR
+Ask for questions with brackets.
+.TP
+\fB\-B\fR, \fB\-\-no\-brackets\fR
+Ask for questions that group nothing in brackets. Of
+.B \-b
+and
+.BR \-B ,
+the one given last counts.
+.TP
+\fB\-m\fR, \fB\-\-max\fR \fIN\fR
+Keep every number, and every step of working a question out, within
+.IR N ,
+from 10 to 10000.
+.TP
+\fB\-o\fR, \fB\-\-operators\fR \fILIST\fR
+Use only these operators, given as a comma-separated list of
+.BR add ,
+.BR subtract ,
+.BR multiply
+and
+.BR divide ,
+each once.
+.TP
+\fB\-r\fR, \fB\-\-range\fR \fILOW\fR\-\fIHIGH\fR
+Draw every answer from
+.I LOW
+to
+.IR HIGH ,
+both included. The numbers are whole numbers from 0 to 10000, at most 100
+apart.
+.TP
+\fB\-n\fR, \fB\-\-no\-negatives\fR
+Ask for questions with no number below zero, in the question or on the way
+to its answer.
+.TP
+\fB\-N\fR, \fB\-\-negatives\fR
+Ask for questions that may have negative numbers. Of
+.B \-n
+and
+.BR \-N ,
+the one given last counts.
+.TP
+\fB\-f\fR, \fB\-\-feedback\fR
+Say after each answer whether it was right, before the next question.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Print a summary of the options and exit.
+.TP
+\fB\-\-version\fR
+Print the version and exit.
+.SH ENVIRONMENT
+.TP
+.B SAMATH_API_URL
+Where the questions are fetched from. The default is
+.BR http://localhost:3000/gen?c=true .
+The value is handed to
+.BR curl (1)
+as it is.
+.SH EXIT STATUS
+.TP
+.B 0
+The run was finished or stopped with
+.BR Q ,
+whatever the score, or
+.B \-\-help
+was given.
+.TP
+.B 1
+The command line is wrong, the questions could not be fetched, or there was
+not enough memory to keep or practise the mistakes.
+.TP
+.B 130
+Interrupted with Ctrl-C.
+.SH FILES
+.TP
+.I contrib/samath.bash
+Bash completion for the options and the operator names. Source it from
+.IR ~/.bashrc .
+.SH REQUIREMENTS
+A POSIX system with
+.BR curl (1)
+on
+.BR PATH ,
+and a running SaMathAPI. On Windows, run it under WSL.
+.SH SEE ALSO
+.BR curl (1)
+.SH AUTHORS
+Azer Sadykhzadeh.

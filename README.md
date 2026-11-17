@@ -122,6 +122,13 @@ has the status of that signal: 130 for Ctrl-C.
 * `curl` on `PATH`
 * a running [SaMathAPI](https://github.com/Sadykhzadeh/samathapi) instance
 
+### Installing
+
+`make install` copies `samath` to `$(PREFIX)/bin` and the manual page to
+`$(PREFIX)/share/man/man1`, which is `/usr/local` unless `PREFIX` says
+otherwise: `make install PREFIX=$HOME/.local` for a single user. Then
+`man samath` shows the page, kept in step with `--help` by `test/docs.sh`.
+
 ### Shell completion
 
 `contrib/samath.bash` completes the options, and the operator names after

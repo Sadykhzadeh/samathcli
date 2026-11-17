@@ -5,11 +5,19 @@ LIB = getQuestion.o checkAnswer.o input.o mistakes.o options.o question.o report
 OBJ = $(LIB) samath.o
 UNIT = test/unit
 
-.PHONY: all build check clean
+PREFIX ?= /usr/local
+MANDIR ?= $(PREFIX)/share/man
+
+.PHONY: all build check install clean
 
 all: $(BIN)
 
 build: $(BIN)
+
+install: $(BIN)
+	install -d $(DESTDIR)$(PREFIX)/bin $(DESTDIR)$(MANDIR)/man1
+	install -m 755 $(BIN) $(DESTDIR)$(PREFIX)/bin/$(BIN)
+	install -m 644 samathcli.1 $(DESTDIR)$(MANDIR)/man1/$(BIN).1
 
 $(BIN): $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $@
@@ -31,6 +39,7 @@ samath.o: samath.c checkAnswer.h getQuestion.h input.h mistakes.h options.h ques
 check: CFLAGS += -Werror
 check: $(BIN) $(UNIT)
 	ASAN_OPTIONS=allocator_may_return_null=1 ./$(UNIT)
+	sh test/docs.sh ./$(BIN)
 	sh test/e2e.sh
 	@if command -v python3 >/dev/null 2>&1; then python3 test/terminal.py ./$(BIN) && python3 test/realcurl.py ./$(BIN); else echo "python3 not found: the terminal and server checks were skipped"; fi
 
