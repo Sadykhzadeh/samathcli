@@ -439,7 +439,15 @@ if [ "$(printf '%s\n' "$out" | grep '^Task')" = "$first" ]; then ok; else fail "
 run "another seed" -s 101 3
 if [ "$(printf '%s\n' "$out" | grep '^Task')" != "$first" ]; then ok; else fail "two seeds gave one run"; fi
 
-for bad in "-s -1 5" "-s 4294967296 5" "-s many 5" "-s"; do
+for bad in -s -m -o -r -l -t; do
+  input=
+  run "$bad with no value is said to need one" 5 "$bad"
+  expect_status 1
+  expect_requests 0
+  expect_err "\"$bad\" needs a value after it"
+done
+
+for bad in "-s -1 5" "-s 4294967296 5" "-s many 5"; do
   input=
   # shellcheck disable=SC2086
   run "\"$bad\" is not a seed" $bad
@@ -566,7 +574,7 @@ run "help mentions max and operators" --help
 expect_out "--max"
 expect_out "--operators"
 
-for bad in "-m 9 5" "-m 10001 5" "-m big 5" "-m"; do
+for bad in "-m 9 5" "-m 10001 5" "-m big 5"; do
   input=
   # shellcheck disable=SC2086
   run "\"$bad\" is not a largest number" $bad
@@ -575,7 +583,7 @@ for bad in "-m 9 5" "-m 10001 5" "-m big 5" "-m"; do
   expect_err "largest number"
 done
 
-for bad in "-o plus 5" "-o add,add 5" "-o add, 5" "-o"; do
+for bad in "-o plus 5" "-o add,add 5" "-o add, 5"; do
   input=
   # shellcheck disable=SC2086
   run "\"$bad\" is not a list of operators" $bad
@@ -584,7 +592,7 @@ for bad in "-o plus 5" "-o add,add 5" "-o add, 5" "-o"; do
   expect_err "Operators are some of"
 done
 
-for bad in "-r 20-10 5" "-r 0-101 5" "-r 10 5" "-r a-b 5" "-r"; do
+for bad in "-r 20-10 5" "-r 0-101 5" "-r 10 5" "-r a-b 5"; do
   input=
   # shellcheck disable=SC2086
   run "\"$bad\" is not an answer range" $bad
@@ -623,7 +631,7 @@ input=
 run "help mentions the answer range" --help
 expect_out "--range"
 
-for bad in "-l 1 5" "-l 13 5" "-l hard 5" "-l"; do
+for bad in "-l 1 5" "-l 13 5" "-l hard 5"; do
   input=
   # shellcheck disable=SC2086
   run "\"$bad\" is not a length" $bad
@@ -701,7 +709,7 @@ expect_out "usage: samath"
 expect_out "--time"
 case "$out" in "usage: samath"*) ok ;; *) fail "the help does not start with the usage" ;; esac
 
-for bad in "-t 0 5" "-t 3601 5" "-t soon 5" "-t"; do
+for bad in "-t 0 5" "-t 3601 5" "-t soon 5"; do
   input=
   # shellcheck disable=SC2086
   run "\"$bad\" is not a time limit" $bad

@@ -217,7 +217,11 @@ static ArgsResult setValue(char letter, const char* value, const char* word,
       break;
   }
   if (number >= 0) return ARGS_OK;
-  *culprit = value ? value : word;
+  if (!value) {
+    *culprit = word;
+    return ARGS_NO_VALUE;
+  }
+  *culprit = value;
   return failure;
 }
 

@@ -288,6 +288,12 @@ int main(int argc, char** argv) {
       if (meant) fprintf(stderr, " Did you mean %s?", meant);
       return fputs(" See samath --help! :3\n", stderr), 1;
     }
+    case ARGS_NO_VALUE:
+      return fprintf(stderr,
+                     "😅 The option \"%s\" needs a value after it! See samath "
+                     "--help. :3\n",
+                     culprit),
+             1;
     case ARGS_EXTRA:
       return fprintf(stderr,
                      "😅 One number of questions is enough, and \"%s\" is a "

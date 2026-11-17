@@ -392,9 +392,18 @@ static void refusesATimeLimitItCannotUse(void) {
   CHECK(args(&o, &culprit, 3, "-t", "x", "5") == ARGS_BAD_TIME);
   CHECK_STR(culprit, "x");
   CHECK(args(&o, &culprit, 3, "-t", "2.5", "5") == ARGS_BAD_TIME);
-  CHECK(args(&o, &culprit, 2, "5", "-t") == ARGS_BAD_TIME);
-  CHECK_STR(culprit, "-t");
   CHECK(args(&o, &culprit, 2, "--time=", "5") == ARGS_BAD_TIME);
+}
+
+static void saysWhenAnOptionHasNoValue(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 2, "5", "-t") == ARGS_NO_VALUE);
+  CHECK_STR(culprit, "-t");
+  CHECK(args(&o, &culprit, 2, "5", "--time") == ARGS_NO_VALUE);
+  CHECK_STR(culprit, "--time");
+  CHECK(args(&o, &culprit, 2, "5", "--operators") == ARGS_NO_VALUE);
+  CHECK_STR(culprit, "--operators");
 }
 
 static void takesTheSeedInEveryForm(void) {
@@ -499,7 +508,7 @@ static void takesAnAnswerRange(void) {
     CHECK(args(&o, &culprit, 3, "-r", bad[i], "5") == ARGS_BAD_RANGE);
     CHECK_STR(culprit, bad[i]);
   }
-  CHECK(args(&o, &culprit, 2, "5", "-r") == ARGS_BAD_RANGE);
+  CHECK(args(&o, &culprit, 2, "5", "-r") == ARGS_NO_VALUE);
   CHECK(args(&o, &culprit, 2, "--range=", "5") == ARGS_BAD_RANGE);
 }
 
@@ -554,7 +563,7 @@ static void refusesAMaxItCannotUse(void) {
   CHECK(args(&o, &culprit, 3, "-m", "-20", "5") == ARGS_BAD_MAX);
   CHECK(args(&o, &culprit, 3, "-m", "twenty", "5") == ARGS_BAD_MAX);
   CHECK(args(&o, &culprit, 3, "-m", "2.5e1", "5") == ARGS_BAD_MAX);
-  CHECK(args(&o, &culprit, 2, "5", "-m") == ARGS_BAD_MAX);
+  CHECK(args(&o, &culprit, 2, "5", "-m") == ARGS_NO_VALUE);
   CHECK_STR(culprit, "-m");
   CHECK(args(&o, &culprit, 2, "--max=", "5") == ARGS_BAD_MAX);
 }
@@ -577,7 +586,7 @@ static void refusesOperatorsItCannotUse(void) {
   CHECK(args(&o, &culprit, 3, "-o",
              "add,subtract,multiply,divide,add,subtract,multiply,divide", "5") ==
         ARGS_BAD_OPERATORS);
-  CHECK(args(&o, &culprit, 2, "5", "-o") == ARGS_BAD_OPERATORS);
+  CHECK(args(&o, &culprit, 2, "5", "-o") == ARGS_NO_VALUE);
   CHECK_STR(culprit, "-o");
 }
 
@@ -591,7 +600,7 @@ static void refusesALengthItCannotUse(void) {
   CHECK(args(&o, &culprit, 3, "-l", "long", "5") == ARGS_BAD_LENGTH);
   CHECK_STR(culprit, "long");
   CHECK(args(&o, &culprit, 3, "-l", "4.5", "5") == ARGS_BAD_LENGTH);
-  CHECK(args(&o, &culprit, 2, "5", "-l") == ARGS_BAD_LENGTH);
+  CHECK(args(&o, &culprit, 2, "5", "-l") == ARGS_NO_VALUE);
   CHECK_STR(culprit, "-l");
   CHECK(args(&o, &culprit, 2, "--length=", "5") == ARGS_BAD_LENGTH);
 }
@@ -605,7 +614,7 @@ static void refusesASeedItCannotUse(void) {
   CHECK(args(&o, &culprit, 3, "-s", "abc", "5") == ARGS_BAD_SEED);
   CHECK_STR(culprit, "abc");
   CHECK(args(&o, &culprit, 3, "-s", "1.5", "5") == ARGS_BAD_SEED);
-  CHECK(args(&o, &culprit, 2, "5", "-s") == ARGS_BAD_SEED);
+  CHECK(args(&o, &culprit, 2, "5", "-s") == ARGS_NO_VALUE);
   CHECK_STR(culprit, "-s");
   CHECK(args(&o, &culprit, 2, "--seed=", "5") == ARGS_BAD_SEED);
 }
@@ -628,7 +637,7 @@ static void takesShortOptionsTogether(void) {
   /* A letter after the one that takes a value is part of the value. */
   CHECK(args(&o, &culprit, 3, "-tp", "10", "5") == ARGS_BAD_TIME);
   CHECK_STR(culprit, "p");
-  CHECK(args(&o, &culprit, 2, "5", "-pt") == ARGS_BAD_TIME);
+  CHECK(args(&o, &culprit, 2, "5", "-pt") == ARGS_NO_VALUE);
   CHECK_STR(culprit, "-pt");
   CHECK(args(&o, &culprit, 2, "-px", "5") == ARGS_BAD_OPTION);
   CHECK_STR(culprit, "-x");
@@ -819,6 +828,7 @@ int main(void) {
   takesPractice();
   takesFeedback();
   refusesATimeLimitItCannotUse();
+  saysWhenAnOptionHasNoValue();
   takesShortOptionsTogether();
   asksForHelpAmongShortOptions();
   refusesOptionsThatDoNotExist();
