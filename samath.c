@@ -28,6 +28,9 @@
 #define noCurl                                                          \
   "😔 I need curl to fetch the questions, and could not run it. Is it "  \
   "installed and on your PATH?\n"
+#define apiTooBig                                                       \
+  "😔 SAMATH_API_URL sent more than 1 MB, far more than a run of "     \
+  "questions. See SAMATH_API_URL.\n"
 #define apiTimedOut                                                     \
   "😔 SaMathAPI did not answer in time. It may be busy, or the network " \
   "slow. See SAMATH_API_URL.\n"
@@ -76,6 +79,8 @@ static const char* fetchFailure(int code) {
       return apiRefused;
     case QUIZ_NOT_QUESTIONS:
       return apiNotQuestions;
+    case QUIZ_TOO_BIG:
+      return apiTooBig;
     case QUIZ_NO_CURL:
       return noCurl;
     case QUIZ_TIMED_OUT:

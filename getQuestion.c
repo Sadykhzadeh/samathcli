@@ -69,6 +69,13 @@ static int fetchText(const char* url, char** text, long* code) {
       dup2(silence, STDIN_FILENO);
       close(silence);
     }
+    /* curl's own complaints are not shown: the caller says what went wrong,
+       in its own words, and a stopped read reads as a write failure to curl. */
+    int hush = open("/dev/null", O_WRONLY);
+    if (hush >= 0 && hush != STDERR_FILENO) {
+      dup2(hush, STDERR_FILENO);
+      close(hush);
+    }
     dup2(channel[1], STDOUT_FILENO);
     close(channel[0]);
     close(channel[1]);
@@ -332,8 +339,8 @@ static int loadBatch(Quiz* quiz) {
       break;
     }
   }
-  if (status == FETCH_TOO_BIG || status == FETCH_NOT_TEXT)
-    return QUIZ_NOT_QUESTIONS;
+  if (status == FETCH_TOO_BIG) return QUIZ_TOO_BIG;
+  if (status == FETCH_NOT_TEXT) return QUIZ_NOT_QUESTIONS;
   if (status == CURL_NOT_RUN) return QUIZ_NO_CURL;
   if (status == CURL_TIMED_OUT) return QUIZ_TIMED_OUT;
   if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;

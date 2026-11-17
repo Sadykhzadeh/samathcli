@@ -176,8 +176,10 @@ url_ok = url
 url = url.replace("/gen", "/big")
 status, out, err = run(["3"])
 url = url_ok
-check(status == 1 and "not with questions" in err, "a huge reply: %r" % err)
+check(status == 1 and "more than 1 MB" in err, "a huge reply: %r" % err)
 check("could not reach" not in err, "a huge reply is not a server out of reach: %r" % err)
+check("curl" not in err and "Failure" not in err, "a huge reply shows nothing of curl: %r" % err)
+check(err.count("\n") == 1, "a huge reply is one line: %r" % err)
 
 # A curlrc with `fail` in it makes curl itself exit with 22 on an HTTP error,
 # and it then sends no body. That is a refusal like any other.
