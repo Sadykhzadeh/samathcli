@@ -11,11 +11,11 @@ trap 'rm -rf "$work"' EXIT
 "$bin" --help | grep -E '^ {2,6}-' | sed 's/^ *//; s/  .*//' |
   tr ', ' '\n\n' | grep -E '^--?[a-zA-Z]' | sort -u > "$work/help"
 
-awk '/^\.TP/ { getline; print }' "$root/samathcli.1" |
+awk '/^\.TP/ { getline; print }' "$root/samathcli.1" | tr -d '\r' |
   sed -e 's/\\f[BIR]//g' -e 's/\\-/-/g' |
   tr ', ' '\n\n' | grep -E '^--?[a-zA-Z]' | sort -u > "$work/man"
 
-grep '^| `-' "$root/README.md" | cut -d'|' -f2 | tr -d '`' |
+grep '^| `-' "$root/README.md" | tr -d '\r' | cut -d'|' -f2 | tr -d '`' |
   tr ', ' '\n\n' | grep -E '^--?[a-zA-Z]' | sort -u > "$work/readme"
 
 if [ ! -s "$work/help" ]; then

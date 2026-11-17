@@ -40,6 +40,7 @@ check: CFLAGS += -Werror
 check: $(BIN) $(UNIT)
 	ASAN_OPTIONS=allocator_may_return_null=1 ./$(UNIT)
 	sh test/docs.sh ./$(BIN)
+	sh test/hostile.sh ./$(BIN)
 	sh test/e2e.sh
 	@if command -v python3 >/dev/null 2>&1; then python3 test/terminal.py ./$(BIN) && python3 test/realcurl.py ./$(BIN); else echo "python3 not found: the terminal and server checks were skipped"; fi
 
