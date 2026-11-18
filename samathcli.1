@@ -12,9 +12,10 @@ samath \- ask arithmetic questions from a SaMathAPI and mark the answers
 fetches
 .I QUESTIONS
 arithmetic tasks from a SaMathAPI server and asks them one at a time. Each
-answer is a single key, A, B, C or D, with no Enter needed. At the end it
-lists the mistakes, each with the right answer and the one given, and the
-score and the time taken.
+answer is a single key, A, B, C or D, with no Enter needed. Q, or Ctrl-D,
+stops the run early. At the end it lists the mistakes, each with the right
+answer and the one given, and the score and the time taken. Ctrl-C does the
+same and then ends the run by SIGINT.
 .PP
 Options may come before or after the number of questions. Short options can
 be joined, as in
