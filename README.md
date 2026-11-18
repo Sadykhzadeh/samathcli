@@ -138,7 +138,7 @@ otherwise: `make install PREFIX=$HOME/.local` for a single user. Then
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `SAMATH_API_URL` | `http://localhost:3000/gen?c=true` | Where questions are fetched from. It is handed to `curl` as it is. |
+| `SAMATH_API_URL` | `http://localhost:3000/gen?c=true` | Where questions are fetched from. It is handed to `curl` as it is. `curl` does not read its own configuration file (`~/.curlrc`), so nothing in it changes the request. |
 
 ### How questions are fetched
 

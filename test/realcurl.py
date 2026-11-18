@@ -181,8 +181,8 @@ check("could not reach" not in err, "a huge reply is not a server out of reach: 
 check("curl" not in err and "Failure" not in err, "a huge reply shows nothing of curl: %r" % err)
 check(err.count("\n") == 1, "a huge reply is one line: %r" % err)
 
-# A curlrc with `fail` in it makes curl itself exit with 22 on an HTTP error,
-# and it then sends no body. That is a refusal like any other.
+# A curlrc with `fail` in it is not read, so a refusal still comes with its
+# body and is a refusal like any other.
 home = tempfile.mkdtemp()
 with open(os.path.join(home, ".curlrc"), "w") as rc:
     rc.write("fail\n")
@@ -198,6 +198,18 @@ with open(os.path.join(home, ".curlrc"), "w") as rc:
     rc.write("retry = 3\n")
 status, out, err = run(["4", "-s", "40"], failures=[(500, said), (500, said)], CURL_HOME=home)
 check(status == 1 and len(Server.paths) == 2, "a 500 with retry in the curlrc is asked twice: %d %r" % (status, Server.paths))
+shutil.rmtree(home)
+
+# A curlrc that would change the request, or send the answer to a file, is not
+# read: the questions are asked for as they always are.
+home = tempfile.mkdtemp()
+saved = os.path.join(home, "saved")
+with open(os.path.join(home, ".curlrc"), "w") as rc:
+    rc.write('request = "POST"\noutput = "%s"\n' % saved)
+status, out, err = run(["4"], CURL_HOME=home)
+check(status == 0 and "4 of 4 right" in out, "a curlrc that changes the request is not read: %d %r %r" % (status, out, err))
+check(Server.paths == ["/gen?c=true&count=4"], "the request is a GET whatever the curlrc says: %r" % Server.paths)
+check(not os.path.exists(saved), "the curlrc's output file is not written")
 shutil.rmtree(home)
 
 print("%d checks passed, %d failed" % (passed, failed))

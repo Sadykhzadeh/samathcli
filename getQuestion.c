@@ -17,7 +17,8 @@
 #define RESPONSE_MAX (1 << 20)
 #define URL_MAX 2048
 
-/* curl's exit status for an HTTP error, which -f turns a 4xx or 5xx into. */
+/* The status fetchText gives for a 4xx or 5xx answer, whose body it returns.
+   curl only exits with 22 for that under -f, which is not used. */
 #define CURL_HTTP_ERROR 22
 /* What the child exits with when there is no curl to run, as a shell does. */
 #define CURL_NOT_RUN 127
@@ -79,14 +80,15 @@ static int fetchText(const char* url, char** text, long* code) {
     dup2(channel[1], STDOUT_FILENO);
     close(channel[0]);
     close(channel[1]);
-    /* A host that does not answer is given up on after 4 s, a slow answer after
-       10. curl is told not to try again by itself, whatever its configuration
-       says: into a pipe it prints the body of the attempt that failed and then
-       that of the next one, with nothing to tell them apart. loadBatch does
-       the trying again. A URL that has moved, as http:// does when a server
-       wants https://, is followed a few times, to another web address and
-       nowhere else. */
-    execlp("curl", "curl", "-sS", "--connect-timeout", "4", "--max-time", "10",
+    /* -q has to come first: it keeps curl from reading the user's curl
+       configuration, whose `request`, `output` or `data` would change what is
+       asked for. A host that does not answer is given up on after 4 s, a slow
+       answer after 10. curl is told not to try again by itself: into a pipe it
+       prints the body of the attempt that failed and then that of the next
+       one, with nothing to tell them apart. loadBatch does the trying again. A
+       URL that has moved, as http:// does when a server wants https://, is
+       followed a few times, to another web address and nowhere else. */
+    execlp("curl", "curl", "-q", "-sS", "--connect-timeout", "4", "--max-time", "10",
            "--retry", "0", "-L", "--max-redirs", "5", "--proto-redir",
            "=http,https", "-w", "%{http_code}", "--url", url, (char*)NULL);
     _exit(CURL_NOT_RUN);
@@ -319,8 +321,7 @@ static int loadBatch(Quiz* quiz) {
   for (;;) {
     if (!requestUrl(quiz, want, url, sizeof url)) return QUIZ_UNREACHABLE;
     status = fetchText(url, &text, &code);
-    /* curl exits with this status itself when its configuration says `fail`,
-       and then there is no body to read. */
+    /* A refusal comes with the body the server sent, which says why. */
     if (status == CURL_HTTP_ERROR && text) {
       rememberRefusal(quiz, text);
       free(text);
