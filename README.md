@@ -26,7 +26,7 @@
 * run `make`
 * That's it! Type `./samath 5` to get five questions
 
-`make clean` removes the binary and the object files.
+`make clean` removes the binary, the object files and the test program.
 
 ### Options
 
