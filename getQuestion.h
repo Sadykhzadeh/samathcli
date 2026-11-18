@@ -63,6 +63,8 @@ void quizClose(Quiz* quiz);
                                    questions can be */
 #define QUIZ_BAD_URL (-7)       /* the URL is not one it can fetch from, or it
                                    redirects too often */
+#define QUIZ_NO_PROCESS (-8)    /* curl could not be started, as there is no
+                                   room left for another process or file */
 
 /* Hands out the next question. Returns 1 and fills `out`, 0 once all `total`
    have been handed out, and one of the QUIZ_ codes above otherwise.

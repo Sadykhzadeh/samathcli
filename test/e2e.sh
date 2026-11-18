@@ -235,6 +235,20 @@ expect_err "need curl"
 case "$err" in *"could not reach"*) fail "blamed the server" ;; *) ok ;; esac
 
 input=$(right 3)
+# With four file descriptors open, samath has no room for the pipe curl's
+# answer comes through, so it cannot start curl: the server is not to blame.
+input=$(right 3)
+name="a pipe that cannot be made is not blamed on the server"
+(cd "$work/cwd" && printf '%s' "$input" | sh -c 'ulimit -n 4; exec "$0" 3' "$root/samath") > "$work/out" 2> "$work/err"
+status=$?
+out=$(cat "$work/out")
+err=$(cat "$work/err")
+requests=0
+expect_status 1
+expect_requests 0
+expect_err "could not start curl"
+case "$err" in *"could not reach"*) fail "blamed the server" ;; *) ok ;; esac
+
 run_at "http://api.test/timeout?c=true" "a server that is too slow is said to be slow" 3
 expect_status 1
 expect_requests 2

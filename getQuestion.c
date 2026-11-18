@@ -40,6 +40,9 @@
    one with a NUL byte in it, which is not text. */
 #define FETCH_TOO_BIG (-2)
 #define FETCH_NOT_TEXT (-3)
+/* What fetchText gives back when there is no pipe to read curl through, or no
+   process to run it in: the system is out of file descriptors or processes. */
+#define FETCH_NO_PROCESS (-4)
 
 int urlWithQuery(const char* url, const char* query, char* out,
                  size_t capacity) {
@@ -54,21 +57,21 @@ int urlWithQuery(const char* url, const char* query, char* out,
 }
 
 /* Runs curl on `url` and collects what it prints. Returns curl's exit status,
-   FETCH_TOO_BIG, FETCH_NOT_TEXT, or 0 when `*text` holds the response (the
-   caller frees it). `*code` is the HTTP status curl got, 0 when it got none.
-   curl is started directly rather than through a shell, so the URL is never
-   read as anything but a URL. */
+   FETCH_TOO_BIG, FETCH_NOT_TEXT, FETCH_NO_PROCESS, or 0 when `*text` holds the
+   response (the caller frees it). `*code` is the HTTP status curl got, 0 when
+   it got none. curl is started directly rather than through a shell, so the
+   URL is never read as anything but a URL. */
 static int fetchText(const char* url, char** text, long* code) {
   *code = 0;
   *text = NULL;
   int channel[2];
-  if (pipe(channel)) return -1;
+  if (pipe(channel)) return FETCH_NO_PROCESS;
 
   pid_t child = fork();
   if (child < 0) {
     close(channel[0]);
     close(channel[1]);
-    return -1;
+    return FETCH_NO_PROCESS;
   }
   if (child == 0) {
     int silence = open("/dev/null", O_RDONLY);
@@ -379,6 +382,7 @@ static int loadBatch(Quiz* quiz) {
   }
   if (status == FETCH_TOO_BIG) return QUIZ_TOO_BIG;
   if (status == FETCH_NOT_TEXT) return QUIZ_NOT_QUESTIONS;
+  if (status == FETCH_NO_PROCESS) return QUIZ_NO_PROCESS;
   if (status == CURL_NOT_RUN) return QUIZ_NO_CURL;
   if (status == CURL_TIMED_OUT) return QUIZ_TIMED_OUT;
   if (status == CURL_UNSUPPORTED_PROTOCOL || status == CURL_BAD_URL ||
