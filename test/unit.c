@@ -750,6 +750,14 @@ static void refusesAnythingButOneLetter(void) {
   CHECK(!checkAnswer("A", NULL, o[0], o[1], o[2], o[3]));
 }
 
+static void countsEveryOptionThatReadsAsTheAnswer(void) {
+  char* o[4] = {"9", "9", "4", "1"};
+  CHECK(checkAnswer("A", "9", o[0], o[1], o[2], o[3]));
+  CHECK(checkAnswer("B", "9", o[0], o[1], o[2], o[3]));
+  CHECK(!checkAnswer("C", "9", o[0], o[1], o[2], o[3]));
+  CHECK(!checkAnswer("D", "9", o[0], o[1], o[2], o[3]));
+}
+
 static void keepsEveryMistakeInOrder(void) {
   Mistakes list = {NULL, 0, 0};
   Mistake m;
@@ -798,6 +806,7 @@ int main(void) {
   picksTheOptionThatHoldsTheAnswer();
   doesNotCareAboutCase();
   refusesAnythingButOneLetter();
+  countsEveryOptionThatReadsAsTheAnswer();
   readsEveryQuestionInAReply();
   skipsWhatIsNotAQuestionInAReply();
   stopsAtTheRoomItWasGiven();
