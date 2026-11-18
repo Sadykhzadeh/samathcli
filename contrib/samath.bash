@@ -9,10 +9,13 @@ _samath() {
   COMPREPLY=()
   case $prev in
     -o|--operators)
-      # One name at a time; after a comma, the next.
-      local head= tail=$cur
-      case $cur in *,*) head=${cur%,*},; tail=${cur##*,} ;; esac
-      COMPREPLY=($(compgen -P "$head" -W 'add subtract multiply divide' -- "$tail"))
+      # One name at a time; after a comma, the next one not named yet.
+      local head= tail=$cur named= name words=
+      case $cur in *,*) head=${cur%,*},; tail=${cur##*,}; named=${cur%,*} ;; esac
+      for name in add subtract multiply divide; do
+        case ",$named," in *",$name,"*) ;; *) words="$words $name" ;; esac
+      done
+      COMPREPLY=($(compgen -P "$head" -W "$words" -- "$tail"))
       return ;;
     -t|--time|-s|--seed|-l|--length|-m|--max|-r|--range)
       return ;;
