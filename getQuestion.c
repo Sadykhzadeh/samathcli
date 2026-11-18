@@ -2,6 +2,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +17,8 @@
    this is not sending questions. */
 #define RESPONSE_MAX (1 << 20)
 #define URL_MAX 2048
+/* Room for every parameter requestUrl can add, each at its longest. */
+#define QUERY_MAX 256
 
 /* The status fetchText gives for a 4xx or 5xx answer, whose body it returns.
    curl only exits with 22 for that under -f, which is not used. */
@@ -287,40 +290,60 @@ static int remember(Quiz* quiz, const char* expression) {
   return 1;
 }
 
+/* Appends what `format` gives to `text`, which holds `*used` bytes, and counts
+   them into `*used`. Returns 0, and leaves `*used` alone, when it does not fit
+   in `capacity`. */
+static int appendf(char* text, size_t capacity, size_t* used,
+                   const char* format, ...) {
+  va_list args;
+  va_start(args, format);
+  int written = vsnprintf(text + *used, capacity - *used, format, args);
+  va_end(args);
+  if (written < 0 || (size_t)written >= capacity - *used) return 0;
+  *used += (size_t)written;
+  return 1;
+}
+
 /* The URL that asks for `want` questions. One question with nothing else
    asked for is the plain URL, the request every server has always
    understood. With a seed, the question the request starts at is the seed
    plus the questions already handed out, so a run is the same questions
    however they were batched. */
 static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
-  char query[160] = "";
+  char query[QUERY_MAX];
   size_t used = 0;
-  if (want > 1) used = (size_t)snprintf(query, sizeof query, "count=%d", want);
-  if (quiz->seed >= 0)
-    used += (size_t)snprintf(query + used, sizeof query - used, "%sseed=%lld",
-                             used ? "&" : "",
-                             (quiz->seed + quiz->asked) % (SEED_MAX + 1));
-  if (quiz->length)
-    used += (size_t)snprintf(query + used, sizeof query - used, "%slength=%d",
-                             used ? "&" : "", quiz->length);
-  if (quiz->brackets)
-    used += (size_t)snprintf(query + used, sizeof query - used,
-                             "%sbrackets=%s", used ? "&" : "",
-                             quiz->brackets == BRACKETS_NEVER ? "never" : "true");
-  if (quiz->max)
-    used += (size_t)snprintf(query + used, sizeof query - used, "%smax=%d",
-                             used ? "&" : "", quiz->max);
-  if (*quiz->operators)
-    used += (size_t)snprintf(query + used, sizeof query - used,
-                             "%soperators=%s", used ? "&" : "",
-                             quiz->operators);
-  if (quiz->ranged)
-    used += (size_t)snprintf(query + used, sizeof query - used,
-                             "%sanswerMin=%d&answerMax=%d", used ? "&" : "",
-                             quiz->rangeLow, quiz->rangeHigh);
-  if (quiz->noNegatives)
-    snprintf(query + used, sizeof query - used, "%snegatives=%s",
-             used ? "&" : "", quiz->noNegatives == NEGATIVES_ASK ? "true" : "false");
+  query[0] = '\0';
+  if (want > 1 && !appendf(query, sizeof query, &used, "count=%d", want))
+    return 0;
+  if (quiz->seed >= 0 &&
+      !appendf(query, sizeof query, &used, "%sseed=%lld", used ? "&" : "",
+               (quiz->seed + quiz->asked) % (SEED_MAX + 1)))
+    return 0;
+  if (quiz->length &&
+      !appendf(query, sizeof query, &used, "%slength=%d", used ? "&" : "",
+               quiz->length))
+    return 0;
+  if (quiz->brackets &&
+      !appendf(query, sizeof query, &used, "%sbrackets=%s", used ? "&" : "",
+               quiz->brackets == BRACKETS_NEVER ? "never" : "true"))
+    return 0;
+  if (quiz->max &&
+      !appendf(query, sizeof query, &used, "%smax=%d", used ? "&" : "",
+               quiz->max))
+    return 0;
+  if (*quiz->operators &&
+      !appendf(query, sizeof query, &used, "%soperators=%s", used ? "&" : "",
+               quiz->operators))
+    return 0;
+  if (quiz->ranged &&
+      !appendf(query, sizeof query, &used, "%sanswerMin=%d&answerMax=%d",
+               used ? "&" : "", quiz->rangeLow, quiz->rangeHigh))
+    return 0;
+  if (quiz->noNegatives &&
+      !appendf(query, sizeof query, &used, "%snegatives=%s",
+               used ? "&" : "",
+               quiz->noNegatives == NEGATIVES_ASK ? "true" : "false"))
+    return 0;
   return urlWithQuery(quiz->url, query, url, capacity);
 }
 
