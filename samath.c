@@ -34,6 +34,9 @@
 #define apiTimedOut                                                     \
   "😔 SaMathAPI did not answer in time. It may be busy, or the network " \
   "slow. See SAMATH_API_URL.\n"
+#define apiBadUrl                                                       \
+  "😔 SAMATH_API_URL is not a web address I can fetch from, or it "     \
+  "redirects too often. See SAMATH_API_URL.\n"
 #define writeFailure "😔 I could not write the result out. Is the disk full?\n"
 #define noMemory                                                          \
   "😔 I ran out of memory to keep the mistakes, so the run stopped there.\n"
@@ -85,6 +88,8 @@ static const char* fetchFailure(int code) {
       return noCurl;
     case QUIZ_TIMED_OUT:
       return apiTimedOut;
+    case QUIZ_BAD_URL:
+      return apiBadUrl;
     default:
       return apiUnreachable;
   }

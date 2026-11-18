@@ -45,6 +45,12 @@ class Server(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         Server.paths.append(self.path)
+        if self.path.startswith("/loop"):
+            self.send_response(302)
+            self.send_header("Location", self.path)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         if self.path.startswith("/moved"):
             # A server that has moved: http:// sent on to https:// is the
             # usual case, here it is a new path on the same server.
@@ -169,6 +175,23 @@ status, out, err = run(["3"])
 url = url_ok
 check(status == 0 and "3 of 3 right" in out, "a moved URL is followed: %r %r" % (out, err))
 check(Server.paths == ["/moved?c=true&count=3", "/gen?c=true&count=3"], "the redirect is followed once: %r" % Server.paths)
+
+# A URL curl cannot fetch from is blamed on the URL, not on a server that is
+# not running; a redirect that never ends is too, and is not asked again.
+url_ok = url
+url = url.replace("http://", "htp://", 1)
+status, out, err = run(["1"])
+url = url_ok
+check(status == 1 and "not a web address" in err, "a mistyped scheme is said so: %r" % err)
+check("could not reach" not in err, "a mistyped scheme is not a server out of reach: %r" % err)
+check(Server.paths == [], "a mistyped scheme is not asked for: %r" % Server.paths)
+
+url_ok = url
+url = url.replace("/gen", "/loop")
+status, out, err = run(["1"])
+url = url_ok
+check(status == 1 and "redirects too often" in err, "a redirect that never ends is said so: %r" % err)
+check(len(Server.paths) == 6, "a redirect that never ends is followed five times: %r" % Server.paths)
 
 # A reply too big to be questions is said not to be questions, not to be out of
 # reach.

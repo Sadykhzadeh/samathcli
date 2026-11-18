@@ -61,6 +61,8 @@ void quizClose(Quiz* quiz);
 #define QUIZ_TIMED_OUT (-5)     /* it was there, but did not answer in time */
 #define QUIZ_TOO_BIG (-6)       /* it answered with more text than a run of
                                    questions can be */
+#define QUIZ_BAD_URL (-7)       /* the URL is not one it can fetch from, or it
+                                   redirects too often */
 
 /* Hands out the next question. Returns 1 and fills `out`, 0 once all `total`
    have been handed out, and one of the QUIZ_ codes above otherwise.

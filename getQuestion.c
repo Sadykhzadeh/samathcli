@@ -24,6 +24,12 @@
 #define CURL_NOT_RUN 127
 /* curl's exit status for a request that ran out of time. */
 #define CURL_TIMED_OUT 28
+/* curl's exit statuses for a URL it cannot fetch from: a scheme it does not
+   know or may not follow, a URL it cannot parse, and a run of redirects past
+   --max-redirs. Asking again does not change any of them. */
+#define CURL_UNSUPPORTED_PROTOCOL 1
+#define CURL_BAD_URL 3
+#define CURL_TOO_MANY_REDIRECTS 47
 /* curl's exit statuses for a connection that was dropped: before all of the
    answer had come, before any of it had, and while sending or receiving. */
 #define CURL_CUT_SHORT 18
@@ -344,6 +350,9 @@ static int loadBatch(Quiz* quiz) {
   if (status == FETCH_NOT_TEXT) return QUIZ_NOT_QUESTIONS;
   if (status == CURL_NOT_RUN) return QUIZ_NO_CURL;
   if (status == CURL_TIMED_OUT) return QUIZ_TIMED_OUT;
+  if (status == CURL_UNSUPPORTED_PROTOCOL || status == CURL_BAD_URL ||
+      status == CURL_TOO_MANY_REDIRECTS)
+    return QUIZ_BAD_URL;
   if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;
   if (status) return QUIZ_UNREACHABLE;
 
