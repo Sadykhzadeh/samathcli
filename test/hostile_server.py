@@ -42,6 +42,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.reply(400, b"\x1b[31mred\x1b[0m " + b"x" * 5000)
         elif path == "/empty":
             self.reply(200, b"")
+        elif path == "/refused-bytes":
+            self.reply(400, b"\x9b31mBAD \xe9 ok\n")
+        elif path == "/refused-c1":
+            self.reply(400, b"\xc2\x9b31mBAD\n")
         else:
             self.reply(404, b"not found\n")
 

@@ -157,27 +157,58 @@ static int fetchText(const char* url, char** text, long* code) {
   return 0;
 }
 
+/* The length of the well-formed UTF-8 character that starts at `text`, or 0
+   when the bytes there are not one. Overlong forms, surrogates and code points
+   past U+10FFFF are not well formed. */
+static size_t utf8Length(const unsigned char* text) {
+  unsigned char low = 0x80, high = 0xBF;
+  size_t length;
+  if (text[0] >= 0xC2 && text[0] <= 0xDF) {
+    length = 2;
+  } else if (text[0] >= 0xE0 && text[0] <= 0xEF) {
+    length = 3;
+    if (text[0] == 0xE0) low = 0xA0;
+    if (text[0] == 0xED) high = 0x9F;
+  } else if (text[0] >= 0xF0 && text[0] <= 0xF4) {
+    length = 4;
+    if (text[0] == 0xF0) low = 0x90;
+    if (text[0] == 0xF4) high = 0x8F;
+  } else {
+    return 0;
+  }
+  if (text[1] < low || text[1] > high) return 0;
+  for (size_t i = 2; i < length; i++)
+    if (text[i] < 0x80 || text[i] > 0xBF) return 0;
+  return length;
+}
+
 /* Keeps what a refusing server said, its first line, for the person to read:
-   without the control characters that would move the cursor, and not past
-   REFUSAL_MAX bytes, or part of a UTF-8 character. */
+   valid UTF-8 only, with the control characters that would move the cursor
+   and the C1 controls dropped, a '?' for each byte that is no part of a
+   character, and not past REFUSAL_MAX bytes or part of a character. */
 static void rememberRefusal(Quiz* quiz, const char* body) {
+  const unsigned char* c = (const unsigned char*)body;
   size_t length = 0;
-  for (const char* c = body; *c && *c != '\n'; c++) {
-    if (length + 1 >= REFUSAL_MAX) {
-      if (((unsigned char)*c & 0xC0) == 0x80) {
-        while (length && ((unsigned char)quiz->said[length - 1] & 0xC0) == 0x80)
-          length--;
-        if (length) length--;
-      }
-      break;
+  while (*c && *c != '\n') {
+    size_t size = *c < 0x80 ? 1 : utf8Length(c);
+    if (size == 2 && c[0] == 0xC2 && c[1] <= 0x9F) {
+      c += 2;
+      continue;
     }
-    /* The C1 controls, which UTF-8 spells as 0xC2 0x80 to 0xC2 0x9F. */
-    if ((unsigned char)*c == 0xC2 && (unsigned char)c[1] >= 0x80 &&
-        (unsigned char)c[1] <= 0x9F) {
+    if (size == 1 && (*c < ' ' || *c == 0x7f)) {
       c++;
       continue;
     }
-    if ((unsigned char)*c >= ' ' && *c != 0x7f) quiz->said[length++] = *c;
+    if (!size) {
+      if (length + 1 >= REFUSAL_MAX) break;
+      quiz->said[length++] = '?';
+      c++;
+      continue;
+    }
+    if (length + size >= REFUSAL_MAX) break;
+    memcpy(quiz->said + length, c, size);
+    length += size;
+    c += size;
   }
   while (length && quiz->said[length - 1] == ' ') length--;
   quiz->said[length] = '\0';

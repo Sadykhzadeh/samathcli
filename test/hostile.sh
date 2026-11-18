@@ -82,6 +82,11 @@ run "a server that is slow" "$base/slow" 1
 run "a server that fails" "$base/broken" 2
 run "a server sending bytes that are not UTF-8" "$base/nonutf8" 1
 run "a refusal with escapes and a long text" "$base/refuse" 1
+expect="It said: ?31mBAD ? ok"
+run "a refusal with raw C1 and invalid bytes shows them as ?" "$base/refused-bytes" 1
+expect="It said: 31mBAD$"
+run "a refusal with a UTF-8 C1 control drops it" "$base/refused-c1" 1
+expect=
 run "a server sending nothing" "$base/empty" 1
 run "a file URL" "file:///etc/passwd" 1
 run "a dash as the URL" "-" 1
