@@ -61,7 +61,9 @@ answered with `Did you mean --practice?`.
 `./samath -m 20 -o add,subtract -n 10` is ten questions of adding and taking
 away within twenty. Question `n` of a run is the one the
 API gives for `seed + n - 1`, so the questions are the same however they were
-fetched. The seed, the length, brackets, `-m`, `-o` and `-n` are passed on to
+fetched. Past 4294967295 the seed wraps to 0, as the API's does, so
+`./samath -s 4294967295 3` asks for the seeds 4294967295, 0 and 1. The seed,
+the length, brackets, `-m`, `-o` and `-n` are passed on to
 the API, which has to be a SaMathAPI that takes them; an older one ignores
 them. A combination that no question can be built from is refused by the API,
 and the run then says that it answered with an error, and what the API said
