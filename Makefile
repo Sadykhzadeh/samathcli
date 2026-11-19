@@ -36,7 +36,7 @@ report.o: report.c report.h
 samath.o: samath.c checkAnswer.h getQuestion.h input.h mistakes.h options.h question.h report.h
 
 # Run `make clean check`: the objects are rebuilt with warnings as errors.
-check: CFLAGS += -Werror
+check: override CFLAGS += -Werror
 check: $(BIN) $(UNIT)
 	ASAN_OPTIONS=allocator_may_return_null=1 ./$(UNIT)
 	sh test/docs.sh ./$(BIN)
