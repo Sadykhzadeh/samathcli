@@ -127,7 +127,11 @@ Interrupted with Ctrl-C.
 .SH FILES
 .TP
 .I contrib/samath.bash
-Bash completion for the options and the operator names. Source it from
+Bash completion for the options and the operator names.
+.B make install
+puts it in
+.IR $PREFIX/share/bash-completion/completions ,
+where bash-completion finds it; otherwise source it from
 .IR ~/.bashrc .
 .SH REQUIREMENTS
 A POSIX system with
