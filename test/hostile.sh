@@ -86,6 +86,8 @@ expect="It said: ?31mBAD ? ok"
 run "a refusal with raw C1 and invalid bytes shows them as ?" "$base/refused-bytes" 1
 expect="It said: 31mBAD$"
 run "a refusal with a UTF-8 C1 control drops it" "$base/refused-c1" 1
+expect="It said: BAD ok$"
+run "a refusal with bidi overrides drops them" "$base/refused-bidi" 1
 expect=
 run "a server sending nothing" "$base/empty" 1
 run "a file URL" "file:///etc/passwd" 1

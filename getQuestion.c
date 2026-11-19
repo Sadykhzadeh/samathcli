@@ -188,10 +188,21 @@ static size_t utf8Length(const unsigned char* text) {
   return length;
 }
 
+/* Whether the well-formed 3-byte character at `text` is a bidirectional
+   control: U+200E, U+200F, U+202A to U+202E or U+2066 to U+2069. A terminal
+   that shows them reorders the text around them. */
+static int isBidiControl(const unsigned char* text) {
+  if (text[0] != 0xE2) return 0;
+  if (text[1] == 0x80) return text[2] == 0x8E || text[2] == 0x8F || (text[2] >= 0xAA && text[2] <= 0xAE);
+  if (text[1] == 0x81) return text[2] >= 0xA6 && text[2] <= 0xA9;
+  return 0;
+}
+
 /* Keeps what a refusing server said, its first line, for the person to read:
-   valid UTF-8 only, with the control characters that would move the cursor
-   and the C1 controls dropped, a '?' for each byte that is no part of a
-   character, and not past REFUSAL_MAX bytes or part of a character. */
+   valid UTF-8 only, with the control characters that would move the cursor,
+   the C1 controls and the bidirectional controls dropped, a '?' for each byte
+   that is no part of a character, and not past REFUSAL_MAX bytes or part of a
+   character. */
 static void rememberRefusal(Quiz* quiz, const char* body) {
   const unsigned char* c = (const unsigned char*)body;
   size_t length = 0;
@@ -199,6 +210,10 @@ static void rememberRefusal(Quiz* quiz, const char* body) {
     size_t size = *c < 0x80 ? 1 : utf8Length(c);
     if (size == 2 && c[0] == 0xC2 && c[1] <= 0x9F) {
       c += 2;
+      continue;
+    }
+    if (size == 3 && isBidiControl(c)) {
+      c += 3;
       continue;
     }
     if (size == 1 && (*c < ' ' || *c == 0x7f)) {

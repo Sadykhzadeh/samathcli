@@ -46,6 +46,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.reply(400, b"\x9b31mBAD \xe9 ok\n")
         elif path == "/refused-c1":
             self.reply(400, b"\xc2\x9b31mBAD\n")
+        elif path == "/refused-bidi":
+            self.reply(400, b"\xe2\x80\xaeBAD\xe2\x81\xa9 \xe2\x80\x8eok\xe2\x80\x8f\n")
         else:
             self.reply(404, b"not found\n")
 
