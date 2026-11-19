@@ -266,5 +266,17 @@ check(Server.paths == ["/gen?c=true&count=4"], "the request is a GET whatever th
 check(not os.path.exists(saved), "the curlrc's output file is not written")
 shutil.rmtree(home)
 
+# With standard output closed the questions are still fetched: the pipe that
+# curl writes to must not be given the descriptor that is closed. The result
+# then cannot be written, and the run says so.
+Server.failures = []
+Server.paths = []
+done = subprocess.run([BINARY, "2"], input=b"ab", stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                      env=dict(os.environ, SAMATH_API_URL=url), preexec_fn=lambda: os.close(1), timeout=60)
+err = done.stderr.decode()
+check(Server.paths == ["/gen?c=true&count=2"], "questions are fetched with standard output closed: %r" % Server.paths)
+check("could not reach" not in err, "closed standard output is not a server out of reach: %r" % err)
+check(done.returncode == 1 and "could not write the result" in err, "a result that cannot be written is said so: %r" % err)
+
 print("%d checks passed, %d failed" % (passed, failed))
 sys.exit(1 if failed else 0)

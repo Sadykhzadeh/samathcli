@@ -87,6 +87,12 @@ static int fetchText(const char* url, char** text, long* code) {
     return FETCH_NO_PROCESS;
   }
   if (child == 0) {
+    /* With standard output closed, pipe() may have given it the read end, and
+       the write end can be the standard input or error. Both ends are moved
+       out of the way before the standard descriptors are set up. */
+    int out = fcntl(channel[1], F_DUPFD, STDERR_FILENO + 1);
+    close(channel[0]);
+    close(channel[1]);
     int silence = open("/dev/null", O_RDONLY);
     if (silence >= 0 && silence != STDIN_FILENO) {
       dup2(silence, STDIN_FILENO);
@@ -99,9 +105,8 @@ static int fetchText(const char* url, char** text, long* code) {
       dup2(hush, STDERR_FILENO);
       close(hush);
     }
-    dup2(channel[1], STDOUT_FILENO);
-    close(channel[0]);
-    close(channel[1]);
+    dup2(out, STDOUT_FILENO);
+    close(out);
     /* -q has to come first: it keeps curl from reading the user's curl
        configuration, whose `request`, `output` or `data` would change what is
        asked for. A host that does not answer is given up on after 4 s, a slow
