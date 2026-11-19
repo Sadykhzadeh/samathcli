@@ -208,6 +208,20 @@ check("Ctrl-C while waiting does not blame the server", "could not reach" not in
 check("Ctrl-C while waiting ends the run by SIGINT, at once", status is not None and os.WIFSIGNALED(status) and os.WTERMSIG(status) == signal.SIGINT and time.time() - began < 3, str(status))
 os.close(fd)
 
+# The same when the program alone gets the signal, as from `kill -INT`, while
+# the server is still working on its answer.
+os.environ["SAMATH_API_URL"] = "http://api.test/slow?c=true"
+pid, fd = start(["3"])
+time.sleep(0.5)
+began = time.time()
+os.kill(pid, signal.SIGINT)
+after = drain(fd)
+status = reap(pid)
+os.environ["SAMATH_API_URL"] = "http://api.test/gen?c=true"
+check("a SIGINT alone gives the result", "You stopped after 0 of 3 questions." in after, repr(after[-300:]))
+check("a SIGINT alone ends the run by SIGINT, without waiting for the server", status is not None and os.WIFSIGNALED(status) and os.WTERMSIG(status) == signal.SIGINT and time.time() - began < 3, str(status))
+os.close(fd)
+
 def collect(fd, seconds):
     """Everything printed in the next `seconds`, quiet or not."""
     out = b""

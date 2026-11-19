@@ -2,6 +2,8 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <poll.h>
+#include <signal.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +11,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "getQuestion.h"
+#include "input.h"
 
 #define apiUrlEnv "SAMATH_API_URL"
 #define apiUrlDefault "http://localhost:3000/gen?c=true"
@@ -128,6 +131,12 @@ static int fetchText(const char* url, char** text, long* code) {
   char* body = malloc(capacity);
   int complete = body != NULL, tooBig = 0;
   while (complete) {
+    /* Ctrl-C ends the wait for the answer, as it ends the wait for a key. */
+    if (inputInterrupted()) {
+      complete = 0;
+      kill(child, SIGTERM);
+      break;
+    }
     if (size + 1 >= capacity) {
       if (capacity >= RESPONSE_MAX) {
         complete = 0;
@@ -142,6 +151,12 @@ static int fetchText(const char* url, char** text, long* code) {
       body = grown;
       capacity *= 2;
     }
+    /* Waiting in short slices lets a Ctrl-C that came in before the read
+       is reached end the wait, not only one that interrupts it. */
+    struct pollfd watch = {channel[0], POLLIN, 0};
+    int ready = poll(&watch, 1, 100);
+    if (ready < 0 && errno != EINTR) break;
+    if (ready <= 0) continue;
     ssize_t got = read(channel[0], body + size, capacity - size - 1);
     if (got < 0 && errno == EINTR) continue;
     if (got <= 0) break;
