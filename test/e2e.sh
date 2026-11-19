@@ -794,6 +794,9 @@ if command -v bash >/dev/null 2>&1; then
   done
   operators=$(complete_words -o add,su)
   if [ "$operators" = "add,subtract" ]; then ok; else name="completion"; fail "-o add,su completed to \"$operators\""; fi
+  # After --operators= the words are split at the equals sign, as bash splits them.
+  operators=$(complete_words --operators = add,su)
+  if [ "$operators" = "add,subtract" ]; then ok; else name="completion"; fail "--operators=add,su completed to \"$operators\""; fi
   # Each name is given once, so one already in the list is not offered again.
   operators=$(complete_words -o add,)
   if [ "$operators" = "add,subtract add,multiply add,divide" ]; then ok; else name="completion"; fail "-o add, completed to \"$operators\""; fi

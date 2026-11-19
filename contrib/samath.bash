@@ -7,6 +7,8 @@ _samath() {
     --practice --length --brackets --no-brackets --max --operators --range
     --no-negatives --negatives --feedback --help --version'
   COMPREPLY=()
+  # Bash splits --operators=add at the equals sign, so the option is two words back.
+  if [ "$prev" = = ]; then prev=${COMP_WORDS[COMP_CWORD-2]}; fi
   case $prev in
     -o|--operators)
       # One name at a time; after a comma, the next one not named yet.
