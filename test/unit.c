@@ -438,7 +438,9 @@ static void takesPractice(void) {
   CHECK(args(&o, &culprit, 6, "-p", "-t", "4", "-s", "1", "5") == ARGS_OK);
   CHECK(o.practice == 1 && o.seconds == 4 && o.seed == 1 && o.questions == 5);
   /* It takes no value. */
-  CHECK(args(&o, &culprit, 2, "--practice=yes", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "--practice=yes", "5") == ARGS_UNWANTED_VALUE);
+  CHECK_STR(culprit, "--practice=yes");
+  CHECK(args(&o, &culprit, 2, "--practice=", "5") == ARGS_UNWANTED_VALUE);
 }
 
 static void takesFeedback(void) {
@@ -449,7 +451,7 @@ static void takesFeedback(void) {
   CHECK(args(&o, &culprit, 2, "5", "--feedback") == ARGS_OK && o.feedback == 1);
   CHECK(args(&o, &culprit, 4, "-p", "-f", "-b", "5") == ARGS_OK);
   CHECK(o.feedback == 1 && o.practice == 1 && o.brackets == 1);
-  CHECK(args(&o, &culprit, 2, "--feedback=yes", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "--feedback=yes", "5") == ARGS_UNWANTED_VALUE);
 }
 
 static void takesTheLengthAndBrackets(void) {
@@ -467,7 +469,7 @@ static void takesTheLengthAndBrackets(void) {
   CHECK(o.brackets == 1);
   CHECK(args(&o, &culprit, 5, "-b", "-l", "4", "-p", "5") == ARGS_OK);
   CHECK(o.brackets == 1 && o.length == 4 && o.practice == 1);
-  CHECK(args(&o, &culprit, 2, "--brackets=yes", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "--brackets=yes", "5") == ARGS_UNWANTED_VALUE);
   CHECK(args(&o, &culprit, 2, "-B", "5") == ARGS_OK && o.brackets == BRACKETS_NEVER);
   CHECK(args(&o, &culprit, 2, "5", "--no-brackets") == ARGS_OK);
   CHECK(o.brackets == BRACKETS_NEVER);
@@ -475,7 +477,7 @@ static void takesTheLengthAndBrackets(void) {
   CHECK(o.brackets == BRACKETS_NEVER && o.practice == 1 && o.length == 4);
   CHECK(args(&o, &culprit, 3, "-B", "-b", "5") == ARGS_OK && o.brackets == BRACKETS_ASK);
   CHECK(args(&o, &culprit, 3, "-b", "-B", "5") == ARGS_OK && o.brackets == BRACKETS_NEVER);
-  CHECK(args(&o, &culprit, 2, "--no-brackets=yes", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "--no-brackets=yes", "5") == ARGS_UNWANTED_VALUE);
 }
 
 static void takesNoNegatives(void) {
@@ -487,7 +489,7 @@ static void takesNoNegatives(void) {
   CHECK(o.noNegatives == 1);
   CHECK(args(&o, &culprit, 5, "-n", "-l", "3", "-b", "5") == ARGS_OK);
   CHECK(o.noNegatives == 1 && o.length == 3 && o.brackets == 1);
-  CHECK(args(&o, &culprit, 2, "--no-negatives=yes", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "--no-negatives=yes", "5") == ARGS_UNWANTED_VALUE);
   CHECK(args(&o, &culprit, 2, "-N", "5") == ARGS_OK && o.noNegatives == NEGATIVES_ASK);
   CHECK(args(&o, &culprit, 2, "5", "--negatives") == ARGS_OK);
   CHECK(o.noNegatives == NEGATIVES_ASK);
@@ -495,7 +497,7 @@ static void takesNoNegatives(void) {
   CHECK(o.noNegatives == NEGATIVES_ASK && o.practice == 1 && o.length == 4);
   CHECK(args(&o, &culprit, 3, "-n", "-N", "5") == ARGS_OK && o.noNegatives == NEGATIVES_ASK);
   CHECK(args(&o, &culprit, 3, "-N", "-n", "5") == ARGS_OK && o.noNegatives == 1);
-  CHECK(args(&o, &culprit, 2, "--negatives=yes", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "--negatives=yes", "5") == ARGS_UNWANTED_VALUE);
 }
 
 static void takesAnAnswerRange(void) {
@@ -656,7 +658,7 @@ static void takesShortOptionsTogether(void) {
   CHECK(args(&o, &culprit, 2, "-pé", "5") == ARGS_BAD_OPTION);
   CHECK_STR(culprit, "-pé");
   /* Long options are not joined, and take a value only if they take one. */
-  CHECK(args(&o, &culprit, 2, "--practice=1", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "--practice=1", "5") == ARGS_UNWANTED_VALUE);
   CHECK(args(&o, &culprit, 2, "--pf", "5") == ARGS_BAD_OPTION);
   CHECK(args(&o, &culprit, 3, "-pf", "--time=9", "5") == ARGS_OK);
   CHECK(o.seconds == 9 && o.practice && o.feedback);
@@ -672,7 +674,7 @@ static void asksForHelpAmongShortOptions(void) {
   /* After an option that takes a value, h is part of the value. */
   CHECK(args(&o, &culprit, 2, "-th", "5") == ARGS_BAD_TIME);
   CHECK(args(&o, &culprit, 3, "--", "-ph", "5") == ARGS_BAD_COUNT);
-  CHECK(args(&o, &culprit, 1, "--help=1") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 1, "--help=1") == ARGS_UNWANTED_VALUE);
 }
 
 static void refusesOptionsThatDoNotExist(void) {
@@ -694,7 +696,7 @@ static void takesPrint(void) {
   CHECK(args(&o, &culprit, 2, "5", "--print") == ARGS_OK && o.print == 1);
   CHECK(args(&o, &culprit, 2, "-Pf", "5") == ARGS_OK && o.print == 1 && o.feedback == 1);
   CHECK(args(&o, &culprit, 2, "-p", "5") == ARGS_OK && o.print == 0 && o.practice == 1);
-  CHECK(args(&o, &culprit, 2, "--print=yes", "5") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 2, "--print=yes", "5") == ARGS_UNWANTED_VALUE);
 }
 
 static void asksForTheVersion(void) {
@@ -704,7 +706,7 @@ static void asksForTheVersion(void) {
   CHECK(args(&o, &culprit, 2, "5", "--version") == ARGS_VERSION);
   CHECK(args(&o, &culprit, 2, "--", "--version") == ARGS_BAD_COUNT);
   CHECK(args(&o, &culprit, 2, "--version", "-h") == ARGS_HELP);
-  CHECK(args(&o, &culprit, 1, "--version=1") == ARGS_BAD_OPTION);
+  CHECK(args(&o, &culprit, 1, "--version=1") == ARGS_UNWANTED_VALUE);
 }
 
 static void suggestsTheOptionThatWasMeant(void) {

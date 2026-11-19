@@ -400,6 +400,11 @@ int main(int argc, char** argv) {
       sayArgument(culprit);
       return fputs("\" needs a value after it! See samath --help. :3\n", stderr),
              1;
+    case ARGS_UNWANTED_VALUE:
+      fputs("😅 The option \"", stderr);
+      sayArgument(culprit);
+      return fputs("\" does not take a value! See samath --help. :3\n", stderr),
+             1;
     case ARGS_EXTRA:
       fputs("😅 One number of questions is enough, and \"", stderr);
       sayArgument(culprit);

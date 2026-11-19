@@ -779,6 +779,11 @@ run "a misspelt long option names the one meant" --practise 5
 expect_status 1
 expect_requests 0
 expect_err "Did you mean --practice?"
+run "a flag given a value says it takes none" --practice=yes 5
+expect_status 1
+expect_requests 0
+expect_err "\"--practice=yes\" does not take a value"
+case "$err" in *"Did you mean"*) fail "suggested an option for a flag given a value" ;; *) ok ;; esac
 run "a short option that does not exist is not guessed at" -x 5
 case "$err" in *"Did you mean"*) fail "guessed at a short option" ;; *) ok ;; esac
 if [ -z "$out" ]; then ok; else fail "said hello to a wrong command line"; fi

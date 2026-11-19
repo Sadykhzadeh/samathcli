@@ -56,6 +56,7 @@ typedef enum {
   ARGS_RANGE_HIGH_ABOVE_MAX, /* -r that ends above the largest number -m allows */
   ARGS_BAD_OPTION, /* an option there is no such thing as */
   ARGS_NO_VALUE,   /* an option that takes a value was the last word */
+  ARGS_UNWANTED_VALUE, /* an option that takes no value was given one, as --print=x */
   ARGS_EXTRA       /* more than one number of questions */
 } ArgsResult;
 

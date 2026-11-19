@@ -73,12 +73,9 @@ static char longOption(const char* arg, const char** attached) {
   size_t length = equals ? (size_t)(equals - name) : strlen(name);
   *attached = equals ? equals + 1 : NULL;
   for (size_t i = 0; i < sizeof longOptions / sizeof *longOptions; i++) {
-    char letter = longOptions[i].letter;
-    if (strlen(longOptions[i].name) != length ||
-        strncmp(name, longOptions[i].name, length))
-      continue;
-    /* A value belongs only to the options that take one. */
-    return equals && !strchr(VALUED, letter) ? 0 : letter;
+    if (strlen(longOptions[i].name) == length &&
+        !strncmp(name, longOptions[i].name, length))
+      return longOptions[i].letter;
   }
   return 0;
 }
@@ -261,6 +258,12 @@ ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) 
     } else if (arg[1] == '-') {
       const char* attached;
       char letter = longOption(arg, &attached);
+      /* --help and --version are read before the table, and take no value. */
+      if (!letter && (!strncmp(arg, "--help=", 7) ||
+                      !strncmp(arg, "--version=", 10))) {
+        *culprit = arg;
+        return ARGS_UNWANTED_VALUE;
+      }
       if (!letter) {
         *culprit = arg;
         return ARGS_BAD_OPTION;
@@ -270,6 +273,9 @@ ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) 
             attached ? attached : i + 1 < argc ? argv[++i] : NULL;
         ArgsResult result = setValue(letter, value, arg, &options, culprit);
         if (result != ARGS_OK) return result;
+      } else if (attached) {
+        *culprit = arg;
+        return ARGS_UNWANTED_VALUE;
       } else {
         setSwitch(letter, &options);
       }
