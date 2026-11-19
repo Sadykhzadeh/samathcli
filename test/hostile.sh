@@ -39,13 +39,14 @@ run() {
   printf 'A\nB\nC\nD\nA\n' | SAMATH_API_URL="$url" timeout 30 "$bin" "$@" > "$work/out" 2> "$work/err"
   status=$?
   noise=$(grep -E '^curl|curl: \(|Sanitizer|runtime error|Failure writing|^==[0-9]+==|Traceback|python' "$work/err")
+  controls=$(LC_ALL=C tr -d '\n' < "$work/err" | LC_ALL=C grep '[[:cntrl:]]')
   said=yes
   if [ -n "$expect" ] && ! grep -q "$expect" "$work/err"; then said=no; fi
-  if [ "$status" = 1 ] && [ -z "$noise" ] && [ "$said" = yes ]; then
+  if [ "$status" = 1 ] && [ -z "$noise" ] && [ -z "$controls" ] && [ "$said" = yes ]; then
     passed=$((passed + 1))
   else
     failed=$((failed + 1))
-    echo "FAIL: $name: status $status, stderr: $(head -c 200 "$work/err" | tr '\n' ' ') $noise"
+    echo "FAIL: $name: status $status, stderr: $(head -c 200 "$work/err" | tr '\n' ' ' | cat -v) $noise"
   fi
 }
 
@@ -71,6 +72,11 @@ run "a negative number after --" "$gen" -- -1
 run "a missing time limit" "$gen" -pt
 run "a misspelt long option" "$gen" --practise 1
 run "an unknown short option" "$gen" -Z 1
+run "a control character in an unknown long option" "$gen" "--$(printf 'x\033[2J')" 1
+run "a control character in an unknown short option" "$gen" "-$(printf '\033')" 1
+run "a control character in a seed" "$gen" -s "$(printf '\r\033[31m')" 1
+run "a control character after an option that needs a value" "$gen" -t "$(printf '\033[1m')" 1
+run "a control character in an extra number" "$gen" 1 "$(printf '\033[2J')" 1
 run "zero questions" "$gen" 0
 run "a zero time limit" "$gen" -t 0 1
 run "an unreachable server" "http://127.0.0.1:1/gen" 1

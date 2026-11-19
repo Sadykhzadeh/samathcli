@@ -89,6 +89,23 @@
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
   "SAMATH_API_URL says where the questions come from.\n"
 
+/* Writes an argument the person typed to standard error. A control character
+   would be acted on by the terminal, so each one is shown as a '?', and so is
+   the C1 control that UTF-8 spells as 0xC2 0x80 to 0xC2 0x9F. */
+static void sayArgument(const char* text) {
+  const unsigned char* c = (const unsigned char*)text;
+  for (; *c; c++) {
+    if (*c < ' ' || *c == 0x7f) {
+      fputc('?', stderr);
+    } else if (*c == 0xC2 && c[1] >= 0x80 && c[1] <= 0x9F) {
+      fputc('?', stderr);
+      c++;
+    } else {
+      fputc(*c, stderr);
+    }
+  }
+}
+
 /* What to say when the questions could not be fetched. */
 static const char* fetchFailure(int code) {
   switch (code) {
@@ -316,41 +333,35 @@ int main(int argc, char** argv) {
     case ARGS_BAD_COUNT:
       return fputs(badArgs, stderr), 1;
     case ARGS_BAD_TIME:
-      return fprintf(stderr,
-                     "😅 A time limit is a whole number of seconds, 1 to %d, "
-                     "not \"%s\"! :3\n",
-                     TIME_LIMIT_MAX, culprit),
-             1;
+      fprintf(stderr,
+              "😅 A time limit is a whole number of seconds, 1 to %d, "
+              "not \"",
+              TIME_LIMIT_MAX);
+      return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
     case ARGS_BAD_SEED:
-      return fprintf(stderr,
-                     "😅 A seed is a whole number from 0 to %lld, not "
-                     "\"%s\"! :3\n",
-                     SEED_MAX, culprit),
-             1;
+      fprintf(stderr,
+              "😅 A seed is a whole number from 0 to %lld, not \"", SEED_MAX);
+      return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
     case ARGS_BAD_LENGTH:
-      return fprintf(stderr,
-                     "😅 A question has %d to %d numbers, not \"%s\"! :3\n",
-                     LENGTH_MIN, LENGTH_MAX, culprit),
-             1;
+      fprintf(stderr, "😅 A question has %d to %d numbers, not \"", LENGTH_MIN,
+              LENGTH_MAX);
+      return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
     case ARGS_BAD_MAX:
-      return fprintf(stderr,
-                     "😅 The largest number is a whole number from %d to %d, "
-                     "not \"%s\"! :3\n",
-                     MAX_MIN, MAX_MAX, culprit),
-             1;
+      fprintf(stderr,
+              "😅 The largest number is a whole number from %d to %d, not \"",
+              MAX_MIN, MAX_MAX);
+      return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
     case ARGS_BAD_OPERATORS:
-      return fprintf(stderr,
-                     "😅 Operators are some of add, subtract, multiply and "
-                     "divide, each once and separated by commas, not "
-                     "\"%s\"! :3\n",
-                     culprit),
-             1;
+      fputs("😅 Operators are some of add, subtract, multiply and divide, each "
+            "once and separated by commas, not \"",
+            stderr);
+      return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
     case ARGS_BAD_RANGE:
-      return fprintf(stderr,
-                     "😅 An answer range is LOW-HIGH, whole numbers from 0 to "
-                     "%d with at most %d between them, not \"%s\"! :3\n",
-                     RANGE_MAX, RANGE_WIDTH, culprit),
-             1;
+      fprintf(stderr,
+              "😅 An answer range is LOW-HIGH, whole numbers from 0 to %d with "
+              "at most %d between them, not \"",
+              RANGE_MAX, RANGE_WIDTH);
+      return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
     case ARGS_RANGE_ABOVE_MAX:
       return fprintf(stderr,
                      "😅 No answer is above the largest number, -m %d, so "
@@ -365,22 +376,21 @@ int main(int argc, char** argv) {
              1;
     case ARGS_BAD_OPTION: {
       const char* meant = nearestOption(culprit);
-      fprintf(stderr, "😅 I do not know the option \"%s\".", culprit);
+      fputs("😅 I do not know the option \"", stderr);
+      sayArgument(culprit);
+      fputs("\".", stderr);
       if (meant) fprintf(stderr, " Did you mean %s?", meant);
       return fputs(" See samath --help! :3\n", stderr), 1;
     }
     case ARGS_NO_VALUE:
-      return fprintf(stderr,
-                     "😅 The option \"%s\" needs a value after it! See samath "
-                     "--help. :3\n",
-                     culprit),
+      fputs("😅 The option \"", stderr);
+      sayArgument(culprit);
+      return fputs("\" needs a value after it! See samath --help. :3\n", stderr),
              1;
     case ARGS_EXTRA:
-      return fprintf(stderr,
-                     "😅 One number of questions is enough, and \"%s\" is a "
-                     "second one! :3\n",
-                     culprit),
-             1;
+      fputs("😅 One number of questions is enough, and \"", stderr);
+      sayArgument(culprit);
+      return fputs("\" is a second one! :3\n", stderr), 1;
   }
 
   if (options.print) return printWorksheet(&options);
