@@ -186,8 +186,11 @@ fails does to a run. No SaMathAPI is needed. To check for memory errors as
 well:
 
 ```sh
-make clean check CFLAGS='-std=c11 -g -O1 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined'
+make clean check CFLAGS='-std=c11 -g -O1 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined'
 ```
+
+The last flag makes an undefined behaviour report fail the run; without it
+UBSan prints the report and the run still exits 0.
 
 ## Contributing
 
