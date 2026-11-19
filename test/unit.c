@@ -686,6 +686,17 @@ static void refusesOptionsThatDoNotExist(void) {
   CHECK(args(&o, &culprit, 2, "--seeds=5", "5") == ARGS_BAD_OPTION);
 }
 
+static void takesPrint(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "5") == ARGS_OK && o.print == 0);
+  CHECK(args(&o, &culprit, 2, "-P", "5") == ARGS_OK && o.print == 1);
+  CHECK(args(&o, &culprit, 2, "5", "--print") == ARGS_OK && o.print == 1);
+  CHECK(args(&o, &culprit, 2, "-Pf", "5") == ARGS_OK && o.print == 1 && o.feedback == 1);
+  CHECK(args(&o, &culprit, 2, "-p", "5") == ARGS_OK && o.print == 0 && o.practice == 1);
+  CHECK(args(&o, &culprit, 2, "--print=yes", "5") == ARGS_BAD_OPTION);
+}
+
 static void asksForTheVersion(void) {
   Options o;
   const char* culprit;
@@ -847,6 +858,7 @@ int main(void) {
   refusesOperatorsItCannotUse();
   takesPractice();
   takesFeedback();
+  takesPrint();
   refusesATimeLimitItCannotUse();
   saysWhenAnOptionHasNoValue();
   takesShortOptionsTogether();

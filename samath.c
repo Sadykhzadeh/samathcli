@@ -50,6 +50,8 @@
 #define writeFailure "😔 I could not write the result out. Is the disk full?\n"
 #define noMemory                                                          \
   "😔 I ran out of memory to keep the mistakes, so the run stopped there.\n"
+#define noSheetMemory                                                     \
+  "😔 I ran out of memory for the answers, so the printout stopped there.\n"
 #define noPractice                                                        \
   "😔 I ran out of memory for practice, so the mistakes were not asked "  \
   "again.\n"
@@ -78,6 +80,8 @@
   "  -N, --negatives      ask for questions that may have them, when the API\n" \
   "                       leaves them out\n"                             \
   "  -f, --feedback       say after each answer whether it was right\n"  \
+  "  -P, --print          print the questions with their answers instead\n" \
+  "                       of asking them\n"                              \
   "  -h, --help           show this\n"                                    \
   "      --version        print the version\n"                           \
   "\n"                                                                    \
@@ -117,6 +121,57 @@ static void sayFetchFailure(int code, const Quiz* quiz) {
   fputs(fetchFailure(code), stderr);
   if (code == QUIZ_REFUSED && *quiz->said)
     fprintf(stderr, "   It said: %s\n", quiz->said);
+}
+
+/* Prints the questions with their answers after them, without asking any of
+   them: for a worksheet, or a key to one. A fetch that fails part of the way
+   prints what came before it. */
+static int printWorksheet(const Options* options) {
+  Quiz quiz;
+  quizOpen(&quiz, options);
+  char* letters = NULL; /* the right answer to each question printed */
+  long printed = 0, room = 0;
+  int status = 0;
+  for (long i = 0; i < options->questions; i++) {
+    Question question;
+    int fetched = quizNext(&quiz, &question);
+    if (fetched < 0) {
+      sayFetchFailure(fetched, &quiz);
+      status = 1;
+      break;
+    }
+    if (!fetched) break;
+    if (printed == room) {
+      long grown = room ? room * 2 : 64;
+      char* more = realloc(letters, (size_t)grown);
+      if (!more) {
+        fputs(noSheetMemory, stderr);
+        status = 1;
+        break;
+      }
+      letters = more;
+      room = grown;
+    }
+    int right = 0;
+    while (right < QUESTION_OPTIONS - 1 &&
+           strcmp(question.options[right], question.answer))
+      right++;
+    letters[printed++] = (char)('A' + right);
+    printf("%ld. %s\n", i + 1, question.expression);
+    printf("\tA) %s\t\tB) %s\n", question.options[0], question.options[1]);
+    printf("\tC) %s\t\tD) %s\n\n", question.options[2], question.options[3]);
+  }
+  quizClose(&quiz);
+  if (printed) {
+    puts("Answers:");
+    for (long i = 0; i < printed; i++)
+      printf("%ld %c%s", i + 1, letters[i],
+             (i + 1) % 10 == 0 || i + 1 == printed ? "\n" : "   ");
+  }
+  free(letters);
+  int written = fflush(stdout) == 0 && !ferror(stdout);
+  if (!written) fputs(writeFailure, stderr);
+  return status || !written;
 }
 
 enum { ASKED_WRONG = 0, ASKED_RIGHT = 1, ASKED_STOP = -1, ASKED_TIMEOUT = -2 };
@@ -328,6 +383,7 @@ int main(int argc, char** argv) {
              1;
   }
 
+  if (options.print) return printWorksheet(&options);
   puts(welcomeText);
   const char* term = getenv("TERM");
   atTerminal = isatty(STDOUT_FILENO) && !(term && !strcmp(term, "dumb"));

@@ -37,6 +37,7 @@ typedef struct {
   int ranged;      /* the answers come from rangeLow to rangeHigh */
   int rangeLow;
   int rangeHigh;
+  int print;       /* print the questions with their answers, without asking them */
 } Options;
 
 typedef enum {

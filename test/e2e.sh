@@ -712,6 +712,22 @@ expect_out "Practice: every mistake put right, in 1 round."
 
 input=$(printf 'bb')
 run "without -f nothing is said until the end" 2
+run "a printout asks for no answer and gives the answers after the questions" -P 3
+expect_status 0
+expect_requests 1
+expect_out "1. 0+1"
+expect_out "A) 1		B) 2"
+expect_no_out "Answer ("
+expect_no_out "Welcome"
+expect_out "Answers:
+1 A   2 B   3 C"
+run "a printout of a seeded run follows the seed" -P -s 40 2
+expect_out "2. 41+1"
+expect_out "Answers:
+1 A   2 B"
+run_at "http://api.test/down?c=true" "a printout says when the server cannot be reached" -P 2
+expect_status 1
+expect_err "could not reach"
 expect_no_out "Wrong:"
 expect_no_out "Right:"
 
