@@ -127,10 +127,11 @@ has the status of that signal: 130 for Ctrl-C.
 
 ### Installing
 
-`make install` copies `samath` to `$(PREFIX)/bin` and the manual page to
-`$(PREFIX)/share/man/man1`, which is `/usr/local` unless `PREFIX` says
-otherwise: `make install PREFIX=$HOME/.local` for a single user. `make
-uninstall` removes both files again, with the same `PREFIX`. Then
+`make install` copies `samath` to `$(PREFIX)/bin`, the manual page to
+`$(PREFIX)/share/man/man1` and the bash completion to
+`$(PREFIX)/share/bash-completion/completions`, which is `/usr/local` unless
+`PREFIX` says otherwise: `make install PREFIX=$HOME/.local` for a single user.
+`make uninstall` removes the three again, with the same `PREFIX`. Then
 `man samath` shows the page, kept in step with `--help` by `test/docs.sh`.
 
 ### Shell completion

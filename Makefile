@@ -7,6 +7,7 @@ UNIT = test/unit
 
 PREFIX ?= /usr/local
 MANDIR ?= $(PREFIX)/share/man
+COMPLETIONDIR ?= $(PREFIX)/share/bash-completion/completions
 
 .PHONY: all build check install uninstall clean
 
@@ -15,12 +16,13 @@ all: $(BIN)
 build: $(BIN)
 
 install: $(BIN)
-	install -d $(DESTDIR)$(PREFIX)/bin $(DESTDIR)$(MANDIR)/man1
+	install -d $(DESTDIR)$(PREFIX)/bin $(DESTDIR)$(MANDIR)/man1 $(DESTDIR)$(COMPLETIONDIR)
 	install -m 755 $(BIN) $(DESTDIR)$(PREFIX)/bin/$(BIN)
 	install -m 644 samathcli.1 $(DESTDIR)$(MANDIR)/man1/$(BIN).1
+	install -m 644 contrib/$(BIN).bash $(DESTDIR)$(COMPLETIONDIR)/$(BIN)
 
 uninstall:
-	rm -f $(DESTDIR)$(PREFIX)/bin/$(BIN) $(DESTDIR)$(MANDIR)/man1/$(BIN).1
+	rm -f $(DESTDIR)$(PREFIX)/bin/$(BIN) $(DESTDIR)$(MANDIR)/man1/$(BIN).1 $(DESTDIR)$(COMPLETIONDIR)/$(BIN)
 
 $(BIN): $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $@
