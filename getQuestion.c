@@ -34,6 +34,12 @@
 #define CURL_BAD_URL 3
 #define CURL_COULDNT_RESOLVE_HOST 6
 #define CURL_TOO_MANY_REDIRECTS 47
+/* curl's exit statuses for a TLS handshake that failed, and for a certificate
+   that could not be checked. */
+#define CURL_SSL_CONNECT 35
+#define CURL_PEER_VERIFY 51
+#define CURL_CA_CHECK 60
+#define CURL_ISSUER_CHECK 83
 /* curl's exit statuses for a connection that was dropped: before all of the
    answer had come, before any of it had, and while sending or receiving. */
 #define CURL_CUT_SHORT 18
@@ -433,6 +439,9 @@ static int loadBatch(Quiz* quiz) {
       status == CURL_TOO_MANY_REDIRECTS)
     return QUIZ_BAD_URL;
   if (status == CURL_COULDNT_RESOLVE_HOST) return QUIZ_NO_HOST;
+  if (status == CURL_SSL_CONNECT || status == CURL_PEER_VERIFY ||
+      status == CURL_CA_CHECK || status == CURL_ISSUER_CHECK)
+    return QUIZ_NO_TLS;
   if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;
   if (status) return QUIZ_UNREACHABLE;
 

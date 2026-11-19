@@ -208,6 +208,15 @@ url = url_ok
 check(status == 1 and "could not find the host" in err, "a host that does not resolve is said so: %r" % err)
 check("Is it running" not in err, "a host that does not resolve is not a server that is down: %r" % err)
 
+# An https address that is not answered with TLS, as a plain HTTP server is
+# not, is a secure connection that could not be made: not a server out of reach.
+url_ok = url
+url = url.replace("http://", "https://", 1)
+status, out, err = run(["1"])
+url = url_ok
+check(status == 1 and "secure connection" in err, "a TLS failure is said so: %r" % err)
+check("Is it running" not in err, "a TLS failure is not a server that is down: %r" % err)
+
 url_ok = url
 url = url.replace("/gen", "/loop")
 status, out, err = run(["1"])
