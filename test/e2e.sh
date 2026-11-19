@@ -829,6 +829,10 @@ if command -v bash >/dev/null 2>&1; then
   # Each name is given once, so one already in the list is not offered again.
   operators=$(complete_words -o add,)
   if [ "$operators" = "add,subtract add,multiply add,divide" ]; then ok; else name="completion"; fail "-o add, completed to \"$operators\""; fi
+  operators=$(complete_words -oadd,su)
+  if [ "$operators" = "-oadd,subtract" ]; then ok; else name="completion"; fail "-oadd,su completed to \"$operators\""; fi
+  operators=$(complete_words -oadd,)
+  if [ "$operators" = "-oadd,subtract -oadd,multiply -oadd,divide" ]; then ok; else name="completion"; fail "-oadd, completed to \"$operators\""; fi
 fi
 
 echo "$passed checks passed, $failed failed"
