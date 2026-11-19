@@ -200,6 +200,14 @@ shutil.rmtree(local_dir)
 check(status == 1 and "not a web address" in err, "a file is not fetched from: %r" % err)
 check("Solve this expression" not in out, "a file's questions are not asked: %r" % out)
 
+# A URL too long to ask for is a wrong address, and nothing is sent.
+url_ok = url
+url = url + "&x=" + "a" * 2100
+status, out, err = run(["1"])
+url = url_ok
+check(status == 1 and "not a web address" in err, "a URL too long to ask for is said so: %r" % err)
+check(Server.paths == [], "a URL too long to ask for is not sent: %r" % Server.paths)
+
 # A host that does not resolve is a wrong address, not a server that is down.
 url_ok = url
 url = "http://no-such-host.invalid/gen?c=true"

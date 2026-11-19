@@ -429,7 +429,7 @@ static int loadBatch(Quiz* quiz) {
   long code = 0;
   int retried = 0;
   for (;;) {
-    if (!requestUrl(quiz, want, url, sizeof url)) return QUIZ_UNREACHABLE;
+    if (!requestUrl(quiz, want, url, sizeof url)) return QUIZ_BAD_URL;
     status = fetchText(url, &text, &code);
     /* A refusal comes with the body the server sent, which says why. */
     if (status == CURL_HTTP_ERROR && text) {
