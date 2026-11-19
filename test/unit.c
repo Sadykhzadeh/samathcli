@@ -171,6 +171,16 @@ static void addsCountToAnyURL(void) {
   CHECK_STR(out, "http://h/gen?c=true&count=5");
 }
 
+static void putsTheQueryBeforeAFragment(void) {
+  char out[64];
+  CHECK(urlWithQuery("http://h/gen#x", "count=5", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?count=5");
+  CHECK(urlWithQuery("http://h/gen?c=true#x", "count=5", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?c=true&count=5");
+  CHECK(urlWithQuery("http://h/gen#x", "", out, sizeof out));
+  CHECK_STR(out, "http://h/gen");
+}
+
 static void leavesTheURLAloneWithoutAQuery(void) {
   char out[64];
   CHECK(urlWithQuery("http://h/gen?c=true", "", out, sizeof out));
@@ -811,6 +821,7 @@ int main(void) {
   skipsWhatIsNotAQuestionInAReply();
   stopsAtTheRoomItWasGiven();
   addsCountToAnyURL();
+  putsTheQueryBeforeAFragment();
   leavesTheURLAloneWithoutAQuery();
   saysSoWhenTheURLDoesNotFit();
   saysDurationsTheWayAPersonDoes();

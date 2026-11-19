@@ -47,15 +47,18 @@
    process to run it in: the system is out of file descriptors or processes. */
 #define FETCH_NO_PROCESS (-4)
 
+/* The query goes before a #fragment, which curl never sends: after it, the
+   query would be lost. */
 int urlWithQuery(const char* url, const char* query, char* out,
                  size_t capacity) {
-  size_t length = strlen(url);
+  size_t length = strcspn(url, "#");
   const char* separator = "?";
   if (!*query || (length && (url[length - 1] == '?' || url[length - 1] == '&')))
     separator = "";
-  else if (strchr(url, '?'))
+  else if (memchr(url, '?', length))
     separator = "&";
-  int written = snprintf(out, capacity, "%s%s%s", url, separator, query);
+  int written = snprintf(out, capacity, "%.*s%s%s", (int)length, url, separator,
+                         query);
   return written >= 0 && (size_t)written < capacity;
 }
 
