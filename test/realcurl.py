@@ -182,7 +182,7 @@ url_ok = url
 url = url.replace("http://", "htp://", 1)
 status, out, err = run(["1"])
 url = url_ok
-check(status == 1 and "not a web address" in err, "a mistyped scheme is said so: %r" % err)
+check(status == 1 and "not an address I can fetch from" in err, "a mistyped scheme is said so: %r" % err)
 check("could not reach" not in err, "a mistyped scheme is not a server out of reach: %r" % err)
 check(Server.paths == [], "a mistyped scheme is not asked for: %r" % Server.paths)
 
@@ -197,7 +197,7 @@ url = "file://" + local_file
 status, out, err = run(["1"])
 url = url_ok
 shutil.rmtree(local_dir)
-check(status == 1 and "not a web address" in err, "a file is not fetched from: %r" % err)
+check(status == 1 and "not an address I can fetch from" in err, "a file is not fetched from: %r" % err)
 check("Solve this expression" not in out, "a file's questions are not asked: %r" % out)
 
 # A URL too long to ask for is a wrong address, and nothing is sent.
@@ -205,7 +205,7 @@ url_ok = url
 url = url + "&x=" + "a" * 2100
 status, out, err = run(["1"])
 url = url_ok
-check(status == 1 and "not a web address" in err, "a URL too long to ask for is said so: %r" % err)
+check(status == 1 and "not an address I can fetch from" in err, "a URL too long to ask for is said so: %r" % err)
 check(Server.paths == [], "a URL too long to ask for is not sent: %r" % Server.paths)
 
 # A host that does not resolve is a wrong address, not a server that is down.
@@ -229,7 +229,7 @@ url_ok = url
 url = url.replace("/gen", "/loop")
 status, out, err = run(["1"])
 url = url_ok
-check(status == 1 and "redirects too often" in err, "a redirect that never ends is said so: %r" % err)
+check(status == 1 and "redirects more than five times" in err, "a redirect that never ends is said so: %r" % err)
 check(len(Server.paths) == 6, "a redirect that never ends is followed five times: %r" % Server.paths)
 
 # A reply too big to be questions is said not to be questions, not to be out of

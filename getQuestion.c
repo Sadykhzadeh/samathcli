@@ -455,9 +455,9 @@ static int loadBatch(Quiz* quiz) {
   if (status == FETCH_NO_PROCESS) return QUIZ_NO_PROCESS;
   if (status == CURL_NOT_RUN) return QUIZ_NO_CURL;
   if (status == CURL_TIMED_OUT) return QUIZ_TIMED_OUT;
-  if (status == CURL_UNSUPPORTED_PROTOCOL || status == CURL_BAD_URL ||
-      status == CURL_TOO_MANY_REDIRECTS)
+  if (status == CURL_UNSUPPORTED_PROTOCOL || status == CURL_BAD_URL)
     return QUIZ_BAD_URL;
+  if (status == CURL_TOO_MANY_REDIRECTS) return QUIZ_TOO_MANY_REDIRECTS;
   if (status == CURL_COULDNT_RESOLVE_HOST) return QUIZ_NO_HOST;
   if (status == CURL_SSL_CONNECT || status == CURL_PEER_VERIFY ||
       status == CURL_CA_CHECK || status == CURL_ISSUER_CHECK)

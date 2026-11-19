@@ -43,8 +43,11 @@
   "😔 I could not start curl to fetch the questions: there is no room left "  \
   "for another process or open file. Close something and try again.\n"
 #define apiBadUrl                                                       \
-  "😔 SAMATH_API_URL is not a web address I can fetch from, or it "     \
-  "redirects too often. See SAMATH_API_URL.\n"
+  "😔 SAMATH_API_URL is not an address I can fetch from. Use an http:// or "  \
+  "https:// address, as http://localhost:3000/gen?c=true is, and keep it "    \
+  "under 2048 characters with the questions asked for added.\n"
+#define apiRedirects                                                    \
+  "😔 SAMATH_API_URL redirects more than five times. See SAMATH_API_URL.\n"
 #define writeFailure "😔 I could not write the result out. Is the disk full?\n"
 #define noMemory                                                          \
   "😔 I ran out of memory to keep the mistakes, so the run stopped there.\n"
@@ -120,6 +123,8 @@ static const char* fetchFailure(int code) {
       return apiTimedOut;
     case QUIZ_BAD_URL:
       return apiBadUrl;
+    case QUIZ_TOO_MANY_REDIRECTS:
+      return apiRedirects;
     case QUIZ_NO_HOST:
       return noHost;
     case QUIZ_NO_TLS:
