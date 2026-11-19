@@ -222,7 +222,7 @@ input=$(right 3)
 run_at "http://api.test/down?c=true" "an unreachable server is one clear message" 3
 expect_status 1
 expect_requests 1
-expect_err "could not reach SaMathAPI"
+expect_err "could not reach SaMathAPI at http://api.test/down?c=true. Is it running"
 expect_no_out "Fantastic"
 
 input=$(right 2)

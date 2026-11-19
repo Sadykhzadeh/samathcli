@@ -16,8 +16,6 @@
   "😅 Please, provide me a number of questions that I should output! See " \
   "samath --help. :3\n"
 #define badArgs "😅 That has to be a whole number of questions, 1 or more! :3\n"
-#define apiUnreachable \
-  "😔 I could not reach SaMathAPI. Is it running? See SAMATH_API_URL.\n"
 #define apiRefused                                                  \
   "😔 SaMathAPI answered with an error instead of questions. See "   \
   "SAMATH_API_URL.\n"
@@ -89,9 +87,10 @@
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
   "SAMATH_API_URL says where the questions come from.\n"
 
-/* Writes an argument the person typed to standard error. A control character
-   would be acted on by the terminal, so each one is shown as a '?', and so is
-   the C1 control that UTF-8 spells as 0xC2 0x80 to 0xC2 0x9F. */
+/* Writes text the person typed or set, such as an argument or SAMATH_API_URL,
+   to standard error. A control character would be acted on by the terminal, so
+   each one is shown as a '?', and so is the C1 control that UTF-8 spells as
+   0xC2 0x80 to 0xC2 0x9F. */
 static void sayArgument(const char* text) {
   const unsigned char* c = (const unsigned char*)text;
   for (; *c; c++) {
@@ -128,14 +127,23 @@ static const char* fetchFailure(int code) {
     case QUIZ_NO_PROCESS:
       return noProcess;
     default:
-      return apiUnreachable;
+      return NULL;
   }
 }
 
 /* Says why the questions could not be fetched, and what the server said
-   when it refused, as that tells which option or URL it did not like. */
+   when it refused, as that tells which option or URL it did not like. A
+   server that could not be reached is named with the address that was tried,
+   which is the first thing to check when it was not the one meant. */
 static void sayFetchFailure(int code, const Quiz* quiz) {
-  fputs(fetchFailure(code), stderr);
+  const char* said = fetchFailure(code);
+  if (said) {
+    fputs(said, stderr);
+  } else {
+    fputs("😔 I could not reach SaMathAPI at ", stderr);
+    sayArgument(quiz->url);
+    fputs(". Is it running? See SAMATH_API_URL.\n", stderr);
+  }
   if (code == QUIZ_REFUSED && *quiz->said)
     fprintf(stderr, "   It said: %s\n", quiz->said);
 }
