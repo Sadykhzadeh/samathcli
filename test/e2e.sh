@@ -162,6 +162,19 @@ expect_out "1 of 4 right (25%)"
 expect_out "1/4	🤔 Solve this expression: 0+1"
 expect_out "4/4	🤔 Solve this expression: 3+1"
 
+input=$(right 10)
+run_at "http://api.test/short?c=true" "a server that sends fewer questions than asked is still asked in batches" 10
+expect_status 0
+expect_requests 4
+expect_out "Fantastic"
+
+input=$(right 10)
+run_at "http://api.test/short&lone?c=true" "a batch that comes back with one question is kept" 10
+expect_status 0
+expect_requests 8
+if [ "$(grep -c 'count=100$' "$CURL_LOG")" = 7 ]; then ok; else fail "$(cat "$CURL_LOG")"; fi
+expect_out "Fantastic"
+
 input=$(right 3)
 FAKE_IGNORE_COUNT=1
 export FAKE_IGNORE_COUNT

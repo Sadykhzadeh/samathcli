@@ -18,7 +18,10 @@
 # ("limited" with a 429, "hangs-up" by dropping the connection),
 # and "drops-out" answers the first request and fails to connect after that.
 # FAKE_IGNORE_COUNT=1 makes it an older server that does not know count and
-# sends one question whatever is asked. "few" knows only 150 tasks, n mod 150,
+# sends one question whatever is asked. "short" sends at most three questions
+# to a request, as a server does when it has no new ones left to give, and
+# "lone" sends one question to every request after the first. "few"
+# knows only 150 tasks, n mod 150,
 # and starts a request without a seed at half the number served so far, so
 # the second request of a run repeats half of the first.
 
@@ -95,6 +98,11 @@ case "$url" in
     ;;
 esac
 if [ -n "${FAKE_IGNORE_COUNT:-}" ]; then count=1; fi
+case "$url" in
+  *short*)
+    if [ "$count" -gt 3 ]; then count=3; fi
+    ;;
+esac
 
 seed=
 case "$url" in
@@ -113,6 +121,12 @@ case "$url" in
       echo "curl: (7) Failed to connect" >&2
       finish 000 7
     fi
+    ;;
+esac
+
+case "$url" in
+  *lone*)
+    if [ "$served" -gt 0 ]; then count=1; fi
     ;;
 esac
 

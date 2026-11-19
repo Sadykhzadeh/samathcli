@@ -468,8 +468,10 @@ static int loadBatch(Quiz* quiz) {
   int got = parseQuestions(text, quiz->batch, want);
   free(text);
   if (got == 0) return QUIZ_NOT_QUESTIONS;
-  /* One question where several were asked for: this server ignores `count`. */
-  if (got < want) quiz->batched = 0;
+  /* A server that ignores `count` sends one question for a request that asks
+     for several, from its first answer on. A batch that comes back with one
+     question later on is kept, as a server can run out of new questions. */
+  if (got == 1 && want > 1 && !quiz->asked) quiz->batched = 0;
   if (quiz->seed < 0) {
     int fresh = 0;
     for (int i = 0; i < got; i++)
