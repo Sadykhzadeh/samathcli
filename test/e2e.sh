@@ -744,6 +744,14 @@ expect_err "could not reach"
 expect_no_out "Wrong:"
 expect_no_out "Right:"
 
+run_at "http://api.test/drops-out?c=true" "a printout keeps the questions before a failure" -P 150
+expect_status 1
+expect_requests 2
+expect_out "100. 99+1"
+expect_out "99 C   100 D"
+expect_no_out "101. "
+expect_err "could not reach"
+
 input=
 run "help says how to use it" --help
 expect_status 0
