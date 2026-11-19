@@ -32,6 +32,7 @@
    --max-redirs. Asking again does not change any of them. */
 #define CURL_UNSUPPORTED_PROTOCOL 1
 #define CURL_BAD_URL 3
+#define CURL_COULDNT_RESOLVE_HOST 6
 #define CURL_TOO_MANY_REDIRECTS 47
 /* curl's exit statuses for a connection that was dropped: before all of the
    answer had come, before any of it had, and while sending or receiving. */
@@ -431,6 +432,7 @@ static int loadBatch(Quiz* quiz) {
   if (status == CURL_UNSUPPORTED_PROTOCOL || status == CURL_BAD_URL ||
       status == CURL_TOO_MANY_REDIRECTS)
     return QUIZ_BAD_URL;
+  if (status == CURL_COULDNT_RESOLVE_HOST) return QUIZ_NO_HOST;
   if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;
   if (status) return QUIZ_UNREACHABLE;
 

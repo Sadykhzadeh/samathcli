@@ -65,6 +65,7 @@ void quizClose(Quiz* quiz);
                                    redirects too often */
 #define QUIZ_NO_PROCESS (-8)    /* curl could not be started, as there is no
                                    room left for another process or file */
+#define QUIZ_NO_HOST (-9)       /* the host in the URL does not resolve */
 
 /* Hands out the next question. Returns 1 and fills `out`, 0 once all `total`
    have been handed out, and one of the QUIZ_ codes above otherwise.

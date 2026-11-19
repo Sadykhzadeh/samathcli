@@ -200,6 +200,14 @@ shutil.rmtree(local_dir)
 check(status == 1 and "not a web address" in err, "a file is not fetched from: %r" % err)
 check("Solve this expression" not in out, "a file's questions are not asked: %r" % out)
 
+# A host that does not resolve is a wrong address, not a server that is down.
+url_ok = url
+url = "http://no-such-host.invalid/gen?c=true"
+status, out, err = run(["1"])
+url = url_ok
+check(status == 1 and "could not find the host" in err, "a host that does not resolve is said so: %r" % err)
+check("Is it running" not in err, "a host that does not resolve is not a server that is down: %r" % err)
+
 url_ok = url
 url = url.replace("/gen", "/loop")
 status, out, err = run(["1"])

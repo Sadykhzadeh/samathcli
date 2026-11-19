@@ -34,6 +34,9 @@
 #define apiTimedOut                                                     \
   "😔 SaMathAPI did not answer in time. It may be busy, or the network " \
   "slow. See SAMATH_API_URL.\n"
+#define noHost                                                            \
+  "😔 I could not find the host in SAMATH_API_URL. Check its name. See "  \
+  "SAMATH_API_URL.\n"
 #define noProcess                                                         \
   "😔 I could not start curl to fetch the questions: there is no room left "  \
   "for another process or open file. Close something and try again.\n"
@@ -93,6 +96,8 @@ static const char* fetchFailure(int code) {
       return apiTimedOut;
     case QUIZ_BAD_URL:
       return apiBadUrl;
+    case QUIZ_NO_HOST:
+      return noHost;
     case QUIZ_NO_PROCESS:
       return noProcess;
     default:
