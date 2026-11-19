@@ -225,6 +225,18 @@ expect_requests 1
 expect_err "could not reach SaMathAPI at http://api.test/down?c=true. Is it running"
 expect_no_out "Fantastic"
 
+input=$(right 3)
+run_at "http://user:secret@api.test/down?c=true" "a user name and password are not shown" 3
+expect_status 1
+expect_err "could not reach SaMathAPI at http://api.test/down?c=true. Is it running"
+case "$err" in *secret*) fail "showed the password of the address" ;; *) ok ;; esac
+
+input=$(right 3)
+run_at "user:secret@api.test/down?next=http://x" "a scheme-less address loses its password too" 3
+expect_status 1
+expect_err "could not reach SaMathAPI at api.test/down?next=http://x. Is it running"
+case "$err" in *secret*) fail "showed the password of a scheme-less address" ;; *) ok ;; esac
+
 input=$(right 2)
 run_at "http://api.test/nul?c=true" "a reply with a NUL byte is not read past it" 2
 expect_status 1

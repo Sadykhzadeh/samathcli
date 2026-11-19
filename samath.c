@@ -90,22 +90,43 @@
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
   "SAMATH_API_URL says where the questions come from.\n"
 
-/* Writes text the person typed or set, such as an argument or SAMATH_API_URL,
-   to standard error. A control character would be acted on by the terminal, so
-   each one is shown as a '?', and so is the C1 control that UTF-8 spells as
-   0xC2 0x80 to 0xC2 0x9F. */
-static void sayArgument(const char* text) {
+/* Writes the first `length` bytes of `text` to standard error: text the person
+   typed or set, such as an argument or SAMATH_API_URL. A control character
+   would be acted on by the terminal, so each one is shown as a '?', and so is
+   the C1 control that UTF-8 spells as 0xC2 0x80 to 0xC2 0x9F. */
+static void sayText(const char* text, size_t length) {
   const unsigned char* c = (const unsigned char*)text;
-  for (; *c; c++) {
+  const unsigned char* end = c + length;
+  for (; c < end; c++) {
     if (*c < ' ' || *c == 0x7f) {
       fputc('?', stderr);
-    } else if (*c == 0xC2 && c[1] >= 0x80 && c[1] <= 0x9F) {
+    } else if (*c == 0xC2 && c + 1 < end && c[1] >= 0x80 && c[1] <= 0x9F) {
       fputc('?', stderr);
       c++;
     } else {
       fputc(*c, stderr);
     }
   }
+}
+
+static void sayArgument(const char* text) { sayText(text, strlen(text)); }
+
+/* Writes an address as it was given, but without a user name and password in
+   it, which have no business on a screen. */
+static void sayAddress(const char* url) {
+  const char* authority = url;
+  const char* scheme = strstr(url, "://");
+  if (scheme && scheme < url + strcspn(url, "/?#")) authority = scheme + 3;
+  const char* end = authority + strcspn(authority, "/?#");
+  const char* at = NULL;
+  for (const char* c = authority; c < end; c++)
+    if (*c == '@') at = c;
+  if (!at) {
+    sayArgument(url);
+    return;
+  }
+  sayText(url, (size_t)(authority - url));
+  sayArgument(at + 1);
 }
 
 /* What to say when the questions could not be fetched. */
@@ -146,7 +167,7 @@ static void sayFetchFailure(int code, const Quiz* quiz) {
     fputs(said, stderr);
   } else {
     fputs("😔 I could not reach SaMathAPI at ", stderr);
-    sayArgument(quiz->url);
+    sayAddress(quiz->url);
     fputs(". Is it running? See SAMATH_API_URL.\n", stderr);
   }
   if (code == QUIZ_REFUSED && *quiz->said)
