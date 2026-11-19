@@ -97,7 +97,11 @@ Print the version and exit.
 .B SAMATH_API_URL
 Where the questions are fetched from. The default is
 .BR http://localhost:3000/gen?c=true .
-The value is handed to
+The value has to be an
+.B http
+or
+.B https
+address. It is handed to
 .BR curl (1)
 as it is.
 .SH EXIT STATUS

@@ -186,6 +186,20 @@ check(status == 1 and "not a web address" in err, "a mistyped scheme is said so:
 check("could not reach" not in err, "a mistyped scheme is not a server out of reach: %r" % err)
 check(Server.paths == [], "a mistyped scheme is not asked for: %r" % Server.paths)
 
+# A file, or any scheme other than http and https, is refused too: curl would
+# read the file, and its lines that look like questions would be asked.
+local_dir = tempfile.mkdtemp()
+local_file = os.path.join(local_dir, "questions")
+with open(local_file, "w") as questions:
+    questions.write("1+1 2,3,4,5 2\n")
+url_ok = url
+url = "file://" + local_file
+status, out, err = run(["1"])
+url = url_ok
+shutil.rmtree(local_dir)
+check(status == 1 and "not a web address" in err, "a file is not fetched from: %r" % err)
+check("Solve this expression" not in out, "a file's questions are not asked: %r" % out)
+
 url_ok = url
 url = url.replace("/gen", "/loop")
 status, out, err = run(["1"])

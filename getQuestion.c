@@ -102,10 +102,12 @@ static int fetchText(const char* url, char** text, long* code) {
        prints the body of the attempt that failed and then that of the next
        one, with nothing to tell them apart. loadBatch does the trying again. A
        URL that has moved, as http:// does when a server wants https://, is
-       followed a few times, to another web address and nowhere else. */
+       followed a few times, to another web address and nowhere else. Only web
+       addresses are asked of at all: a file or any other scheme is refused. */
     execlp("curl", "curl", "-q", "-sS", "--connect-timeout", "4", "--max-time", "10",
-           "--retry", "0", "-L", "--max-redirs", "5", "--proto-redir",
-           "=http,https", "-w", "%{http_code}", "--url", url, (char*)NULL);
+           "--retry", "0", "-L", "--max-redirs", "5", "--proto", "=http,https",
+           "--proto-redir", "=http,https", "-w", "%{http_code}", "--url", url,
+           (char*)NULL);
     _exit(CURL_NOT_RUN);
   }
   close(channel[1]);
