@@ -24,6 +24,7 @@
 
 * Download repo
 * run `make`
+* Start a [SaMathAPI](https://github.com/Sadykhzadeh/samathapi): samath asks it for the questions at `http://localhost:3000/gen?c=true` unless `SAMATH_API_URL` says otherwise, see [Configuration](#configuration)
 * That's it! Type `./samath 5` to get five questions
 
 `make clean` removes the binary, the object files and the test program.
