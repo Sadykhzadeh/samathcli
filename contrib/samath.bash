@@ -3,9 +3,9 @@
 
 _samath() {
   local cur=${COMP_WORDS[COMP_CWORD]} prev=${COMP_WORDS[COMP_CWORD-1]}
-  local options='--time --seed --practice --length --brackets --no-brackets
-    --max --operators --range --no-negatives --negatives --feedback --help
-    --version'
+  local options='-t -s -p -l -b -B -m -o -r -n -N -f -h --time --seed
+    --practice --length --brackets --no-brackets --max --operators --range
+    --no-negatives --negatives --feedback --help --version'
   COMPREPLY=()
   case $prev in
     -o|--operators)
