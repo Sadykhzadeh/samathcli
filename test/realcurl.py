@@ -51,6 +51,12 @@ class Server(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
+        if self.path.startswith("/to-file"):
+            self.send_response(302)
+            self.send_header("Location", "file:///etc/passwd")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         if self.path.startswith("/moved"):
             # A server that has moved: http:// sent on to https:// is the
             # usual case, here it is a new path on the same server.
@@ -239,6 +245,16 @@ url = url_ok
 check(status == 1 and "could not find the proxy" in err, "a proxy that does not resolve is said so: %r" % err)
 check("Is it running" not in err, "a proxy that does not resolve is not a server that is down: %r" % err)
 check(Server.paths == [], "a proxy that does not resolve is not sent to: %r" % Server.paths)
+
+# A redirect to a file, or any other scheme that is not followed, is the
+# server's address that is wrong, not the one in SAMATH_API_URL, which is fine.
+url_ok = url
+url = url.replace("/gen", "/to-file")
+status, out, err = run(["1"])
+url = url_ok
+check(status == 1 and "redirected to an address that is not http or https" in err, "a redirect to a file is said so: %r" % err)
+check("not an address I can fetch from" not in err, "a redirect to a file is not blamed on SAMATH_API_URL: %r" % err)
+check(Server.paths == ["/to-file?c=true"], "a redirect to a file is not followed: %r" % Server.paths)
 
 # A reply that stops part of the way through is a server that is there and
 # failing: it is asked again once, and then said to have stopped.

@@ -73,6 +73,8 @@ void quizClose(Quiz* quiz);
                                    http_proxy names it, does not resolve */
 #define QUIZ_CUT_SHORT (-13)    /* it answered, but stopped part of the way
                                    through its answer */
+#define QUIZ_REDIRECTED_AWAY (-14) /* it redirected to an address that is not
+                                      http or https */
 
 /* Hands out the next question. Returns 1 and fills `out`, 0 once all `total`
    have been handed out, and one of the QUIZ_ codes above otherwise.

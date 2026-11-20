@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include "getQuestion.h"
@@ -59,6 +60,12 @@
 /* What fetchText gives back when there is no pipe to read curl through, or no
    process to run it in: the system is out of file descriptors or processes. */
 #define FETCH_NO_PROCESS (-4)
+
+/* Whether `url` is an http or https address, the only kind curl is asked to
+   fetch from, and so the kind a redirect may be followed to. */
+static int isWebUrl(const char* url) {
+  return !strncasecmp(url, "http://", 7) || !strncasecmp(url, "https://", 8);
+}
 
 /* The query goes before a #fragment, which curl never sends: after it, the
    query would be lost. */
@@ -458,6 +465,8 @@ static int loadBatch(Quiz* quiz) {
   if (status == FETCH_NO_PROCESS) return QUIZ_NO_PROCESS;
   if (status == CURL_NOT_RUN) return QUIZ_NO_CURL;
   if (status == CURL_TIMED_OUT) return QUIZ_TIMED_OUT;
+  if (status == CURL_UNSUPPORTED_PROTOCOL && isWebUrl(quiz->url))
+    return QUIZ_REDIRECTED_AWAY;
   if (status == CURL_UNSUPPORTED_PROTOCOL || status == CURL_BAD_URL)
     return QUIZ_BAD_URL;
   if (status == CURL_TOO_MANY_REDIRECTS) return QUIZ_TOO_MANY_REDIRECTS;
