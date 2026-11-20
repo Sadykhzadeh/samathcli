@@ -77,6 +77,9 @@ void quizClose(Quiz* quiz);
                                       http or https */
 #define QUIZ_CURL_FAILED (-15)  /* curl could not start the request, as it
                                    does not know an option it was given */
+#define QUIZ_DROPPED (-16)      /* it dropped the connection with no answer,
+                                   or part of one, or the connection failed
+                                   while its answer was received */
 
 /* Hands out the next question. Returns 1 and fills `out`, 0 once all `total`
    have been handed out, and one of the QUIZ_ codes above otherwise.

@@ -5,12 +5,14 @@ curl is started with work, and what a failing server does to a run.
 usage: python3 test/realcurl.py ./samath
 """
 import http.server
+import io
 import os
 import re
 import select
 import shutil
 import signal
 import socket
+import struct
 import subprocess
 import sys
 import tempfile
@@ -92,6 +94,21 @@ class Server(http.server.BaseHTTPRequestHandler):
                     break
             self.close_connection = True
             return
+        if self.path.startswith("/reset"):
+            # Part of an answer, then the connection is reset rather than closed.
+            self.send_response(200)
+            self.send_header("Content-Length", "500")
+            self.end_headers()
+            self.wfile.write(b"1+1 2,3,4,5 2\n")
+            self.wfile.flush()
+            time.sleep(0.2)
+            self.connection.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+            self.wfile.close()
+            self.rfile.close()
+            self.connection.close()
+            self.wfile = io.BytesIO()
+            self.close_connection = True
+            return
         if self.path.startswith("/cut"):
             # A reply that stops short of its Content-Length, as a server does
             # when it fails part of the way through an answer.
@@ -170,7 +187,15 @@ check(status == 0 and "4 of 4 right" in out, "a dropped connection is got over: 
 check(Server.paths == ["/gen?c=true&count=4"] * 2, "a dropped connection is asked again: %r" % Server.paths)
 
 status, out, err = run(["4"], failures=[0, 0])
-check(status == 1 and "could not reach" in err, "a server that keeps dropping the connection: %r" % err)
+check(status == 1 and "dropped the connection" in err, "a server that keeps dropping the connection: %r" % err)
+check(Server.paths == ["/gen?c=true&count=4"] * 2, "a dropped connection is asked twice: %r" % Server.paths)
+Server.paths = []
+done = subprocess.run([BINARY, "1"], input=b"a", capture_output=True, timeout=60,
+                      env=dict(os.environ, SAMATH_API_URL=url.replace("/gen", "/reset")))
+check(done.returncode == 1 and "dropped the connection" in done.stderr.decode(),
+      "a connection reset after part of an answer is said so: %r" % done.stderr)
+check("Is it running" not in done.stderr.decode(), "a reset is not a server that is down: %r" % done.stderr)
+check("Is it running" not in err and "could not reach" not in err, "a dropped connection is not a server that is down: %r" % err)
 check(len(Server.paths) == 2, "a dropped connection is asked twice and no more: %r" % Server.paths)
 
 # A refusal that will not change is not asked again.

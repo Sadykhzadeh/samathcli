@@ -43,6 +43,9 @@
 #define noProxy                                                           \
   "😔 I could not find the proxy that curl sends the request through, so " \
   "SaMathAPI was not asked. Check http_proxy, https_proxy and all_proxy.\n"
+#define dropped                                                           \
+  "😔 SaMathAPI dropped the connection. It may be busy or failing. See "  \
+  "SAMATH_API_URL.\n"
 #define cutShort                                                          \
   "😔 SaMathAPI stopped part of the way through its answer. It may be busy " \
   "or failing. See SAMATH_API_URL.\n"
@@ -165,6 +168,8 @@ static const char* fetchFailure(int code) {
       return noProxy;
     case QUIZ_CUT_SHORT:
       return cutShort;
+    case QUIZ_DROPPED:
+      return dropped;
     case QUIZ_REDIRECTED_AWAY:
       return redirectedAway;
     case QUIZ_CURL_FAILED:
