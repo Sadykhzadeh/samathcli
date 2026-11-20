@@ -49,6 +49,9 @@
 #define redirectedAway                                                    \
   "😔 SaMathAPI redirected to an address that is not http or https, which " \
   "is not followed. See SAMATH_API_URL.\n"
+#define curlFailed                                                        \
+  "😔 curl could not start the request. samath needs curl 7.21 or newer, " \
+  "so check the curl on your PATH.\n"
 #define noProcess                                                         \
   "😔 I could not start curl to fetch the questions: there is no room left "  \
   "for another process or open file. Close something and try again.\n"
@@ -164,6 +167,8 @@ static const char* fetchFailure(int code) {
       return cutShort;
     case QUIZ_REDIRECTED_AWAY:
       return redirectedAway;
+    case QUIZ_CURL_FAILED:
+      return curlFailed;
     case QUIZ_NO_TLS:
       return noTls;
     case QUIZ_NO_PROCESS:

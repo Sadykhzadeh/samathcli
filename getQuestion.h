@@ -75,6 +75,8 @@ void quizClose(Quiz* quiz);
                                    through its answer */
 #define QUIZ_REDIRECTED_AWAY (-14) /* it redirected to an address that is not
                                       http or https */
+#define QUIZ_CURL_FAILED (-15)  /* curl could not start the request, as it
+                                   does not know an option it was given */
 
 /* Hands out the next question. Returns 1 and fills `out`, 0 once all `total`
    have been handed out, and one of the QUIZ_ codes above otherwise.

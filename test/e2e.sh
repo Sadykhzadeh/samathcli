@@ -219,6 +219,13 @@ expect_url "count=3"
 expect_out "Fantastic"
 
 input=$(right 3)
+run_at "http://api.test/old-curl?c=true" "a curl too old for --proto-redir is said so" 3
+expect_status 1
+expect_requests 1
+expect_err "samath needs curl 7.21 or newer"
+case "$err" in *"could not reach"*) fail "blamed the server" ;; *) ok ;; esac
+
+input=$(right 3)
 run_at "http://api.test/down?c=true" "an unreachable server is one clear message" 3
 expect_status 1
 expect_requests 1

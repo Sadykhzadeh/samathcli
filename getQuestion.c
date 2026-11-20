@@ -40,6 +40,9 @@
 /* curl's exit status for a proxy, as http_proxy names it, whose host does not
    resolve. */
 #define CURL_COULDNT_RESOLVE_PROXY 5
+/* curl's exit status for an option it does not know, which curl before 7.21
+   gives for --proto and --proto-redir. */
+#define CURL_FAILED_INIT 2
 #define CURL_TOO_MANY_REDIRECTS 47
 /* curl's exit statuses for a TLS handshake that failed, and for a certificate
    that could not be checked. */
@@ -473,6 +476,7 @@ static int loadBatch(Quiz* quiz) {
     return QUIZ_BAD_URL;
   if (status == CURL_TOO_MANY_REDIRECTS) return QUIZ_TOO_MANY_REDIRECTS;
   if (status == CURL_COULDNT_RESOLVE_PROXY) return QUIZ_NO_PROXY;
+  if (status == CURL_FAILED_INIT) return QUIZ_CURL_FAILED;
   if (status == CURL_COULDNT_RESOLVE_HOST) return QUIZ_NO_HOST;
   if (status == CURL_SSL_CONNECT || status == CURL_PEER_VERIFY ||
       status == CURL_CA_CHECK || status == CURL_ISSUER_CHECK)

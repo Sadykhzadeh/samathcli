@@ -123,7 +123,7 @@ has the status of that signal: 130 for Ctrl-C.
   `termios`, so it builds on Linux and other Unix-like systems. On Windows,
   run it in WSL; a native build, with MinGW for one, is not supported
 * a C11 compiler (`gcc` or `clang`) and `make`
-* `curl` on `PATH`
+* `curl` 7.21 or newer on `PATH`, the version that added `--proto-redir`
 * a running [SaMathAPI](https://github.com/Sadykhzadeh/samathapi) instance
 
 ### Installing
