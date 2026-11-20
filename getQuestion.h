@@ -71,6 +71,8 @@ void quizClose(Quiz* quiz);
                                          run follows */
 #define QUIZ_NO_PROXY (-12)     /* the proxy the request goes through, as
                                    http_proxy names it, does not resolve */
+#define QUIZ_CUT_SHORT (-13)    /* it answered, but stopped part of the way
+                                   through its answer */
 
 /* Hands out the next question. Returns 1 and fills `out`, 0 once all `total`
    have been handed out, and one of the QUIZ_ codes above otherwise.

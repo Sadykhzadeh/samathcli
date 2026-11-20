@@ -59,6 +59,15 @@ class Server(http.server.BaseHTTPRequestHandler):
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
+        if self.path.startswith("/cut"):
+            # A reply that stops short of its Content-Length, as a server does
+            # when it fails part of the way through an answer.
+            self.send_response(200)
+            self.send_header("Content-Length", "500")
+            self.end_headers()
+            self.wfile.write(b"1+1 2,3,4,5 2\n")
+            self.close_connection = True
+            return
         status, said = Server.failures.pop(0) if Server.failures else (200, b"")
         if status == 0:
             self.close_connection = True
@@ -230,6 +239,16 @@ url = url_ok
 check(status == 1 and "could not find the proxy" in err, "a proxy that does not resolve is said so: %r" % err)
 check("Is it running" not in err, "a proxy that does not resolve is not a server that is down: %r" % err)
 check(Server.paths == [], "a proxy that does not resolve is not sent to: %r" % Server.paths)
+
+# A reply that stops part of the way through is a server that is there and
+# failing: it is asked again once, and then said to have stopped.
+url_ok = url
+url = url.replace("/gen", "/cut")
+status, out, err = run(["1"])
+url = url_ok
+check(status == 1 and "stopped part of the way" in err, "a cut-short reply is said so: %r" % err)
+check("could not reach" not in err and "Is it running" not in err, "a cut-short reply is not a server out of reach: %r" % err)
+check(len(Server.paths) == 2, "a cut-short reply is asked twice and no more: %r" % Server.paths)
 
 # An https address that is not answered with TLS, as a plain HTTP server is
 # not, is a secure connection that could not be made: not a server out of reach.

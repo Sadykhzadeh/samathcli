@@ -467,6 +467,7 @@ static int loadBatch(Quiz* quiz) {
       status == CURL_CA_CHECK || status == CURL_ISSUER_CHECK)
     return QUIZ_NO_TLS;
   if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;
+  if (status == CURL_CUT_SHORT) return QUIZ_CUT_SHORT;
   if (status) return QUIZ_UNREACHABLE;
 
   int got = parseQuestions(text, quiz->batch, want);

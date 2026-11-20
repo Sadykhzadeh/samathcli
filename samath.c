@@ -43,6 +43,9 @@
 #define noProxy                                                           \
   "😔 I could not find the proxy that curl sends the request through, so " \
   "SaMathAPI was not asked. Check http_proxy, https_proxy and all_proxy.\n"
+#define cutShort                                                          \
+  "😔 SaMathAPI stopped part of the way through its answer. It may be busy " \
+  "or failing. See SAMATH_API_URL.\n"
 #define noProcess                                                         \
   "😔 I could not start curl to fetch the questions: there is no room left "  \
   "for another process or open file. Close something and try again.\n"
@@ -154,6 +157,8 @@ static const char* fetchFailure(int code) {
       return noHost;
     case QUIZ_NO_PROXY:
       return noProxy;
+    case QUIZ_CUT_SHORT:
+      return cutShort;
     case QUIZ_NO_TLS:
       return noTls;
     case QUIZ_NO_PROCESS:
