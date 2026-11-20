@@ -21,7 +21,8 @@
   "SAMATH_API_URL.\n"
 #define apiNotQuestions                                             \
   "😔 SAMATH_API_URL answered, but not with questions. It has to " \
-  "ask for them as text, as http://localhost:3000/gen?c=true does.\n"
+  "send them as plain text, which c=true asks for, as in " \
+  "http://localhost:3000/gen?c=true.\n"
 #define fetching "⏳ Asking SaMathAPI for the questions..."
 #define noCurl                                                          \
   "😔 I need curl to fetch the questions, and could not run it. Is it "  \
