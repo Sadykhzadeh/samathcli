@@ -1,6 +1,8 @@
 #ifndef SAMATH_INPUT_H
 #define SAMATH_INPUT_H
 
+#include <sys/types.h>
+
 /* What readChoice gives back: 0 to 3 for A to D, or one of these. */
 #define CHOICE_QUIT (-1)
 #define CHOICE_TIMEOUT (-2)
@@ -23,6 +25,11 @@ int inputInterrupted(void);
 
 /* Hands the terminal back and dies of SIGINT, as an interrupted run does. */
 void inputDie(void);
+
+/* Names a process that is sent SIGTERM when a signal ends the run, so that it
+   does not outlive the run; 0 names none. Outside a terminal this also makes
+   those signals end the run by the signal, as they would without it. */
+void inputChild(pid_t pid);
 
 /* Drops keys typed ahead of the question, so that a stray press while the
    questions were loading does not answer the first one, and at a terminal

@@ -7,7 +7,10 @@ usage: python3 test/realcurl.py ./samath
 import http.server
 import os
 import re
+import select
 import shutil
+import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -40,6 +43,7 @@ class Server(http.server.BaseHTTPRequestHandler):
     # used up. A status of 0 is a connection dropped with no answer at all.
     failures = []
     paths = []
+    closed = []
 
     def log_message(self, *args):
         pass
@@ -77,6 +81,17 @@ class Server(http.server.BaseHTTPRequestHandler):
             self.wfile.flush()
             time.sleep(30)
             return
+        if self.path.startswith("/stall"):
+            # Never answers. The time it takes curl to go away is taken from
+            # when it closes its connection, which it does when it is stopped.
+            deadline = time.time() + 30
+            while time.time() < deadline:
+                ready, _, _ = select.select([self.connection], [], [], 0.1)
+                if ready and not self.connection.recv(1, socket.MSG_PEEK):
+                    Server.closed.append((self.path, time.time()))
+                    break
+            self.close_connection = True
+            return
         if self.path.startswith("/cut"):
             # A reply that stops short of its Content-Length, as a server does
             # when it fails part of the way through an answer.
@@ -106,7 +121,7 @@ class Server(http.server.BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
-server = http.server.HTTPServer(("127.0.0.1", 0), Server)
+server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Server)
 threading.Thread(target=server.serve_forever, daemon=True).start()
 url = "http://127.0.0.1:%d/gen?c=true" % server.server_address[1]
 
@@ -358,6 +373,27 @@ waited = time.time() - started
 url = url_ok
 check(status == 1 and "more than 1 MB" in err, "a reply past 1 MB is said so: %r" % err)
 check(waited < 5, "a reply past 1 MB is not waited for: %.1f s" % waited)
+
+# A run stopped by a signal that reaches only the program, as from `kill`, takes
+# curl down with it: curl is not left to wait out its time limit of 10 s.
+for name, number in (("SIGTERM", signal.SIGTERM), ("SIGINT", signal.SIGINT)):
+    Server.paths = []
+    stalled = dict(os.environ, SAMATH_API_URL=url.replace("/gen", "/stall-" + name))
+    run_once = subprocess.Popen([BINARY, "3"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE, env=stalled)
+    deadline = time.time() + 10
+    while not Server.paths and time.time() < deadline:
+        time.sleep(0.05)
+    sent = time.time()
+    run_once.send_signal(number)
+    run_once.communicate(timeout=30)
+    deadline = time.time() + 9
+    while not [1 for path, _ in Server.closed if path.startswith("/stall-" + name)] and time.time() < deadline:
+        time.sleep(0.05)
+    gone = [when - sent for path, when in Server.closed if path.startswith("/stall-" + name)]
+    left = gone[0] if gone else None
+    check(run_once.returncode == -number, "%s ends the run by the signal: %r" % (name, run_once.returncode))
+    check(left is not None and left < 3, "%s stops curl with the run: %r s" % (name, left))
 
 print("%d checks passed, %d failed" % (passed, failed))
 sys.exit(1 if failed else 0)

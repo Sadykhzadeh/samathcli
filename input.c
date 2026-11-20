@@ -26,6 +26,7 @@
 static struct termios original;
 static volatile sig_atomic_t taken = 0;
 static volatile sig_atomic_t interrupted = 0;
+static volatile sig_atomic_t child = 0; /* a process the run stops with it */
 static double settled = 0; /* when keys start to answer the question */
 
 static void giveBack(void) {
@@ -38,6 +39,7 @@ static void giveBack(void) {
 /* Leaves the terminal as it was, then dies of the same signal as it would
    have. Only calls that are safe inside a handler. */
 static void onSignal(int signal) {
+  if (child > 0) kill((pid_t)child, SIGTERM);
   giveBack();
   struct sigaction fallback;
   fallback.sa_handler = SIG_DFL;
@@ -96,6 +98,24 @@ void inputStart(void) {
   /* No SA_RESTART: the wait for a key has to end when this arrives. */
   handler.sa_handler = onInterrupt;
   sigaction(SIGINT, &handler, NULL);
+}
+
+void inputChild(pid_t pid) {
+  child = pid;
+  if (taken) return;
+  /* Outside a terminal the signals are only caught here, and only when they
+     are not ignored already, so that nohup and a shell's background jobs keep
+     their dispositions. */
+  static const int stops[] = {SIGTERM, SIGHUP, SIGQUIT, SIGINT};
+  struct sigaction handler;
+  handler.sa_handler = onSignal;
+  sigemptyset(&handler.sa_mask);
+  handler.sa_flags = 0;
+  for (size_t i = 0; i < sizeof stops / sizeof stops[0]; i++) {
+    struct sigaction current;
+    if (sigaction(stops[i], NULL, &current) == 0 && current.sa_handler == SIG_DFL)
+      sigaction(stops[i], &handler, NULL);
+  }
 }
 
 void inputDiscard(void) {

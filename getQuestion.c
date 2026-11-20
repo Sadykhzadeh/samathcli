@@ -139,6 +139,7 @@ static int fetchText(const char* url, char** text, long* code) {
     _exit(CURL_NOT_RUN);
   }
   close(channel[1]);
+  inputChild(child);
 
   size_t size = 0, capacity = 4096;
   char* body = malloc(capacity);
@@ -182,6 +183,7 @@ static int fetchText(const char* url, char** text, long* code) {
   int status = 0;
   while (waitpid(child, &status, 0) < 0 && errno == EINTR) {
   }
+  inputChild(0);
   if (tooBig) {
     free(body);
     return FETCH_TOO_BIG;
