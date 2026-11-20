@@ -402,9 +402,9 @@ int main(int argc, char** argv) {
       return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
     case ARGS_RANGE_ABOVE_MAX:
       return fprintf(stderr,
-                     "😅 No answer is above the largest number, -m %d, so "
-                     "-r %d-%d has no question! :3\n",
-                     options.max, options.rangeLow, options.rangeHigh),
+                     "😅 Every answer from -r %d-%d is above the largest "
+                     "number, -m %d, so there is no question to ask! :3\n",
+                     options.rangeLow, options.rangeHigh, options.max),
              1;
     case ARGS_RANGE_HIGH_ABOVE_MAX:
       return fprintf(stderr,

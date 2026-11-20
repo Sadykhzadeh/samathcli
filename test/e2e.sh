@@ -644,7 +644,7 @@ input=
 run "a range that starts above -m has no question" -m 20 -r 50-100 5
 expect_status 1
 expect_requests 0
-expect_err "-m 20, so -r 50-100 has no question"
+expect_err "Every answer from -r 50-100 is above the largest number, -m 20"
 
 input=
 run "a range that ends above -m has answers too big" -m 20 -r 15-30 5
