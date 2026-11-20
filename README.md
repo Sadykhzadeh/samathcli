@@ -166,7 +166,7 @@ within about ten seconds, and one that connects but never answers within
 about twenty. A refusal such as a 404 is not asked again. A URL that has moved
 is followed, up to five times, so `http://` works against a server that
 sends it on to `https://`. At a terminal a line
-says that the questions are being asked for until the first one is there.
+says that the questions are being asked for until each batch of them is there.
 
 SaMathAPI asks no question twice in one request, and a longer run does not
 either: a question that an earlier batch had is left out, and every batch

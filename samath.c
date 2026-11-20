@@ -199,9 +199,10 @@ static void sayFetchFailure(int code, const Quiz* quiz) {
    that says it is dumb, as Emacs's M-x shell does, gets what a pipe gets. */
 static int atTerminal;
 
-/* Gets the next question. While the first batch is awaited at a terminal, a
-   line says so, and it is wiped once the question is there. */
-static int fetchQuestion(Quiz* quiz, Question* question, int waiting) {
+/* Gets the next question. While a batch is awaited at a terminal, a line says
+   so, and it is wiped once the question is there. */
+static int fetchQuestion(Quiz* quiz, Question* question, int terminal) {
+  int waiting = terminal && quiz->next >= quiz->size;
   if (waiting) {
     fputs(fetching, stdout);
     fflush(stdout);
@@ -226,7 +227,7 @@ static int printWorksheet(const Options* options) {
   for (long i = 0; i < options->questions; i++) {
     if (fflush(stdout) || ferror(stdout)) break;
     Question question;
-    int fetched = fetchQuestion(&quiz, &question, i == 0 && atTerminal);
+    int fetched = fetchQuestion(&quiz, &question, atTerminal);
     if (fetched < 0) {
       sayFetchFailure(fetched, &quiz);
       status = 1;
@@ -496,9 +497,9 @@ int main(int argc, char** argv) {
   int lost = 0, outOfMemory = 0;
   for (long i = 0; i < options.questions; i++) {
     Question question;
-    /* Fetching the first batch can take a few seconds when the server is slow
-       or not there, and nothing else is on the screen to say so. */
-    int fetched = fetchQuestion(&quiz, &question, i == 0 && atTerminal);
+    /* Fetching a batch can take a few seconds when the server is slow or not
+       there, and nothing else is on the screen to say so. */
+    int fetched = fetchQuestion(&quiz, &question, atTerminal);
     if (inputInterrupted()) break;
     if (fetched < 0) {
       if (i == 0) {

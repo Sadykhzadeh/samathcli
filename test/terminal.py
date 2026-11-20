@@ -279,6 +279,19 @@ check("and still reads single keys", "(time ran out)" in seen and "Task 1." not 
 reap(pid)
 os.close(fd)
 
+# A server that answers one question at a time is waited for after each answer,
+# and the wait is shown and wiped like the first one.
+os.environ["FAKE_IGNORE_COUNT"] = "1"
+pid, fd = start(["2"])
+drain(fd)
+os.write(fd, b"a")
+waited = drain(fd)
+del os.environ["FAKE_IGNORE_COUNT"]
+check("a question fetched after an answer is waited for, then the wait wiped", "Asking SaMathAPI" in waited and waited.index("Asking SaMathAPI") < waited.index("\r\x1b[K") < waited.index("2/2"), waited[-300:])
+os.write(fd, b"a")
+reap(pid)
+os.close(fd)
+
 # A printout at a terminal shows the wait for its questions, and wipes it.
 pid, fd = start(["-P", "2"])
 shown = drain(fd)
