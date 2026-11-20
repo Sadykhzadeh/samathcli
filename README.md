@@ -23,7 +23,7 @@
 ## Usage
 
 * Download repo
-* run `make`
+* run `make` (on the BSDs, `gmake`: the Makefile needs GNU make)
 * Start a [SaMathAPI](https://github.com/Sadykhzadeh/samathapi): samath asks it for the questions at `http://localhost:3000/gen?c=true` unless `SAMATH_API_URL` says otherwise, see [Configuration](#configuration)
 * That's it! Type `./samath 5` to get five questions
 
@@ -122,7 +122,7 @@ has the status of that signal: 130 for Ctrl-C.
 * a POSIX system: it starts `curl` with `fork` and reads single keys with
   `termios`, so it builds on Linux and other Unix-like systems. On Windows,
   run it in WSL; a native build, with MinGW for one, is not supported
-* a C11 compiler (`gcc` or `clang`) and `make`
+* a C11 compiler (`gcc` or `clang`) and GNU `make` (`gmake` on the BSDs)
 * `curl` 7.21 or newer on `PATH`, the version that added `--proto-redir`
 * a running [SaMathAPI](https://github.com/Sadykhzadeh/samathapi) instance
 
