@@ -69,6 +69,8 @@ void quizClose(Quiz* quiz);
                                    or its certificate could not be checked */
 #define QUIZ_TOO_MANY_REDIRECTS (-11) /* it redirects more often than the
                                          run follows */
+#define QUIZ_NO_PROXY (-12)     /* the proxy the request goes through, as
+                                   http_proxy names it, does not resolve */
 
 /* Hands out the next question. Returns 1 and fills `out`, 0 once all `total`
    have been handed out, and one of the QUIZ_ codes above otherwise.

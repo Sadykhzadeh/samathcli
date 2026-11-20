@@ -40,6 +40,9 @@
   "😔 I could not make a secure connection to SAMATH_API_URL: its "       \
   "certificate could not be checked, or it does not speak https. See "    \
   "SAMATH_API_URL.\n"
+#define noProxy                                                           \
+  "😔 I could not find the proxy that curl sends the request through, so " \
+  "SaMathAPI was not asked. Check http_proxy, https_proxy and all_proxy.\n"
 #define noProcess                                                         \
   "😔 I could not start curl to fetch the questions: there is no room left "  \
   "for another process or open file. Close something and try again.\n"
@@ -149,6 +152,8 @@ static const char* fetchFailure(int code) {
       return apiRedirects;
     case QUIZ_NO_HOST:
       return noHost;
+    case QUIZ_NO_PROXY:
+      return noProxy;
     case QUIZ_NO_TLS:
       return noTls;
     case QUIZ_NO_PROCESS:

@@ -222,6 +222,15 @@ url = url_ok
 check(status == 1 and "could not find the host" in err, "a host that does not resolve is said so: %r" % err)
 check("Is it running" not in err, "a host that does not resolve is not a server that is down: %r" % err)
 
+# A proxy from http_proxy that does not resolve is blamed on the proxy: the
+# server is not asked, and it is not said to be down.
+url_ok = url
+status, out, err = run(["1"], http_proxy="http://no-such-proxy.invalid:3128", all_proxy="")
+url = url_ok
+check(status == 1 and "could not find the proxy" in err, "a proxy that does not resolve is said so: %r" % err)
+check("Is it running" not in err, "a proxy that does not resolve is not a server that is down: %r" % err)
+check(Server.paths == [], "a proxy that does not resolve is not sent to: %r" % Server.paths)
+
 # An https address that is not answered with TLS, as a plain HTTP server is
 # not, is a secure connection that could not be made: not a server out of reach.
 url_ok = url
