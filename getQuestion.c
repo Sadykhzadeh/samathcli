@@ -144,7 +144,6 @@ static int fetchText(const char* url, char** text, long* code) {
     /* Ctrl-C ends the wait for the answer, as it ends the wait for a key. */
     if (inputInterrupted()) {
       complete = 0;
-      kill(child, SIGTERM);
       break;
     }
     if (size + 1 >= capacity) {
@@ -173,6 +172,9 @@ static int fetchText(const char* url, char** text, long* code) {
     size += (size_t)got;
   }
   close(channel[0]);
+  /* What is left of the answer is not wanted, so curl is not waited for: it
+     may be stalled on a server that has nothing more to send. */
+  if (!complete) kill(child, SIGTERM);
 
   int status = 0;
   while (waitpid(child, &status, 0) < 0 && errno == EINTR) {

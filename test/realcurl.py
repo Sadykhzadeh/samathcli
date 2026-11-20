@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 import urllib.parse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -64,6 +65,17 @@ class Server(http.server.BaseHTTPRequestHandler):
             self.send_header("Location", self.path.replace("/moved", "/gen", 1))
             self.send_header("Content-Length", "0")
             self.end_headers()
+            return
+        if self.path.startswith("/stall-big"):
+            # More than a megabyte, and then nothing more: a run that is told so
+            # does not wait for the rest of the answer.
+            body = b"x" * 1050000
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body) + 50))
+            self.end_headers()
+            self.wfile.write(body)
+            self.wfile.flush()
+            time.sleep(30)
             return
         if self.path.startswith("/cut"):
             # A reply that stops short of its Content-Length, as a server does
@@ -335,6 +347,17 @@ err = done.stderr.decode()
 check(Server.paths == ["/gen?c=true&count=2"], "questions are fetched with standard output closed: %r" % Server.paths)
 check("could not reach" not in err, "closed standard output is not a server out of reach: %r" % err)
 check(done.returncode == 1 and "could not write the result" in err, "a result that cannot be written is said so: %r" % err)
+
+# A reply past 1 MB that then stops is said to be too big at once, not after
+# curl has waited out its time limit for the rest of it.
+url_ok = url
+url = url.replace("/gen", "/stall-big")
+started = time.time()
+status, out, err = run(["3"])
+waited = time.time() - started
+url = url_ok
+check(status == 1 and "more than 1 MB" in err, "a reply past 1 MB is said so: %r" % err)
+check(waited < 5, "a reply past 1 MB is not waited for: %.1f s" % waited)
 
 print("%d checks passed, %d failed" % (passed, failed))
 sys.exit(1 if failed else 0)
