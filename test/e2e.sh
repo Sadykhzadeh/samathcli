@@ -813,6 +813,13 @@ expect_requests 0
 expect_err "do not know the option \"-x\""
 
 input=
+run "a bidi override in an unknown option is shown as a question mark" "--x$(printf '\342\200\256')"
+expect_status 1
+expect_requests 0
+expect_err 'do not know the option "--x?"'
+case "$err" in *"$(printf '\342\200\256')"*) fail "showed the bidi override" ;; *) ok ;; esac
+
+input=
 run "--version prints the version and exits 0" --version
 expect_status 0
 expect_requests 0

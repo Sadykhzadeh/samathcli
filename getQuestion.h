@@ -5,6 +5,10 @@
 #include "options.h"
 #include "question.h"
 
+/* Whether the three bytes at `text` are a bidirectional control character; the
+   caller makes sure there are three. */
+int isBidiControl(const unsigned char* text);
+
 /* The most bytes of what a refusing server said that are kept. */
 #define REFUSAL_MAX 160
 

@@ -240,7 +240,7 @@ static size_t utf8Length(const unsigned char* text) {
 /* Whether the well-formed 3-byte character at `text` is a bidirectional
    control: U+200E, U+200F, U+202A to U+202E or U+2066 to U+2069. A terminal
    that shows them reorders the text around them. */
-static int isBidiControl(const unsigned char* text) {
+int isBidiControl(const unsigned char* text) {
   if (text[0] != 0xE2) return 0;
   if (text[1] == 0x80) return text[2] == 0x8E || text[2] == 0x8F || (text[2] >= 0xAA && text[2] <= 0xAE);
   if (text[1] == 0x81) return text[2] >= 0xA6 && text[2] <= 0xA9;

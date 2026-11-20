@@ -109,7 +109,8 @@
 /* Writes the first `length` bytes of `text` to standard error: text the person
    typed or set, such as an argument or SAMATH_API_URL. A control character
    would be acted on by the terminal, so each one is shown as a '?', and so is
-   the C1 control that UTF-8 spells as 0xC2 0x80 to 0xC2 0x9F. */
+   the C1 control that UTF-8 spells as 0xC2 0x80 to 0xC2 0x9F, and each
+   bidirectional control, which reorders the text around it. */
 static void sayText(const char* text, size_t length) {
   const unsigned char* c = (const unsigned char*)text;
   const unsigned char* end = c + length;
@@ -119,6 +120,9 @@ static void sayText(const char* text, size_t length) {
     } else if (*c == 0xC2 && c + 1 < end && c[1] >= 0x80 && c[1] <= 0x9F) {
       fputc('?', stderr);
       c++;
+    } else if (end - c >= 3 && isBidiControl(c)) {
+      fputc('?', stderr);
+      c += 2;
     } else {
       fputc(*c, stderr);
     }
