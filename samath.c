@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,7 +16,6 @@
 #define noArgs                                                      \
   "😅 Please, provide me a number of questions that I should output! See " \
   "samath --help. :3\n"
-#define badArgs "😅 That has to be a whole number of questions, 1 or more! :3\n"
 #define apiRefused                                                  \
   "😔 SaMathAPI answered with an error instead of questions. See "   \
   "SAMATH_API_URL.\n"
@@ -365,7 +365,11 @@ int main(int argc, char** argv) {
     case ARGS_VERSION:
       return puts("samath " SAMATH_VERSION), 0;
     case ARGS_BAD_COUNT:
-      return fputs(badArgs, stderr), 1;
+      fprintf(stderr,
+              "😅 The number of questions is a whole number from 1 to %d, "
+              "not \"",
+              INT_MAX);
+      return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
     case ARGS_BAD_TIME:
       fprintf(stderr,
               "😅 A time limit is a whole number of seconds, 1 to %d, "

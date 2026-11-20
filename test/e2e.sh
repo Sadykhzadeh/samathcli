@@ -835,6 +835,12 @@ for bad in 0 -3 abc 2.5 ""; do
   expect_err "whole number"
 done
 
+input=
+run "a count past the largest is named with its limit" 2147483648
+expect_status 1
+expect_requests 0
+expect_err "a whole number from 1 to 2147483647, not \"2147483648\""
+
 # What the completion script offers for the words given, the last of them
 # being the one completed.
 complete_words() {
