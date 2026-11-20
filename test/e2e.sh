@@ -750,6 +750,12 @@ run "a printout of a seeded run follows the seed" -P -s 40 2
 expect_out "2. 41+1"
 expect_out "Answers:
 1 A   2 B"
+run "a printout is the same with a time limit, practice and feedback" -P 3
+plain=$out
+run "a printout ignores a time limit, practice and feedback" -P -t 5 -p -f 3
+expect_status 0
+if [ "$out" = "$plain" ]; then ok; else fail "the printout changed: $out"; fi
+expect_no_out "left"
 run_at "http://api.test/down?c=true" "a printout says when the server cannot be reached" -P 2
 expect_status 1
 expect_err "could not reach"
