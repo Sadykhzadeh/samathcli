@@ -766,6 +766,9 @@ run "a printout of a seeded run follows the seed" -P -s 40 2
 expect_out "2. 41+1"
 expect_out "Answers:
 1 A   2 B"
+run "a printout to a file does not say it is asking" -P 2
+expect_no_out "Asking"
+
 run "a printout is the same with a time limit, practice and feedback" -P 3
 plain=$out
 run "a printout ignores a time limit, practice and feedback" -P -t 5 -p -f 3

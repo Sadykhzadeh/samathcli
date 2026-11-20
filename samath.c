@@ -195,6 +195,25 @@ static void sayFetchFailure(int code, const Quiz* quiz) {
     fprintf(stderr, "   It said: %s\n", quiz->said);
 }
 
+/* Output to a terminal that can clear the screen and move the cursor. One
+   that says it is dumb, as Emacs's M-x shell does, gets what a pipe gets. */
+static int atTerminal;
+
+/* Gets the next question. While the first batch is awaited at a terminal, a
+   line says so, and it is wiped once the question is there. */
+static int fetchQuestion(Quiz* quiz, Question* question, int waiting) {
+  if (waiting) {
+    fputs(fetching, stdout);
+    fflush(stdout);
+  }
+  int fetched = quizNext(quiz, question);
+  if (waiting) {
+    fputs("\r\033[K", stdout);
+    fflush(stdout);
+  }
+  return fetched;
+}
+
 /* Prints the questions with their answers after them, without asking any of
    them: for a worksheet, or a key to one. A fetch that fails part of the way
    prints what came before it. */
@@ -207,7 +226,7 @@ static int printWorksheet(const Options* options) {
   for (long i = 0; i < options->questions; i++) {
     if (fflush(stdout) || ferror(stdout)) break;
     Question question;
-    int fetched = quizNext(&quiz, &question);
+    int fetched = fetchQuestion(&quiz, &question, i == 0 && atTerminal);
     if (fetched < 0) {
       sayFetchFailure(fetched, &quiz);
       status = 1;
@@ -248,10 +267,6 @@ static int printWorksheet(const Options* options) {
 }
 
 enum { ASKED_WRONG = 0, ASKED_RIGHT = 1, ASKED_STOP = -1, ASKED_TIMEOUT = -2 };
-
-/* Output to a terminal that can clear the screen and move the cursor. One
-   that says it is dumb, as Emacs's M-x shell does, gets what a pipe gets. */
-static int atTerminal;
 
 /* With -f, a line about the answer last given, which the next question shows
    above itself; empty until there is one. */
@@ -458,10 +473,10 @@ int main(int argc, char** argv) {
       return fputs("\" is a second one! :3\n", stderr), 1;
   }
 
-  if (options.print) return printWorksheet(&options);
-  puts(welcomeText);
   const char* term = getenv("TERM");
   atTerminal = isatty(STDOUT_FILENO) && !(term && !strcmp(term, "dumb"));
+  if (options.print) return printWorksheet(&options);
+  puts(welcomeText);
   giveFeedback = options.feedback;
   Quiz quiz;
   quizOpen(&quiz, &options);
@@ -483,16 +498,7 @@ int main(int argc, char** argv) {
     Question question;
     /* Fetching the first batch can take a few seconds when the server is slow
        or not there, and nothing else is on the screen to say so. */
-    int waiting = i == 0 && atTerminal;
-    if (waiting) {
-      fputs(fetching, stdout);
-      fflush(stdout);
-    }
-    int fetched = quizNext(&quiz, &question);
-    if (waiting) {
-      fputs("\r\033[K", stdout);
-      fflush(stdout);
-    }
+    int fetched = fetchQuestion(&quiz, &question, i == 0 && atTerminal);
     if (inputInterrupted()) break;
     if (fetched < 0) {
       if (i == 0) {

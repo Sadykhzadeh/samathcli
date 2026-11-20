@@ -279,6 +279,13 @@ check("and still reads single keys", "(time ran out)" in seen and "Task 1." not 
 reap(pid)
 os.close(fd)
 
+# A printout at a terminal shows the wait for its questions, and wipes it.
+pid, fd = start(["-P", "2"])
+shown = drain(fd)
+check("a printout at a terminal shows the wait, then wipes it", "Asking SaMathAPI" in shown and shown.index("Asking SaMathAPI") < shown.index("\r\x1b[K") < shown.index("1. "), shown[-200:])
+reap(pid)
+os.close(fd)
+
 # Ctrl-D stops the run.
 pid, fd = start(["3"])
 drain(fd)
