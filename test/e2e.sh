@@ -335,6 +335,15 @@ if [ -w /dev/full ]; then
   err=$(cat "$work/err")
   expect_status 1
   expect_err "could not write the result"
+  name="a printout on a full disk stops asking for questions"
+  : > "$CURL_LOG"
+  (cd "$work/cwd" && "$root/samath" -P 1000 < /dev/null > /dev/full 2> "$work/err")
+  status=$?
+  err=$(cat "$work/err")
+  requests=$(wc -l < "$CURL_LOG" | tr -d ' ')
+  expect_status 1
+  expect_err "could not write the result"
+  if [ "$requests" -eq 1 ]; then ok; else fail "asked the server $requests times"; fi
 fi
 
 input=$(printf 'abcD')

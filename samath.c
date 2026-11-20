@@ -200,6 +200,7 @@ static int printWorksheet(const Options* options) {
   long printed = 0, room = 0;
   int status = 0;
   for (long i = 0; i < options->questions; i++) {
+    if (fflush(stdout) || ferror(stdout)) break;
     Question question;
     int fetched = quizNext(&quiz, &question);
     if (fetched < 0) {
