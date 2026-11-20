@@ -183,6 +183,12 @@ url = url.replace("http://", "htp://", 1)
 status, out, err = run(["1"])
 url = url_ok
 check(status == 1 and "not an address I can fetch from" in err, "a mistyped scheme is said so: %r" % err)
+url_ok = url
+url = url + " x"
+status, out, err = run(["1"])
+url = url_ok
+check(status == 1 and "with no spaces in it" in err, "a URL with a space is said so: %r" % err)
+check(Server.paths == [], "a URL with a space is not sent: %r" % Server.paths)
 check("could not reach" not in err, "a mistyped scheme is not a server out of reach: %r" % err)
 check(Server.paths == [], "a mistyped scheme is not asked for: %r" % Server.paths)
 

@@ -44,8 +44,8 @@
   "for another process or open file. Close something and try again.\n"
 #define apiBadUrl                                                       \
   "😔 SAMATH_API_URL is not an address I can fetch from. Use an http:// or "  \
-  "https:// address, as http://localhost:3000/gen?c=true is, and keep it "    \
-  "under 2048 characters with the questions asked for added.\n"
+  "https:// address with no spaces in it, as http://localhost:3000/gen?c=true " \
+  "is, and keep it under 2048 characters with the questions asked for added.\n"
 #define apiRedirects                                                    \
   "😔 SAMATH_API_URL redirects more than five times. See SAMATH_API_URL.\n"
 #define writeFailure "😔 I could not write the result out. Is the disk full?\n"
