@@ -63,7 +63,10 @@ answered with `Did you mean --practice?`.
 `./samath -t 10 20` is twenty questions with ten seconds each,
 `./samath -l 6 -b 10` is ten harder ones, and
 `./samath -m 20 -o add,subtract -n 10` is ten questions of adding and taking
-away within twenty. Question `n` of a run is the one the
+away within twenty. `./samath -T 300 20` is twenty questions with five minutes
+of answering between them, and `./samath -P 20 > worksheet.txt` prints twenty
+questions with their answers for a worksheet.
+Question `n` of a run is the one the
 API gives for `seed + n - 1`, so the questions are the same however they were
 fetched. Past 4294967295 the seed wraps to 0, as the API's does, so
 `./samath -s 4294967295 3` asks for the seeds 4294967295, 0 and 1. The seed,
