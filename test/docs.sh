@@ -1,7 +1,9 @@
 #!/bin/sh
 # Checks that the options --help prints, the manual page (samathcli.1) and the
-# options table of README.md name the same flags. Run from `make check`
-# with the binary as the argument, or with ./samath by default.
+# options table of README.md name the same flags, that the long options in the
+# table of options.c are the ones --help prints, and that the manual page and
+# README give the bounds and the default address the code has. Run from
+# `make check` with the binary as the argument, or with ./samath by default.
 
 root=$(cd "$(dirname "$0")/.." && pwd)
 bin=${1:-$root/samath}
@@ -23,7 +25,16 @@ if [ ! -s "$work/help" ]; then
   exit 1
 fi
 
+grep -o '{"[a-z-]*", '"'"'.'"'"'}' "$root/options.c" | sed 's/^{"\([^"]*\)".*/--\1/' |
+  sort -u > "$work/table"
+grep -E '^--' "$work/help" | grep -vxE -- '--(help|version)' > "$work/help-table"
+
 status=0
+if ! diff "$work/help-table" "$work/table" > "$work/diff"; then
+  echo "the long options in options.c and --help differ (< --help, > options.c):" >&2
+  cat "$work/diff" >&2
+  status=1
+fi
 for source in man readme; do
   if ! diff "$work/help" "$work/$source" > "$work/diff"; then
     echo "the options in --help and in the $source differ (< --help, > $source):" >&2
@@ -70,6 +81,6 @@ $default
 $fetching"
 
 if [ "$status" = 0 ]; then
-  echo "docs: $(wc -l < "$work/help" | tr -d ' ') options agree across --help, samathcli.1 and README.md"
+  echo "docs: $(wc -l < "$work/help" | tr -d ' ') options agree across --help, options.c, samathcli.1 and README.md"
 fi
 exit "$status"
