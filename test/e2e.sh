@@ -409,6 +409,11 @@ run_at "http://api.test/gen?c=true&x='\$(touch pwned)';touch pwned2" "the URL is
 if [ ! -e "$work/cwd/pwned" ] && [ ! -e "$work/cwd/pwned2" ]; then ok; else fail "a command in the URL ran"; fi
 expect_url "\$(touch pwned)"
 
+input=$(right 1)
+run_at "" "an empty SAMATH_API_URL asks the default address" 1
+expect_status 0
+if [ "$(cat "$CURL_LOG")" = "http://localhost:3000/gen?c=true" ]; then ok; else fail "asked for $(cat "$CURL_LOG")"; fi
+
 input=$(right 3)
 run "a time limit that is kept changes nothing" -t 5 3
 expect_status 0
