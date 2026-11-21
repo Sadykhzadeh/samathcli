@@ -276,6 +276,13 @@ expect_err "gen?c=true"
 case "$err" in *"could not reach"*) fail "said the server was not there" ;; *) ok ;; esac
 
 input=$(right 3)
+run_at "http://api.test/garbage" "with -w, a reply that is not a question asks for JSON, not c=true" -w 3
+expect_status 1
+expect_err "answered, but not with questions"
+expect_err "as JSON"
+expect_no_err "c=true"
+
+input=$(right 3)
 samath_path=$work/cwd
 run "a missing curl is said to be missing, not the server" 3
 samath_path=

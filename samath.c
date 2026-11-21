@@ -23,6 +23,10 @@
   "😔 SAMATH_API_URL answered, but not with questions. It has to " \
   "send them as plain text, which c=true asks for, as in " \
   apiUrlDefault ".\n"
+#define apiNotWorked                                                    \
+  "😔 SAMATH_API_URL answered, but not with questions. With -w it has to " \
+  "send them as JSON, with their working, which working=true asks for. " \
+  "See SAMATH_API_URL.\n"
 #define fetching "⏳ Asking SaMathAPI for the questions..."
 #define noCurl                                                          \
   "😔 I need curl to fetch the questions, and could not run it. Is it "  \
@@ -206,7 +210,9 @@ static const char* fetchFailure(int code) {
    server that could not be reached is named with the address that was tried,
    which is the first thing to check when it was not the one meant. */
 static void sayFetchFailure(int code, const Quiz* quiz) {
-  const char* said = fetchFailure(code);
+  const char* said = code == QUIZ_NOT_QUESTIONS && quiz->working
+                         ? apiNotWorked
+                         : fetchFailure(code);
   if (said) {
     fputs(said, stderr);
   } else {
