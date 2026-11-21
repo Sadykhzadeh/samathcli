@@ -94,6 +94,16 @@ expect=
 run "a server that is slow" "$base/slow" 1
 run "a server that fails" "$base/broken" 2
 run "a server sending bytes that are not UTF-8" "$base/nonutf8" 1
+run "a worked answer cut short" "$base/json-cut" -w 3
+run "a worked answer nested too deep" "$base/json-deep" -w 3
+run "a worked answer that is not tasks" "$base/json-other" -w 1
+run "a worked answer with escapes in fields it does not use" "$base/json-escapes" -w 1
+expect='It said: bad "x"'
+run "a worked refusal shows its message with the escapes read" "$base/json-refusal" -w 1
+expect=
+expect="more than 1 MB"
+run "a worked answer sending too much" "$base/json-huge" -w 2
+expect=
 run "a refusal with escapes and a long text" "$base/refuse" 1
 expect="It said: ?31mBAD ? ok"
 run "a refusal with raw C1 and invalid bytes shows them as ?" "$base/refused-bytes" 1

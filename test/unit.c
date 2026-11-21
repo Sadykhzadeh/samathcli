@@ -876,6 +876,9 @@ static void dropsAWorkingThatIsNotPlainArithmetic(void) {
                              q, 2) == 1);
   CHECK_STR(q[0].working, "");
   CHECK_STR(q[0].answer, "2");
+  CHECK(parseWorkedQuestions("{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"working\":[\"1+1\x1b[2J\",\"2\"]}",
+                             q, 2) == 1);
+  CHECK_STR(q[0].working, "");
   /* A working too long for its room is left out, and the question kept. */
   size_t at = 0;
   while (at + 8 < sizeof working - 1) {

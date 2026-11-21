@@ -42,6 +42,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.reply(400, b"\x1b[31mred\x1b[0m " + b"x" * 5000)
         elif path == "/empty":
             self.reply(200, b"")
+        elif path == "/json-cut":
+            self.reply(200, b'[{"task":[1,"+",1],"answer":2,"quizOptions":[2,3,4,5],"working":["1+1","2')
+        elif path == "/json-deep":
+            self.reply(200, b'[{"task":[1,"+",1],"answer":2,"quizOptions":[2,3,4,5],"working":' + b"[" * 5000)
+        elif path == "/json-escapes":
+            self.reply(200, rb'{"msg":"say \"hi\" \u001b[2J","task":null,"answer":2,"quizOptions":[2,3,4,5]}')
+        elif path == "/json-refusal":
+            self.reply(400, rb'{"error":"bad\u001b \"x\""}')
+        elif path == "/json-other":
+            self.reply(200, b'{"error":"not a task"}')
+        elif path == "/json-huge":
+            self.reply(200, b"[" + b'{"task":[1,"+",1]},' * (2 * 1024 * 1024 // 20))
         elif path == "/refused-bytes":
             self.reply(400, b"\x9b31mBAD \xe9 ok\n")
         elif path == "/refused-c1":
