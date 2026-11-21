@@ -14,13 +14,12 @@ double monotonicSeconds(void);
 /* At a terminal, takes the keyboard over so that one key is one answer,
    with no Enter and nothing echoed. The terminal is handed back on the way
    out, also when the run is interrupted. Anywhere else, standard input is
-   read as it comes and this does nothing. */
+   read as it comes, and only Ctrl-C is caught, as it is at a terminal. */
 void inputStart(void);
 
 /* Whether Ctrl-C, or an INT signal, has come in since inputStart. It makes
    readChoice give CHOICE_QUIT, so that the run can show its result; after
-   that, inputDie ends the run the way the signal would have. Only a run at
-   a terminal is told: anywhere else Ctrl-C ends the run at once. */
+   that, inputDie ends the run the way the signal would have. */
 int inputInterrupted(void);
 
 /* Hands the terminal back and dies of SIGINT, as an interrupted run does. */

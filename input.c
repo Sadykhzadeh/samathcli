@@ -66,9 +66,24 @@ double monotonicSeconds(void) {
   return (double)time.tv_sec + (double)time.tv_nsec / 1e9;
 }
 
+/* Outside a terminal Ctrl-C is caught as it is at one, so that the result is
+   still shown, unless it is ignored already, as in a shell's background job. */
+static void catchInterrupt(void) {
+  struct sigaction current;
+  if (sigaction(SIGINT, NULL, &current) || current.sa_handler != SIG_DFL) return;
+  struct sigaction handler;
+  handler.sa_handler = onInterrupt;
+  sigemptyset(&handler.sa_mask);
+  handler.sa_flags = 0;
+  sigaction(SIGINT, &handler, NULL);
+}
+
 void inputStart(void) {
-  if (taken || !isatty(STDIN_FILENO) || tcgetattr(STDIN_FILENO, &original))
+  if (taken) return;
+  if (!isatty(STDIN_FILENO) || tcgetattr(STDIN_FILENO, &original)) {
+    catchInterrupt();
     return;
+  }
 
   struct termios keys = original;
   keys.c_lflag &= (tcflag_t) ~(ICANON | ECHO);

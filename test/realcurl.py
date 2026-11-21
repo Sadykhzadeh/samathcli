@@ -434,6 +434,22 @@ url = url_ok
 check(status == 1 and "more than 1 MB" in err, "a reply past 1 MB is said so: %r" % err)
 check(waited < 5, "a reply past 1 MB is not waited for: %.1f s" % waited)
 
+# Ctrl-C with the answers piped in gives the result so far, as it does at a
+# terminal, and then ends the run by SIGINT.
+read_end, write_end = os.pipe()
+piped = subprocess.Popen([BINARY, "3"], stdin=read_end, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, env=child_env(SAMATH_API_URL=url),
+                         preexec_fn=own_signals)
+os.close(read_end)
+os.write(write_end, b"a")
+time.sleep(1)
+piped.send_signal(signal.SIGINT)
+piped_out, piped_err = piped.communicate(timeout=30)
+os.close(write_end)
+check(piped.returncode == -signal.SIGINT, "Ctrl-C with piped answers ends the run by SIGINT: %r" % piped.returncode)
+check("You stopped after 1 of 3 questions." in piped_out.decode() and "1 of 1 right" in piped_out.decode(),
+      "Ctrl-C with piped answers gives the result so far: %r" % piped_out.decode()[-300:])
+
 # A run stopped by a signal that reaches only the program, as from `kill`, takes
 # curl down with it: curl is not left to wait out its time limit of 10 s.
 for name, number in (("SIGTERM", signal.SIGTERM), ("SIGINT", signal.SIGINT)):
