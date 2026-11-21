@@ -188,7 +188,7 @@ fails does to a run. No SaMathAPI is needed. To check for memory errors as
 well:
 
 ```sh
-make clean check CFLAGS='-std=c11 -g -O1 -Wall -Wextra -Wpedantic -Werror -fsanitize=address,undefined -fno-sanitize-recover=undefined'
+make clean check CFLAGS='-std=c11 -O1 -g -Wall -Wextra -Wpedantic -Wshadow -Wstrict-prototypes -fsanitize=address,undefined -fno-sanitize-recover=undefined'
 ```
 
 The last flag makes an undefined behaviour report fail the run; without it
