@@ -17,6 +17,8 @@
 # "flaky" answers its first request with a 500 and the rest normally
 # ("limited" with a 429, "hangs-up" by dropping the connection),
 # and "drops-out" answers the first request and fails to connect after that.
+# "send-fails" fails while sending the request, as curl does when the server
+# cuts the connection before it has taken the request.
 # "old-curl" exits with 2 at once, as curl before 7.21 does for --proto.
 # FAKE_IGNORE_COUNT=1 makes it an older server that does not know count and
 # sends one question whatever is asked. "short" sends at most three questions
@@ -55,6 +57,10 @@ case "$url" in
   *down*)
     echo "curl: (7) Failed to connect" >&2
     finish 000 7
+    ;;
+  *send-fails*)
+    echo "curl: (55) Send failure: Connection reset by peer" >&2
+    finish 000 55
     ;;
   *old-curl*)
     echo "curl: option --proto-redir: is unknown" >&2

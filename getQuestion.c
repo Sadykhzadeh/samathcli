@@ -481,7 +481,8 @@ static int loadBatch(Quiz* quiz) {
     return QUIZ_NO_TLS;
   if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;
   if (status == CURL_CUT_SHORT) return QUIZ_CUT_SHORT;
-  if (status == CURL_NO_REPLY || status == CURL_RECEIVE_FAILED)
+  if (status == CURL_NO_REPLY || status == CURL_SEND_FAILED ||
+      status == CURL_RECEIVE_FAILED)
     return QUIZ_DROPPED;
   if (status) return QUIZ_UNREACHABLE;
 

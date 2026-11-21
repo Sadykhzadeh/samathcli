@@ -219,6 +219,13 @@ expect_url "count=3"
 expect_out "Fantastic"
 
 input=$(right 3)
+run_at "http://api.test/send-fails?c=true" "a connection dropped while sending is tried again and named" 3
+expect_status 1
+expect_requests 2
+expect_err "SaMathAPI dropped the connection"
+case "$err" in *"could not reach"*) fail "blamed the server being down" ;; *) ok ;; esac
+
+input=$(right 3)
 run_at "http://api.test/old-curl?c=true" "a curl too old for --proto-redir is said so" 3
 expect_status 1
 expect_requests 1
