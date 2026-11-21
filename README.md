@@ -191,7 +191,11 @@ tests in `test/`: unit checks of the parser, then the program itself against a
 stand-in for `curl`, then (when `python3` is there) on a pseudo-terminal, which
 is the only way to see single-key input working, and against a small HTTP
 server on this machine with the real `curl`, which shows what a server that
-fails does to a run. No SaMathAPI is needed. To check for memory errors as
+fails does to a run. `test/docs.sh` checks that `--help`, the manual page and
+the options table name the same options, and `test/hostile.sh` checks that
+hostile command lines and servers that send garbage end every run with status
+1 and no sanitizer report or curl message on standard error. No SaMathAPI is
+needed. To check for memory errors as
 well:
 
 ```sh
