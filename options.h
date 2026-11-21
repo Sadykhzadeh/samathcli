@@ -2,10 +2,13 @@
 #define SAMATH_OPTIONS_H
 
 #define SAMATH_VERSION "1.0.0"
+/* A constant as the text of a string literal, for the help text. */
+#define AS_TEXT_(value) #value
+#define AS_TEXT(value) AS_TEXT_(value)
 #define TIME_LIMIT_MAX 3600
 /* The whole run, from the first question to the last, may take this long. */
 #define TOTAL_TIME_MAX 3600
-#define SEED_MAX 4294967295LL
+#define SEED_MAX 4294967295
 /* How many numbers a question may have: the bounds SaMathAPI takes. */
 #define LENGTH_MIN 2
 #define LENGTH_MAX 12

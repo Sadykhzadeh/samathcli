@@ -79,30 +79,34 @@
   "usage: samath [options] QUESTIONS\n"                                   \
   "\n"                                                                    \
   "  QUESTIONS            how many questions to ask, 1 or more\n"         \
-  "  -t, --time SECONDS   seconds to answer each question (1 to 3600);\n" \
+  "  -t, --time SECONDS   seconds to answer each question (1 to "         \
+  AS_TEXT(TIME_LIMIT_MAX) ");\n"                                          \
   "                       one that runs out counts as a mistake\n"        \
   "  -T, --total SECONDS  seconds of answering for the whole run (1 to\n" \
-  "                       3600); the questions not reached are not asked\n" \
+  "                       " AS_TEXT(TOTAL_TIME_MAX) "); the questions not reached" \
+  " are not asked\n"                                                      \
   "  -s, --seed NUMBER    ask the same questions every time\n"            \
-  "                       (0 to 4294967295; the API has to take a seed)\n" \
+  "                       (0 to " AS_TEXT(SEED_MAX) "; the API has to take a seed)\n" \
   "  -p, --practice       ask the ones you got wrong again until they are\n" \
   "                       right\n"                                        \
-  "  -l, --length N       how many numbers each question has (2 to 12)\n" \
+  "  -l, --length N       how many numbers each question has ("           \
+  AS_TEXT(LENGTH_MIN) " to " AS_TEXT(LENGTH_MAX) ")\n"                    \
   "  -b, --brackets       ask for questions with brackets\n"              \
-  "  -B, --no-brackets    ask for questions with no group in brackets\n" \
-  "  -m, --max N          no number further from zero than N (10-10000)\n" \
+  "  -B, --no-brackets    ask for questions with no group in brackets\n"  \
+  "  -m, --max N          no number further from zero than N ("           \
+  AS_TEXT(MAX_MIN) "-" AS_TEXT(MAX_MAX) ")\n"                             \
   "  -o, --operators LIST only these: add, subtract, multiply, divide,\n" \
-  "                       separated by commas\n"                         \
-  "  -r, --range LOW-HIGH answers from LOW to HIGH (0-10000, at most\n"    \
-  "                       100 apart)\n"                                  \
-  "  -n, --no-negatives   ask for questions with no number below zero\n" \
+  "                       separated by commas\n"                          \
+  "  -r, --range LOW-HIGH answers from LOW to HIGH (0-" AS_TEXT(RANGE_MAX) ", at most\n" \
+  "                       " AS_TEXT(RANGE_WIDTH) " apart)\n"              \
+  "  -n, --no-negatives   ask for questions with no number below zero\n"  \
   "  -N, --negatives      ask for questions that may have them, when the API\n" \
-  "                       leaves them out\n"                             \
-  "  -f, --feedback       say after each answer whether it was right\n"  \
+  "                       leaves them out\n"                              \
+  "  -f, --feedback       say after each answer whether it was right\n"   \
   "  -P, --print          print the questions with their answers instead\n" \
-  "                       of asking them\n"                              \
+  "                       of asking them\n"                               \
   "  -h, --help           show this\n"                                    \
-  "      --version        print the version\n"                           \
+  "      --version        print the version\n"                            \
   "\n"                                                                    \
   "Short options can be joined: -pf, or -pt 30 with a time limit.\n"      \
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
@@ -443,7 +447,7 @@ int main(int argc, char** argv) {
       return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
     case ARGS_BAD_SEED:
       fprintf(stderr,
-              "😅 A seed is a whole number from 0 to %lld, not \"", SEED_MAX);
+              "😅 A seed is a whole number from 0 to %lld, not \"", (long long)SEED_MAX);
       return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
     case ARGS_BAD_LENGTH:
       fprintf(stderr, "😅 A question has %d to %d numbers, not \"", LENGTH_MIN,
