@@ -28,8 +28,8 @@
   "😔 I need curl to fetch the questions, and could not run it. Is it "  \
   "installed and on your PATH?\n"
 #define apiTooBig                                                       \
-  "😔 SAMATH_API_URL sent more than 1 MB, far more than a run of "     \
-  "questions. See SAMATH_API_URL.\n"
+  "😔 SAMATH_API_URL sent more than " AS_TEXT(RESPONSE_MAX_MB) " MB, far more " \
+  "than a run of questions. See SAMATH_API_URL.\n"
 #define apiTimedOut                                                     \
   "😔 SaMathAPI did not answer in time. It may be busy, or the network " \
   "slow. See SAMATH_API_URL.\n"
@@ -61,7 +61,8 @@
 #define apiBadUrl                                                       \
   "😔 SAMATH_API_URL is not an address I can fetch from. Use an http:// or "  \
   "https:// address with no spaces in it, as http://localhost:3000/gen?c=true " \
-  "is, and keep it under 2048 characters with the questions asked for added.\n"
+  "is, and keep it under " AS_TEXT(URL_MAX) " characters with the questions " \
+  "asked for added.\n"
 #define apiRedirects                                                    \
   "😔 SAMATH_API_URL redirects more than five times. See SAMATH_API_URL.\n"
 #define writeFailure "😔 I could not write the result out. Is the disk full?\n"

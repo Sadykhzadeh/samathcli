@@ -12,6 +12,13 @@ int isBidiControl(const unsigned char* text);
 /* The most bytes of what a refusing server said that are kept. */
 #define REFUSAL_MAX 160
 
+/* A run of 100 questions is a few kilobytes; a server that sends more than
+   RESPONSE_MAX_MB megabytes is not sending questions. */
+#define RESPONSE_MAX_MB 1
+#define RESPONSE_MAX (RESPONSE_MAX_MB << 20)
+/* The longest URL that is asked of, with the query added. */
+#define URL_MAX 2048
+
 /* The most questions asked for in one request: SaMathAPI's limit on `count`. */
 #define QUIZ_BATCH_MAX 100
 

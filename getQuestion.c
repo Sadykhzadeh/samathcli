@@ -17,10 +17,6 @@
 #define apiUrlEnv "SAMATH_API_URL"
 #define apiUrlDefault "http://localhost:3000/gen?c=true"
 
-/* A run of 100 questions is a few kilobytes; a server that sends more than
-   this is not sending questions. */
-#define RESPONSE_MAX (1 << 20)
-#define URL_MAX 2048
 /* Room for every parameter requestUrl can add, each at its longest. */
 #define QUERY_MAX 256
 
