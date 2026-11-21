@@ -38,6 +38,26 @@ if ! grep '^\.TH ' "$root/samathcli.1" | tr -d '\r' | grep -qF "\"$version\""; t
   status=1
 fi
 
+# The bounds the manual page and README give for each option, as options.h
+# sets them, each as a whole phrase: "1 to 3600" does not match "1 to 36000".
+limit() { sed -n "s/^#define $1 \\([0-9]*\\).*/\\1/p" "$root/options.h"; }
+bounds="1 to $(limit TIME_LIMIT_MAX)
+1 to $(limit TOTAL_TIME_MAX)
+0 to $(limit SEED_MAX)
+$(limit LENGTH_MIN) to $(limit LENGTH_MAX)
+$(limit MAX_MIN) to $(limit MAX_MAX)
+0 to $(limit RANGE_MAX)
+at most $(limit RANGE_WIDTH)"
+for source in samathcli.1 README.md; do
+  flat=$(tr -d '\r' < "$root/$source" | tr '\n' ' ' | tr -s ' ')
+  echo "$bounds" | while IFS= read -r phrase; do
+    if ! printf '%s\n' "$flat" | grep -qwF -- "$phrase"; then
+      echo "$source does not give the bound \"$phrase\", as options.h has it" >&2
+      exit 1
+    fi
+  done || status=1
+done
+
 if [ "$status" = 0 ]; then
   echo "docs: $(wc -l < "$work/help" | tr -d ' ') options agree across --help, samathcli.1 and README.md"
 fi
