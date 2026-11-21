@@ -32,6 +32,12 @@ for source in man readme; do
   fi
 done
 
+version=$("$bin" --version) || exit 1
+if ! grep '^\.TH ' "$root/samathcli.1" | tr -d '\r' | grep -qF "\"$version\""; then
+  echo "the .TH line of samathcli.1 does not name \"$version\", as --version prints" >&2
+  status=1
+fi
+
 if [ "$status" = 0 ]; then
   echo "docs: $(wc -l < "$work/help" | tr -d ' ') options agree across --help, samathcli.1 and README.md"
 fi
