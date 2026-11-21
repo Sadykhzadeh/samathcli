@@ -854,6 +854,24 @@ static void keepsTheMistakesWhenTheListCannotGrow(void) {
   mistakesFree(&list);
 }
 
+static void knowsTheBidirectionalControls(void) {
+  /* The controls are U+200E, U+200F, U+202A to U+202E and U+2066 to U+2069;
+     the code points either side of those ranges are not controls. */
+  CHECK(isBidiControl((const unsigned char*)"\xe2\x80\x8e"));
+  CHECK(isBidiControl((const unsigned char*)"\xe2\x80\x8f"));
+  CHECK(!isBidiControl((const unsigned char*)"\xe2\x80\x8d"));
+  CHECK(!isBidiControl((const unsigned char*)"\xe2\x80\x90"));
+  CHECK(!isBidiControl((const unsigned char*)"\xe2\x80\xa9"));
+  CHECK(isBidiControl((const unsigned char*)"\xe2\x80\xaa"));
+  CHECK(isBidiControl((const unsigned char*)"\xe2\x80\xae"));
+  CHECK(!isBidiControl((const unsigned char*)"\xe2\x80\xaf"));
+  CHECK(!isBidiControl((const unsigned char*)"\xe2\x81\xa5"));
+  CHECK(isBidiControl((const unsigned char*)"\xe2\x81\xa6"));
+  CHECK(isBidiControl((const unsigned char*)"\xe2\x81\xa9"));
+  CHECK(!isBidiControl((const unsigned char*)"\xe2\x81\xaa"));
+  CHECK(!isBidiControl((const unsigned char*)"\xe3\x80\xaa"));
+}
+
 int main(void) {
   parsesAWellFormedLine();
   keepsNegativesAndBrackets();
@@ -882,6 +900,7 @@ int main(void) {
   keepsAMistakeOffAPerfectScore();
   doesNotRepeatItselfForOneAnswer();
   neverWritesPastTheRoomItWasGiven();
+  knowsTheBidirectionalControls();
   survivesRandomInput();
   readsTheNumberOfQuestions();
   refusesWhatIsNotANumberOfQuestions();

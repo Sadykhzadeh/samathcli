@@ -48,6 +48,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.reply(400, b"\xc2\x9b31mBAD\n")
         elif path == "/refused-bidi":
             self.reply(400, b"\xe2\x80\xaeBAD\xe2\x81\xa9 \xe2\x80\x8eok\xe2\x80\x8f\n")
+        elif path == "/refused-utf8":
+            self.reply(400, b"\xf0\x9f\x98\x94 caf\xc3\xa9 \xc0\xaf \xed\xa0\x80 \xf4\x90\x80\x80 \xf0\x8f\xbf\xbf \xe0\x80\xaf \xe2\x80 end\n")
         else:
             self.reply(404, b"not found\n")
 

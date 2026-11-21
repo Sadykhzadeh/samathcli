@@ -94,6 +94,8 @@ expect="It said: 31mBAD$"
 run "a refusal with a UTF-8 C1 control drops it" "$base/refused-c1" 1
 expect="It said: BAD ok$"
 run "a refusal with bidi overrides drops them" "$base/refused-bidi" 1
+expect="It said: 😔 café ?? ??? ???? ???? ??? ?? end$"
+run "a refusal keeps well-formed UTF-8 and shows a ? for each byte of the rest" "$base/refused-utf8" 1
 expect=
 run "a server sending nothing" "$base/empty" 1
 run "a file URL" "file:///etc/passwd" 1
