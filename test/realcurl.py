@@ -40,6 +40,25 @@ def check(condition, what):
         print("FAIL: " + what)
 
 
+PROXY_VARS = ("http_proxy", "HTTP_PROXY", "https_proxy", "HTTPS_PROXY",
+              "all_proxy", "ALL_PROXY", "no_proxy", "NO_PROXY")
+
+
+def child_env(**more):
+    # The caller's proxy settings would send the checks to a proxy, or let
+    # no_proxy bypass the local server; each check sets the ones it needs.
+    env = {name: value for name, value in os.environ.items() if name not in PROXY_VARS}
+    env.update(more)
+    return env
+
+
+def own_signals():
+    # A signal the caller ignored is inherited by the program, which then keeps
+    # it: samath only stops curl on a signal it can catch.
+    for number in (signal.SIGINT, signal.SIGQUIT, signal.SIGTERM, signal.SIGHUP):
+        signal.signal(number, signal.SIG_DFL)
+
+
 class Server(http.server.BaseHTTPRequestHandler):
     # The (status, body) to answer the next requests with; 200 once they are
     # used up. A status of 0 is a connection dropped with no answer at all.
@@ -135,7 +154,11 @@ class Server(http.server.BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
-        self.wfile.write(body)
+        try:
+            self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):
+            # curl stops reading once it has what it needs, as with a reply past 1 MB.
+            pass
 
 
 server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Server)
@@ -146,8 +169,9 @@ url = "http://127.0.0.1:%d/gen?c=true" % server.server_address[1]
 def run(args, failures=(), stdin=b"aaaaaaaaaa", **more):
     Server.failures = [f if isinstance(f, tuple) else (f, b"") for f in failures]
     Server.paths = []
-    env = dict(os.environ, SAMATH_API_URL=url, **more)
-    done = subprocess.run([BINARY] + args, input=stdin, capture_output=True, env=env, timeout=60)
+    env = child_env(SAMATH_API_URL=url, **more)
+    done = subprocess.run([BINARY] + args, input=stdin, capture_output=True, env=env,
+                          preexec_fn=own_signals, timeout=60)
     return done.returncode, done.stdout.decode(), done.stderr.decode()
 
 
@@ -191,7 +215,7 @@ check(status == 1 and "dropped the connection" in err, "a server that keeps drop
 check(Server.paths == ["/gen?c=true&count=4"] * 2, "a dropped connection is asked twice: %r" % Server.paths)
 Server.paths = []
 done = subprocess.run([BINARY, "1"], input=b"a", capture_output=True, timeout=60,
-                      env=dict(os.environ, SAMATH_API_URL=url.replace("/gen", "/reset")))
+                      env=child_env(SAMATH_API_URL=url.replace("/gen", "/reset")))
 check(done.returncode == 1 and "dropped the connection" in done.stderr.decode(),
       "a connection reset after part of an answer is said so: %r" % done.stderr)
 check("Is it running" not in done.stderr.decode(), "a reset is not a server that is down: %r" % done.stderr)
@@ -332,9 +356,8 @@ check("Is it running" not in err, "a TLS failure is not a server that is down: %
 # down: curl fails before it ever connects.
 Server.paths = []
 done = subprocess.run([BINARY, "1"], input=b"a", capture_output=True, timeout=60,
-                      env=dict(os.environ,
-                               SAMATH_API_URL=url.replace("http://", "https://", 1),
-                               CURL_CA_BUNDLE="/nonexistent"))
+                      env=child_env(SAMATH_API_URL=url.replace("http://", "https://", 1),
+                                    CURL_CA_BUNDLE="/nonexistent"))
 err = done.stderr.decode()
 check(done.returncode == 1 and "secure connection" in err, "a CA bundle that cannot be loaded: %r" % err)
 check("Is it running" not in err, "a bad CA bundle is not a server that is down: %r" % err)
@@ -394,7 +417,7 @@ shutil.rmtree(home)
 Server.failures = []
 Server.paths = []
 done = subprocess.run([BINARY, "2"], input=b"ab", stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                      env=dict(os.environ, SAMATH_API_URL=url), preexec_fn=lambda: os.close(1), timeout=60)
+                      env=child_env(SAMATH_API_URL=url), preexec_fn=lambda: os.close(1), timeout=60)
 err = done.stderr.decode()
 check(Server.paths == ["/gen?c=true&count=2"], "questions are fetched with standard output closed: %r" % Server.paths)
 check("could not reach" not in err, "closed standard output is not a server out of reach: %r" % err)
@@ -415,9 +438,9 @@ check(waited < 5, "a reply past 1 MB is not waited for: %.1f s" % waited)
 # curl down with it: curl is not left to wait out its time limit of 10 s.
 for name, number in (("SIGTERM", signal.SIGTERM), ("SIGINT", signal.SIGINT)):
     Server.paths = []
-    stalled = dict(os.environ, SAMATH_API_URL=url.replace("/gen", "/stall-" + name))
+    stalled = child_env(SAMATH_API_URL=url.replace("/gen", "/stall-" + name))
     run_once = subprocess.Popen([BINARY, "3"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, env=stalled)
+                                stderr=subprocess.PIPE, env=stalled, preexec_fn=own_signals)
     deadline = time.time() + 10
     while not Server.paths and time.time() < deadline:
         time.sleep(0.05)

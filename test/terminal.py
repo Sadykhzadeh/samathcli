@@ -37,8 +37,10 @@ def start(argv, closed_output=False, term="xterm"):
     pid, fd = pty.fork()
     if pid == 0:
         # As a shell would start it: Python ignores SIGPIPE, and the program
-        # would inherit that. No core file from SIGQUIT either.
-        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+        # would inherit that, and a signal the caller ignores is kept ignored
+        # too. No core file from SIGQUIT either.
+        for number in (signal.SIGPIPE, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM, signal.SIGHUP):
+            signal.signal(number, signal.SIG_DFL)
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
         if closed_output:
             # Output into a pipe nobody reads, as in `samath 3 | true`.
