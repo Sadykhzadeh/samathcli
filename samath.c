@@ -64,7 +64,8 @@
   "is, and keep it under " AS_TEXT(URL_MAX) " characters with the questions " \
   "asked for added.\n"
 #define apiRedirects                                                    \
-  "😔 SAMATH_API_URL redirects more than five times. See SAMATH_API_URL.\n"
+  "😔 SAMATH_API_URL redirects more than " AS_TEXT(REDIRECTS_MAX) " times. " \
+  "See SAMATH_API_URL.\n"
 #define writeFailure "😔 I could not write the result out. Is the disk full?\n"
 #define noMemory                                                          \
   "😔 I ran out of memory to keep the mistakes, so the run stopped there.\n"

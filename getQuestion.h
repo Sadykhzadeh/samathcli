@@ -18,6 +18,11 @@ int isBidiControl(const unsigned char* text);
 #define RESPONSE_MAX (RESPONSE_MAX_MB << 20)
 /* The longest URL that is asked of, with the query added. */
 #define URL_MAX 2048
+/* How long curl waits to connect and for the whole answer, in seconds, and
+   how many redirects it follows. */
+#define CONNECT_SECONDS 4
+#define ANSWER_SECONDS 10
+#define REDIRECTS_MAX 5
 
 /* The most questions asked for in one request: SaMathAPI's limit on `count`. */
 #define QUIZ_BATCH_MAX 100

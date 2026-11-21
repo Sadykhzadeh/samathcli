@@ -331,7 +331,7 @@ url_ok = url
 url = url.replace("/gen", "/loop")
 status, out, err = run(["1"])
 url = url_ok
-check(status == 1 and "redirects more than five times" in err, "a redirect that never ends is said so: %r" % err)
+check(status == 1 and "redirects more than 5 times" in err, "a redirect that never ends is said so: %r" % err)
 check(len(Server.paths) == 6, "a redirect that never ends is followed five times: %r" % Server.paths)
 
 # A reply too big to be questions is said not to be questions, not to be out of

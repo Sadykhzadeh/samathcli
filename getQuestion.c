@@ -128,10 +128,11 @@ static int fetchText(const char* url, char** text, long* code) {
        URL that has moved, as http:// does when a server wants https://, is
        followed a few times, to another web address and nowhere else. Only web
        addresses are asked of at all: a file or any other scheme is refused. */
-    execlp("curl", "curl", "-q", "-sS", "--connect-timeout", "4", "--max-time", "10",
-           "--retry", "0", "-L", "--max-redirs", "5", "--proto", "=http,https",
-           "--proto-redir", "=http,https", "-w", "%{http_code}", "--url", url,
-           (char*)NULL);
+    execlp("curl", "curl", "-q", "-sS", "--connect-timeout",
+           AS_TEXT(CONNECT_SECONDS), "--max-time", AS_TEXT(ANSWER_SECONDS),
+           "--retry", "0", "-L", "--max-redirs", AS_TEXT(REDIRECTS_MAX),
+           "--proto", "=http,https", "--proto-redir", "=http,https", "-w",
+           "%{http_code}", "--url", url, (char*)NULL);
     _exit(CURL_NOT_RUN);
   }
   close(channel[1]);
