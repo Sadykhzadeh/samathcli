@@ -833,6 +833,11 @@ run "a printout ignores a time limit, practice and feedback" -P -t 5 -p -f 3
 expect_status 0
 if [ "$out" = "$plain" ]; then ok; else fail "the printout changed: $out"; fi
 expect_no_out "left"
+
+run "a printout ignores the time for the whole run" -P -T 1 3
+expect_status 0
+if [ "$out" = "$plain" ]; then ok; else fail "the printout changed: $out"; fi
+expect_no_out "Time is up"
 run_at "http://api.test/down?c=true" "a printout says when the server cannot be reached" -P 2
 expect_status 1
 expect_err "could not reach"
