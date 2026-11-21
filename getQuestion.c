@@ -208,10 +208,7 @@ static int fetchText(const char* url, char** text, long* code) {
   return 0;
 }
 
-/* The length of the well-formed UTF-8 character that starts at `text`, or 0
-   when the bytes there are not one. Overlong forms, surrogates and code points
-   past U+10FFFF are not well formed. */
-static size_t utf8Length(const unsigned char* text) {
+size_t utf8Length(const unsigned char* text) {
   unsigned char low = 0x80, high = 0xBF;
   size_t length;
   if (text[0] >= 0xC2 && text[0] <= 0xDF) {

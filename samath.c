@@ -123,6 +123,8 @@ static void sayText(const char* text, size_t length) {
   const unsigned char* c = (const unsigned char*)text;
   const unsigned char* end = c + length;
   for (; c < end; c++) {
+    size_t size = *c < 0x80 ? 1 : utf8Length(c);
+    if (size > (size_t)(end - c)) size = 0;
     if (*c < ' ' || *c == 0x7f) {
       fputc('?', stderr);
     } else if (*c == 0xC2 && c + 1 < end && c[1] >= 0x80 && c[1] <= 0x9F) {
@@ -131,8 +133,11 @@ static void sayText(const char* text, size_t length) {
     } else if (end - c >= 3 && isBidiControl(c)) {
       fputc('?', stderr);
       c += 2;
+    } else if (!size) {
+      fputc('?', stderr);
     } else {
-      fputc(*c, stderr);
+      fwrite(c, 1, size, stderr);
+      c += size - 1;
     }
   }
 }

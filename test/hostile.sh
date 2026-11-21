@@ -77,6 +77,13 @@ run "a control character in an unknown short option" "$gen" "-$(printf '\033')" 
 run "a control character in a seed" "$gen" -s "$(printf '\r\033[31m')" 1
 run "a control character after an option that needs a value" "$gen" -t "$(printf '\033[1m')" 1
 run "a control character in an extra number" "$gen" 1 "$(printf '\033[2J')" 1
+expect='not "5?"'
+run "a raw C1 byte in an argument shows it as ?" "$gen" "5$(printf '\233')" 1
+expect='not "5é?"'
+run "bytes that are not UTF-8 in an argument show as ?" "$gen" "5é$(printf '\377')" 1
+expect='not "5é"'
+run "well-formed UTF-8 in an argument is kept" "$gen" "5é" 1
+expect=
 run "zero questions" "$gen" 0
 run "a zero time limit" "$gen" -t 0 1
 run "an unreachable server" "http://127.0.0.1:1/gen" 1

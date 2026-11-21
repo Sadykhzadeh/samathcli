@@ -9,6 +9,12 @@
    caller makes sure there are three. */
 int isBidiControl(const unsigned char* text);
 
+/* The length of the well-formed UTF-8 character that starts at `text`, or 0
+   when the bytes there are not one. Overlong forms, surrogates and code points
+   past U+10FFFF are not well formed. Reads no further than the first byte that
+   is not part of a character, so a NUL ends it. */
+size_t utf8Length(const unsigned char* text);
+
 /* The most bytes of what a refusing server said that are kept. */
 #define REFUSAL_MAX 160
 
