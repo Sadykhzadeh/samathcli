@@ -19,6 +19,8 @@
 # and "drops-out" answers the first request and fails to connect after that.
 # "send-fails" fails while sending the request, as curl does when the server
 # cuts the connection before it has taken the request.
+# "peer-verify" exits with 51, as curl before 7.62 does when the server's
+# certificate fails verification.
 # "old-curl" exits with 2 at once, as curl before 7.21 does for --proto.
 # FAKE_IGNORE_COUNT=1 makes it an older server that does not know count and
 # sends one question whatever is asked. "short" sends at most three questions
@@ -61,6 +63,10 @@ case "$url" in
   *send-fails*)
     echo "curl: (55) Send failure: Connection reset by peer" >&2
     finish 000 55
+    ;;
+  *peer-verify*)
+    echo "curl: (51) SSL: no alternative certificate subject name matches target host name" >&2
+    finish 000 51
     ;;
   *old-curl*)
     echo "curl: option --proto-redir: is unknown" >&2

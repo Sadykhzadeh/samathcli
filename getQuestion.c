@@ -40,7 +40,9 @@
 #define CURL_FAILED_INIT 2
 #define CURL_TOO_MANY_REDIRECTS 47
 /* curl's exit statuses for a TLS handshake that failed, and for a certificate
-   that could not be checked. */
+   that could not be checked. A peer certificate that fails verification has
+   been 60 (CURL_CA_CHECK below) since curl 7.62.0, and was 51 before it, so
+   both are kept. */
 #define CURL_SSL_CONNECT 35
 #define CURL_PEER_VERIFY 51
 #define CURL_SSL_CERT_PROBLEM 58

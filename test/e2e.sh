@@ -226,6 +226,13 @@ expect_err "SaMathAPI dropped the connection"
 case "$err" in *"could not reach"*) fail "blamed the server being down" ;; *) ok ;; esac
 
 input=$(right 3)
+run_at "http://api.test/peer-verify?c=true" "a peer certificate that fails verification is a certificate problem" 3
+expect_status 1
+expect_requests 1
+expect_err "certificate could not be checked"
+case "$err" in *"could not reach"*) fail "blamed the server" ;; *) ok ;; esac
+
+input=$(right 3)
 run_at "http://api.test/old-curl?c=true" "a curl too old for --proto-redir is said so" 3
 expect_status 1
 expect_requests 1
