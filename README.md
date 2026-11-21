@@ -169,9 +169,9 @@ through ends the run there: the result covers the questions answered so
 far, and `samath` exits with status 1.
 
 A request that gets no connection within 4 seconds, or no answer within 10, is
-given up on, and one that fails in a way that may pass (a 5xx, a timeout, a
-dropped connection) is tried once more, a second later, so one hiccup on a
-busy server does not end a class's run; a host that is dead still ends it
+given up on, and one that fails in a way that may pass (a 5xx, a 408 or 429,
+a timeout, a dropped connection) is tried once more, a second later, so one
+hiccup on a busy server does not end a class's run; a host that is dead still ends it
 within about ten seconds, and one that connects but never answers within
 about twenty. A refusal such as a 404 is not asked again. A URL that has moved
 is followed, up to 5 times, so `http://` works against a server that
