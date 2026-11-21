@@ -38,8 +38,8 @@ if ! grep '^\.TH ' "$root/samathcli.1" | tr -d '\r' | grep -qF "\"$version\""; t
   status=1
 fi
 
-# The numbers the manual page and README give, as the code has them, each as a
-# whole phrase: "1 to 3600" does not match "1 to 36000".
+# The numbers and the default address the manual page and README give, as the
+# code has them, each as a whole phrase: "1 to 3600" does not match "1 to 36000".
 limit() { sed -n "s/^#define $1 \\([0-9]*\\).*/\\1/p" "$root/options.h" "$root/getQuestion.h"; }
 # Fails, and sets status, when the file does not say one of the phrases.
 mentions() {
@@ -62,8 +62,11 @@ fetching="within $(limit CONNECT_SECONDS) seconds
 no answer within $(limit ANSWER_SECONDS)
 up to $(limit REDIRECTS_MAX) times
 batches of $(limit QUIZ_BATCH_MAX)"
-mentions "$root/samathcli.1" "$bounds"
+default=$(sed -n 's/^#define apiUrlDefault "\(.*\)"$/\1/p' "$root/getQuestion.h")
+mentions "$root/samathcli.1" "$bounds
+$default"
 mentions "$root/README.md" "$bounds
+$default
 $fetching"
 
 if [ "$status" = 0 ]; then

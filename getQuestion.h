@@ -16,6 +16,8 @@ int isBidiControl(const unsigned char* text);
    RESPONSE_MAX_MB megabytes is not sending questions. */
 #define RESPONSE_MAX_MB 1
 #define RESPONSE_MAX (RESPONSE_MAX_MB << 20)
+/* The address the questions come from when SAMATH_API_URL is not set. */
+#define apiUrlDefault "http://localhost:3000/gen?c=true"
 /* The longest URL that is asked of, with the query added. */
 #define URL_MAX 2048
 /* How long curl waits to connect and for the whole answer, in seconds, and

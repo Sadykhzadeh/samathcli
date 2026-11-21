@@ -22,7 +22,7 @@
 #define apiNotQuestions                                             \
   "😔 SAMATH_API_URL answered, but not with questions. It has to " \
   "send them as plain text, which c=true asks for, as in " \
-  "http://localhost:3000/gen?c=true.\n"
+  apiUrlDefault ".\n"
 #define fetching "⏳ Asking SaMathAPI for the questions..."
 #define noCurl                                                          \
   "😔 I need curl to fetch the questions, and could not run it. Is it "  \
@@ -60,7 +60,7 @@
   "for another process or open file. Close something and try again.\n"
 #define apiBadUrl                                                       \
   "😔 SAMATH_API_URL is not an address I can fetch from. Use an http:// or "  \
-  "https:// address with no spaces in it, as http://localhost:3000/gen?c=true " \
+  "https:// address with no spaces in it, as " apiUrlDefault " " \
   "is, and keep it under " AS_TEXT(URL_MAX) " characters with the questions " \
   "asked for added.\n"
 #define apiRedirects                                                    \

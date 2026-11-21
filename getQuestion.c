@@ -15,7 +15,6 @@
 #include "input.h"
 
 #define apiUrlEnv "SAMATH_API_URL"
-#define apiUrlDefault "http://localhost:3000/gen?c=true"
 
 /* Room for every parameter requestUrl can add, each at its longest. */
 #define QUERY_MAX 256
