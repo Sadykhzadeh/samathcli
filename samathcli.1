@@ -28,6 +28,13 @@ or a value can follow the option letter directly, as in
 Give each question that many seconds to answer, from 1 to 3600. A question
 that runs out of time counts as a mistake.
 .TP
+\fB\-T\fR, \fB\-\-total\fR \fISECONDS\fR
+Give the whole run that many seconds of answering, from 1 to 3600. The time
+is counted as the time limit is, so time spent waiting for the server does not
+count. When it runs out, the question on
+the screen counts as a mistake if it was not answered, and the questions not
+reached are not asked. Practice does not run after such a run.
+.TP
 \fB\-s\fR, \fB\-\-seed\fR \fINUMBER\fR
 Ask the same questions every time, from 0 to 4294967295. The seed is passed
 to the API, which has to support it.

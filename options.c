@@ -10,7 +10,7 @@
    a value. -h is read before anything else, so it is no more than a letter
    to skip here. */
 #define SWITCHES "pbBnNfhP"
-#define VALUED "tslmor"
+#define VALUED "tTslmor"
 
 /* Whether `text` is some of the operators SaMathAPI names, each once and
    separated by commas, as in "add,subtract". */
@@ -60,7 +60,7 @@ static const struct {
 } longOptions[] = {{"practice", 'p'}, {"brackets", 'b'}, {"no-brackets", 'B'},
                    {"no-negatives", 'n'}, {"negatives", 'N'},
                    {"feedback", 'f'}, {"print", 'P'},
-                   {"time", 't'},     {"seed", 's'},
+                   {"time", 't'},     {"total", 'T'},    {"seed", 's'},
                    {"length", 'l'},   {"max", 'm'},      {"operators", 'o'},
                    {"range", 'r'}};
 
@@ -185,6 +185,11 @@ static ArgsResult setValue(char letter, const char* value, const char* word,
       failure = ARGS_BAD_TIME;
       if (number >= 0) options->seconds = (int)number;
       break;
+    case 'T':
+      number = value ? wholeNumber(value, 1, TOTAL_TIME_MAX) : -1;
+      failure = ARGS_BAD_TOTAL;
+      if (number >= 0) options->total = (int)number;
+      break;
     case 's':
       number = value ? wholeNumber(value, 0, SEED_MAX) : -1;
       failure = ARGS_BAD_SEED;
@@ -226,7 +231,7 @@ static ArgsResult setValue(char letter, const char* value, const char* word,
 }
 
 ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) {
-  Options options = {0, 0, -1, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0};
+  Options options = {0, 0, 0, -1, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0};
   int optionsEnded = 0;
   /* The option that is not one, when it is one letter among several. */
   static char unknown[3] = {'-', '\0', '\0'};

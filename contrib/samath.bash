@@ -3,7 +3,7 @@
 
 _samath() {
   local cur=${COMP_WORDS[COMP_CWORD]} prev=${COMP_WORDS[COMP_CWORD-1]}
-  local options='-t -s -p -l -b -B -m -o -r -n -N -f -P -h --time --seed
+  local options='-t -T -s -p -l -b -B -m -o -r -n -N -f -P -h --time --total --seed
     --practice --length --brackets --no-brackets --max --operators --range
     --no-negatives --negatives --feedback --print --help --version'
   local lead=
@@ -22,7 +22,7 @@ _samath() {
       done
       COMPREPLY=($(compgen -P "$lead$head" -W "$words" -- "$tail"))
       return ;;
-    -t|--time|-s|--seed|-l|--length|-m|--max|-r|--range)
+    -t|--time|-T|--total|-s|--seed|-l|--length|-m|--max|-r|--range)
       return ;;
   esac
   case $cur in

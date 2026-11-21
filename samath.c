@@ -81,6 +81,8 @@
   "  QUESTIONS            how many questions to ask, 1 or more\n"         \
   "  -t, --time SECONDS   seconds to answer each question (1 to 3600);\n" \
   "                       one that runs out counts as a mistake\n"        \
+  "  -T, --total SECONDS  seconds of answering for the whole run (1 to\n" \
+  "                       3600); the questions not reached are not asked\n" \
   "  -s, --seed NUMBER    ask the same questions every time\n"            \
   "                       (0 to 4294967295; the API has to take a seed)\n" \
   "  -p, --practice       ask the ones you got wrong again until they are\n" \
@@ -308,10 +310,10 @@ static void clearScreen(void) {
    last, and at a terminal the cursor position before them is saved, so that
    tick() rewrites only them: going back to the start of the line would land
    on its second half in a terminal narrow enough to wrap it. */
-static void showPrompt(int limit) {
+static void showPrompt(double limit) {
   if (limit > 0)
     printf("\tAnswer (A-D, Q to stop) - %s%d s left: ",
-           atTerminal ? "\0337" : "", limit);
+           atTerminal ? "\0337" : "", secondsLeft(limit));
   else
     fputs("\tAnswer (A-D, Q to stop): ", stdout);
   fflush(stdout);
@@ -332,8 +334,9 @@ static void tick(int left) {
    above the question, under what -f has to say about the last answer. Unless
    the person stopped, `*chosen` is set to the option picked or to
    CHOICE_TIMEOUT; `chosen` may be NULL. */
-static int askQuestion(long number, long total, const Question* q, int limit,
-                       double* spent, const char* note, int* chosen) {
+static int askQuestion(long number, long total, const Question* q,
+                       double limit, double* spent, const char* note,
+                       int* chosen) {
   inputDiscard();
   clearScreen();
   if (*feedback) printf("%s\n\n", feedback);
@@ -363,6 +366,16 @@ static int askQuestion(long number, long total, const Question* q, int limit,
   }
   if (giveFeedback) rememberFeedback(q, result, choice);
   return result;
+}
+
+/* The time the next question gets: the time limit for each question, cut
+   short by what is left of the whole run after `spent` seconds, or 0 for no
+   limit at all. */
+static double questionLimit(const Options* options, double spent) {
+  double left = options->total ? options->total - spent : 0;
+  if (!options->seconds || (options->total && left < options->seconds))
+    return left;
+  return options->seconds;
 }
 
 /* Asks the mistakes again, round after round, until each has been put right.
@@ -422,6 +435,11 @@ int main(int argc, char** argv) {
               "😅 A time limit is a whole number of seconds, 1 to %d, "
               "not \"",
               TIME_LIMIT_MAX);
+      return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
+    case ARGS_BAD_TOTAL:
+      fprintf(stderr,
+              "😅 A time limit for the whole run is a whole number of seconds, "
+              "1 to %d, not \"", TOTAL_TIME_MAX);
       return sayArgument(culprit), fputs("\"! :3\n", stderr), 1;
     case ARGS_BAD_SEED:
       fprintf(stderr,
@@ -503,7 +521,7 @@ int main(int argc, char** argv) {
      answered until then still gets its result. Running out of memory for a
      mistake ends it the same way, before the question that could not be
      kept is counted. */
-  int lost = 0, outOfMemory = 0;
+  int lost = 0, outOfMemory = 0, outOfTime = 0;
   for (long i = 0; i < options.questions; i++) {
     Question question;
     /* Fetching a batch can take a few seconds when the server is slow or not
@@ -522,7 +540,8 @@ int main(int argc, char** argv) {
     int chosen;
     double before = thinking;
     int result = askQuestion(i + 1, options.questions, &question,
-                             options.seconds, &thinking, NULL, &chosen);
+                             questionLimit(&options, thinking), &thinking,
+                             NULL, &chosen);
     if (result == ASKED_STOP) break;
     if (result != ASKED_RIGHT) {
       Mistake wrong = {i + 1, question, chosen};
@@ -538,6 +557,10 @@ int main(int argc, char** argv) {
       slowestNumber = i + 1;
       slowestQuestion = question;
     }
+    if (options.total && thinking >= options.total) {
+      outOfTime = 1;
+      break;
+    }
   }
   quizClose(&quiz);
 
@@ -545,7 +568,7 @@ int main(int argc, char** argv) {
      mistakes if that was asked for. */
   long stillWrong = 0, rounds = 0;
   int practised = options.practice && mistakes.count &&
-                  answered == options.questions;
+                  answered == options.questions && !outOfTime;
   int practiceLost = 0;
   if (practised) {
     stillWrong =
@@ -562,6 +585,10 @@ int main(int argc, char** argv) {
            answered, options.questions);
   else if (outOfMemory)
     printf("😔 I ran out of memory after %ld of %ld %s.\n\n", answered,
+           options.questions,
+           options.questions == 1 ? "question" : "questions");
+  else if (outOfTime && answered < options.questions)
+    printf("⌛ Time is up after %ld of %ld %s.\n\n", answered,
            options.questions,
            options.questions == 1 ? "question" : "questions");
   else if (answered < options.questions)

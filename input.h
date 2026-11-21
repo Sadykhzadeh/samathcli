@@ -45,6 +45,9 @@ void inputDiscard(void);
    With `seconds` above 0 it gives up after that long with CHOICE_TIMEOUT,
    and calls `tick` with the whole seconds that are left each time that
    number changes. `tick` may be NULL. */
-int readChoice(int seconds, void (*tick)(int left));
+int readChoice(double seconds, void (*tick)(int left));
+
+/* The whole seconds in `seconds`, rounded up, as a countdown shows them. */
+int secondsLeft(double seconds);
 
 #endif

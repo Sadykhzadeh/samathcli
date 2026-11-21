@@ -444,6 +444,59 @@ run "a run that went by quickly names none" 3
 expect_out "Fantastic"
 expect_no_out "Slowest"
 
+input=$(right 3)
+run "a run that is quick enough for its whole time is not cut" -T 60 3
+expect_status 0
+expect_out "Fantastic"
+expect_no_out "Time is up"
+
+# The first question is answered at once and the second runs out the whole
+# second, so the third is not asked; the run is not practised either.
+hold=2
+input=$(printf 'a')
+run "a run that runs out of its whole time stops there" -p -T 1 3
+hold=0
+expect_status 0
+expect_out "Time is up after 2 of 3 questions."
+expect_out "(time ran out)"
+expect_no_out "Task 3."
+expect_no_out "Practice"
+expect_out "1 of 2 right (50%)"
+expect_no_out "Fantastic"
+
+hold=2
+input=$(printf 'a')
+run "a question cut short by the whole run is counted as one that ran out" -t 5 -T 1 3
+hold=0
+expect_status 0
+expect_out "Time is up after 2 of 3 questions."
+expect_out "(time ran out)"
+
+hold=2
+input=$(printf 'a')
+run "running out of the whole time on the last question is not a stop" -T 1 2
+hold=0
+expect_status 0
+expect_out "You have 1 mistake!"
+expect_out "(time ran out)"
+expect_no_out "Time is up"
+expect_no_out "You stopped"
+
+# The only question runs out, so the mistake is listed and practice is skipped.
+hold=2
+input=
+run "running out of the whole time on the last question skips practice" -p -T 1 1
+hold=0
+expect_status 0
+expect_out "(time ran out)"
+expect_no_out "Practice"
+expect_no_out "Time is up"
+
+run "a printout ignores the whole run's time limit" -P -T 1 3
+expect_status 0
+expect_out "Answers:"
+expect_no_out "Time is up"
+
 # With a seed, question n of the stand-in is seed + n - 1.
 input=$(right 3 42)
 run "a seed is passed on with the count" -s 42 3
@@ -797,7 +850,7 @@ expect_out "usage: samath"
 expect_out "--time"
 case "$out" in "usage: samath"*) ok ;; *) fail "the help does not start with the usage" ;; esac
 
-for bad in "-t 0 5" "-t 3601 5" "-t soon 5"; do
+for bad in "-t 0 5" "-t 3601 5" "-t soon 5" "-T 0 5" "-T 3601 5" "-T soon 5"; do
   input=
   # shellcheck disable=SC2086
   run "\"$bad\" is not a time limit" $bad

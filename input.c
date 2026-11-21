@@ -161,18 +161,21 @@ static void skipEscapeSequence(void) {
     next = readByte(SEQUENCE_WAIT_MS);
 }
 
-int readChoice(int seconds, void (*tick)(int left)) {
+int secondsLeft(double seconds) {
+  int whole = (int)seconds;
+  return (double)whole < seconds ? whole + 1 : whole;
+}
+
+int readChoice(double seconds, void (*tick)(int left)) {
   double deadline = monotonicSeconds() + seconds;
-  int shown = seconds;
+  int shown = secondsLeft(seconds);
 
   for (;;) {
     int waitMs = -1;
     if (seconds > 0) {
       double remaining = deadline - monotonicSeconds();
       if (remaining <= 0) return CHOICE_TIMEOUT;
-      /* Whole seconds still to go, counting the one running. */
-      int left = (int)remaining;
-      if ((double)left < remaining) left++;
+      int left = secondsLeft(remaining);
       if (left != shown) {
         shown = left;
         if (tick) tick(left);

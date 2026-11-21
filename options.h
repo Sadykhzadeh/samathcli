@@ -3,6 +3,8 @@
 
 #define SAMATH_VERSION "1.0.0"
 #define TIME_LIMIT_MAX 3600
+/* The whole run, from the first question to the last, may take this long. */
+#define TOTAL_TIME_MAX 3600
 #define SEED_MAX 4294967295LL
 /* How many numbers a question may have: the bounds SaMathAPI takes. */
 #define LENGTH_MIN 2
@@ -26,6 +28,7 @@
 typedef struct {
   long questions;  /* how many to ask: 1 or more */
   int seconds;     /* the time each question gets, or 0 for no limit */
+  int total;       /* the time the whole run gets, or 0 for no limit */
   long long seed;  /* 0 to SEED_MAX, or -1 for questions that differ every run */
   int practice;    /* ask the mistakes again until each is right */
   int length;      /* numbers in each question, or 0 to leave it to the server */
@@ -47,6 +50,7 @@ typedef enum {
   ARGS_VERSION,    /* --version */
   ARGS_BAD_COUNT,  /* the number of questions is not a whole number of 1 or more */
   ARGS_BAD_TIME,   /* -t without a whole number of seconds, 1 to TIME_LIMIT_MAX */
+  ARGS_BAD_TOTAL,  /* -T without a whole number of seconds, 1 to TOTAL_TIME_MAX */
   ARGS_BAD_SEED,   /* -s without a whole number from 0 to SEED_MAX */
   ARGS_BAD_LENGTH, /* -l without a whole number, LENGTH_MIN to LENGTH_MAX */
   ARGS_BAD_MAX,    /* -m without a whole number, MAX_MIN to MAX_MAX */

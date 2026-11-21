@@ -4,6 +4,7 @@
 #include <string.h>
 #include "../checkAnswer.h"
 #include "../getQuestion.h"
+#include "../input.h"
 #include "../mistakes.h"
 #include "../options.h"
 #include "../question.h"
@@ -403,6 +404,43 @@ static void refusesATimeLimitItCannotUse(void) {
   CHECK_STR(culprit, "x");
   CHECK(args(&o, &culprit, 3, "-t", "2.5", "5") == ARGS_BAD_TIME);
   CHECK(args(&o, &culprit, 2, "--time=", "5") == ARGS_BAD_TIME);
+}
+
+static void countsTheSecondsLeftUpForACountdown(void) {
+  CHECK(secondsLeft(0) == 0);
+  CHECK(secondsLeft(0.5) == 1);
+  CHECK(secondsLeft(1) == 1);
+  CHECK(secondsLeft(1.000001) == 2);
+  CHECK(secondsLeft(9.999) == 10);
+  CHECK(secondsLeft(59.2) == 60);
+}
+
+static void takesTheWholeRunsTimeInEveryForm(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 3, "-T", "300", "5") == ARGS_OK);
+  CHECK(o.questions == 5 && o.total == 300 && o.seconds == 0);
+  CHECK(args(&o, &culprit, 3, "5", "--total", "60") == ARGS_OK && o.total == 60);
+  CHECK(args(&o, &culprit, 2, "-T300", "5") == ARGS_OK && o.total == 300);
+  CHECK(args(&o, &culprit, 2, "--total=3600", "5") == ARGS_OK && o.total == 3600);
+  CHECK(args(&o, &culprit, 5, "-t", "10", "-T", "90", "5") == ARGS_OK);
+  CHECK(o.seconds == 10 && o.total == 90);
+  CHECK(args(&o, &culprit, 2, "-pT30", "5") == ARGS_OK && o.practice && o.total == 30);
+  CHECK(args(&o, &culprit, 3, "-T", "1", "5") == ARGS_OK && o.total == 1);
+}
+
+static void refusesAWholeRunsTimeItCannotUse(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 3, "-T", "0", "5") == ARGS_BAD_TOTAL);
+  CHECK_STR(culprit, "0");
+  CHECK(args(&o, &culprit, 3, "-T", "3601", "5") == ARGS_BAD_TOTAL);
+  CHECK(args(&o, &culprit, 3, "-T", "-4", "5") == ARGS_BAD_TOTAL);
+  CHECK(args(&o, &culprit, 3, "-T", "soon", "5") == ARGS_BAD_TOTAL);
+  CHECK_STR(culprit, "soon");
+  CHECK(args(&o, &culprit, 2, "--total=", "5") == ARGS_BAD_TOTAL);
+  CHECK(args(&o, &culprit, 2, "5", "-T") == ARGS_NO_VALUE);
+  CHECK_STR(culprit, "-T");
 }
 
 static void saysWhenAnOptionHasNoValue(void) {
@@ -848,6 +886,8 @@ int main(void) {
   readsTheNumberOfQuestions();
   refusesWhatIsNotANumberOfQuestions();
   takesTheTimeLimitInEveryForm();
+  countsTheSecondsLeftUpForACountdown();
+  takesTheWholeRunsTimeInEveryForm();
   takesTheSeedInEveryForm();
   refusesASeedItCannotUse();
   takesTheLengthAndBrackets();
@@ -862,6 +902,7 @@ int main(void) {
   takesFeedback();
   takesPrint();
   refusesATimeLimitItCannotUse();
+  refusesAWholeRunsTimeItCannotUse();
   saysWhenAnOptionHasNoValue();
   takesShortOptionsTogether();
   asksForHelpAmongShortOptions();
