@@ -43,8 +43,13 @@
    that could not be checked. */
 #define CURL_SSL_CONNECT 35
 #define CURL_PEER_VERIFY 51
+#define CURL_SSL_CERT_PROBLEM 58
+#define CURL_SSL_CIPHER 59
 #define CURL_CA_CHECK 60
+#define CURL_SSL_CACERT_BADFILE 77
+#define CURL_SSL_CRL_BADFILE 82
 #define CURL_ISSUER_CHECK 83
+#define CURL_SSL_CERT_STATUS 91
 /* curl's exit statuses for a connection that was dropped: before all of the
    answer had come, before any of it had, and while sending or receiving. */
 #define CURL_CUT_SHORT 18
@@ -474,7 +479,10 @@ static int loadBatch(Quiz* quiz) {
   if (status == CURL_FAILED_INIT) return QUIZ_CURL_FAILED;
   if (status == CURL_COULDNT_RESOLVE_HOST) return QUIZ_NO_HOST;
   if (status == CURL_SSL_CONNECT || status == CURL_PEER_VERIFY ||
-      status == CURL_CA_CHECK || status == CURL_ISSUER_CHECK)
+      status == CURL_SSL_CERT_PROBLEM || status == CURL_SSL_CIPHER ||
+      status == CURL_CA_CHECK || status == CURL_SSL_CACERT_BADFILE ||
+      status == CURL_SSL_CRL_BADFILE || status == CURL_ISSUER_CHECK ||
+      status == CURL_SSL_CERT_STATUS)
     return QUIZ_NO_TLS;
   if (status == CURL_HTTP_ERROR) return QUIZ_REFUSED;
   if (status == CURL_CUT_SHORT) return QUIZ_CUT_SHORT;

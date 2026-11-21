@@ -327,6 +327,18 @@ url = url_ok
 check(status == 1 and "secure connection" in err, "a TLS failure is said so: %r" % err)
 check("Is it running" not in err, "a TLS failure is not a server that is down: %r" % err)
 
+# A certificate store that curl cannot load, as CURL_CA_BUNDLE naming a file
+# that is not there does, is a certificate problem and not a server that is
+# down: curl fails before it ever connects.
+Server.paths = []
+done = subprocess.run([BINARY, "1"], input=b"a", capture_output=True, timeout=60,
+                      env=dict(os.environ,
+                               SAMATH_API_URL=url.replace("http://", "https://", 1),
+                               CURL_CA_BUNDLE="/nonexistent"))
+err = done.stderr.decode()
+check(done.returncode == 1 and "secure connection" in err, "a CA bundle that cannot be loaded: %r" % err)
+check("Is it running" not in err, "a bad CA bundle is not a server that is down: %r" % err)
+
 url_ok = url
 url = url.replace("/gen", "/loop")
 status, out, err = run(["1"])
