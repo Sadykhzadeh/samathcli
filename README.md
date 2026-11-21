@@ -113,6 +113,9 @@ that answered it; waiting for the server is not counted. The Slowest line
 names the question that took longest, but only in a run of three or more where it
 took at least two seconds, so it is left out when nothing was slow.
 
+With `-w`, each mistake is followed by a `working:` line that shows how it is
+worked out, as described under [Options](#options).
+
 ### Exit status
 
 `0` when the run was finished or stopped with `Q`, whatever the score, and for
