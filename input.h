@@ -25,6 +25,11 @@ int inputInterrupted(void);
 /* Hands the terminal back and dies of SIGINT, as an interrupted run does. */
 void inputDie(void);
 
+/* Whether standard input failed to read, as a directory does, rather than
+   ending or being closed: the run then stopped for want of answers, which
+   the person did not ask for. */
+int inputUnreadable(void);
+
 /* Names a process that is sent SIGTERM when a signal ends the run, so that it
    does not outlive the run; 0 names none. Outside a terminal this also makes
    those signals end the run by the signal, as they would without it. */

@@ -121,9 +121,10 @@ worked out, as described under [Options](#options).
 `0` when the run was finished or stopped with `Q`, whatever the score, and for
 `--help`. `1` when the command line is wrong, including no number of
 questions at all, when the questions could not be fetched, at the start of
-the run or part of the way through, or when there is not the memory to keep
-the mistakes or to practise them. A run ended by a signal, Ctrl-C included,
-has the status of that signal: 130 for Ctrl-C.
+the run or part of the way through, when there is not the memory to keep the
+mistakes or to practise them, or when standard input cannot be read, as when
+it is a directory. A run ended by a signal, Ctrl-C included, has the status of
+that signal: 130 for Ctrl-C.
 
 ### Requirements
 

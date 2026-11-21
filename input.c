@@ -27,6 +27,7 @@ static struct termios original;
 static volatile sig_atomic_t taken = 0;
 static volatile sig_atomic_t interrupted = 0;
 static volatile sig_atomic_t child = 0; /* a process the run stops with it */
+static int unreadable = 0; /* standard input failed, rather than ended */
 static double settled = 0; /* when keys start to answer the question */
 
 static void giveBack(void) {
@@ -57,6 +58,8 @@ static void onInterrupt(int signal) {
 }
 
 int inputInterrupted(void) { return interrupted; }
+
+int inputUnreadable(void) { return unreadable; }
 
 void inputDie(void) { onSignal(SIGINT); }
 
@@ -159,6 +162,9 @@ static int readByte(int waitMs) {
     ssize_t got = read(STDIN_FILENO, &byte, 1);
     if (got == 1) return byte;
     if (got < 0 && errno == EINTR && !interrupted) continue;
+    /* A closed standard input is no input, as the wait above has it; any
+       other failure to read is said, as the input could not be used. */
+    if (got < 0 && errno != EBADF && !interrupted) unreadable = 1;
     return BYTE_END;
   }
 }

@@ -75,6 +75,9 @@
   "😔 I ran out of memory to keep the mistakes, so the run stopped there.\n"
 #define noSheetMemory                                                     \
   "😔 I ran out of memory for the answers, so the printout stopped there.\n"
+#define noInput                                                           \
+  "😔 I could not read your answers from standard input, so the run "     \
+  "stopped there.\n"
 #define noPractice                                                        \
   "😔 I ran out of memory for practice, so the mistakes were not asked "  \
   "again.\n"
@@ -599,6 +602,7 @@ int main(int argc, char** argv) {
     }
   }
 
+  int unread = inputUnreadable();
   clearScreen();
   if (lost)
     printf("😔 SaMathAPI stopped answering after %ld of %ld questions.\n\n",
@@ -606,6 +610,10 @@ int main(int argc, char** argv) {
   else if (outOfMemory)
     printf("😔 I ran out of memory after %ld of %ld %s.\n\n", answered,
            options.questions,
+           options.questions == 1 ? "question" : "questions");
+  else if (unread && answered < options.questions)
+    printf("😔 I could not read your answers after %ld of %ld %s.\n\n",
+           answered, options.questions,
            options.questions == 1 ? "question" : "questions");
   else if (outOfTime && answered < options.questions)
     printf("⌛ Time is up after %ld of %ld %s.\n\n", answered,
@@ -656,6 +664,7 @@ int main(int argc, char** argv) {
   if (lost) sayFetchFailure(lost, &quiz);
   if (outOfMemory) fputs(noMemory, stderr);
   if (practiceLost) fputs(noPractice, stderr);
+  if (unread) fputs(noInput, stderr);
   if (inputInterrupted()) inputDie();
-  return lost != 0 || outOfMemory || practiceLost || !written;
+  return lost != 0 || outOfMemory || practiceLost || unread || !written;
 }

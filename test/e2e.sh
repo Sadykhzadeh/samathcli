@@ -425,6 +425,25 @@ run "one question stopped at once is one question" 1
 expect_status 0
 expect_out "You stopped after 0 of 1 question."
 
+name="standard input that is a directory"
+(cd "$work/cwd" && "$root/samath" 2 < "$work" > "$work/out" 2> "$work/err")
+status=$?
+out=$(cat "$work/out")
+err=$(cat "$work/err")
+expect_status 1
+expect_out "I could not read your answers after 0 of 2 questions."
+expect_no_out "You stopped"
+expect_err "could not read your answers from standard input"
+
+name="standard input that is a directory, with a time limit"
+(cd "$work/cwd" && "$root/samath" -t 5 2 < "$work" > "$work/out" 2> "$work/err")
+status=$?
+out=$(cat "$work/out")
+err=$(cat "$work/err")
+expect_status 1
+expect_err "could not read your answers from standard input"
+expect_no_out "You stopped"
+
 input=$(right 5)
 run "nothing is left behind in the directory" 5
 if [ -z "$(ls -A "$work/cwd")" ]; then ok; else fail "left $(ls -A "$work/cwd")"; fi
