@@ -150,7 +150,7 @@ has the status of that signal: 130 for Ctrl-C.
 ### How questions are fetched
 
 The whole run is asked for in one request, `...&count=20` for twenty
-questions and in batches of a hundred past that, so a quiz costs one round
+questions and in batches of 100 past that, so a quiz costs one round
 trip rather than one per question. Against a server on the same machine, twenty questions
 went from 193 ms to 6 ms. A SaMathAPI that does not know `count` sends one
 question back, and the run carries on with a request per question, as it
@@ -165,13 +165,13 @@ dropped connection) is tried once more, a second later, so one hiccup on a
 busy server does not end a class's run; a host that is dead still ends it
 within about ten seconds, and one that connects but never answers within
 about twenty. A refusal such as a 404 is not asked again. A URL that has moved
-is followed, up to five times, so `http://` works against a server that
+is followed, up to 5 times, so `http://` works against a server that
 sends it on to `https://`. At a terminal a line
 says that the questions are being asked for until each batch of them is there.
 
 SaMathAPI asks no question twice in one request, and a longer run does not
 either: a question that an earlier batch had is left out, and every batch
-after the first is a full hundred, so there are enough new ones to go on
+after the first is a full 100, so there are enough new ones to go on
 with. A question only comes again once a whole batch has nothing new in it,
 as when two-number questions run out somewhere past 550. A run with a seed
 keeps the questions its seed gives, repeats and all, so that it stays the
