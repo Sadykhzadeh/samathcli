@@ -3,9 +3,9 @@
 
 _samath() {
   local cur=${COMP_WORDS[COMP_CWORD]} prev=${COMP_WORDS[COMP_CWORD-1]}
-  local options='-t -T -s -p -l -b -B -m -o -r -n -N -f -P -h --time --total --seed
+  local options='-t -T -s -p -l -b -B -m -o -r -n -N -f -w -P -h --time --total --seed
     --practice --length --brackets --no-brackets --max --operators --range
-    --no-negatives --negatives --feedback --print --help --version'
+    --no-negatives --negatives --feedback --working --print --help --version'
   local lead=
   COMPREPLY=()
   # Bash splits --operators=add at the equals sign, so the option is two words back.

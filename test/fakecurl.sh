@@ -92,6 +92,10 @@ case "$url" in
     echo "count is not a thing here"
     finish 400 0
     ;;
+  *jsonerr*)
+    printf '%s\n' '{"error":"Too many \"x\" \u001b"}'
+    finish 400 0
+    ;;
   *flaky*|*limited*|*hangs-up*)
     if [ ! -f "$CURL_LOG.flaky" ]; then
       : > "$CURL_LOG.flaky"
@@ -147,6 +151,18 @@ case "$url" in
     ;;
 esac
 
+# With working=true it answers JSON, as SaMathAPI does: an array for a request
+# with count, an object without one, each task's working being the task and
+# its answer.
+working=
+case "$url" in
+  *working=true*) working=1 ;;
+esac
+listed=
+case "$url" in
+  *count=*) listed=1 ;;
+esac
+if [ -n "$working" ] && [ -n "$listed" ]; then printf '['; fi
 i=0
 while [ "$i" -lt "$count" ]; do
   if [ -n "$seed" ]; then n=$((seed + i)); else n=$((served + i)); fi
@@ -165,8 +181,27 @@ while [ "$i" -lt "$count" ]; do
     if [ -z "$options" ]; then options=$value; else options=$options,$value; fi
     k=$((k + 1))
   done
-  echo "$n+1 $options $answer"
+  if [ -z "$working" ]; then
+    echo "$n+1 $options $answer"
+  else
+    if [ "$i" -gt 0 ] && [ -n "$listed" ]; then printf ','; fi
+    # oddmsg adds a field with escapes, oddvoid a working that is null, and
+    # oddescape a working with an escape in it, which is not shown.
+    extra=
+    case "$url" in *oddmsg*) extra='"msg":"say \"hi\" \u00e9",' ;; esac
+    work="[\"$n+1\",\"$answer\"]"
+    case "$url" in
+      *oddvoid*) work=null ;;
+      *oddescape*) work="[\"$n+1\\u001b[2J\",\"$answer\"]" ;;
+    esac
+    printf '{%s"task":[%s,"+",1],"answer":%s,"quizOptions":[%s],"working":%s}' \
+      "$extra" "$n" "$answer" "$options" "$work"
+  fi
   i=$((i + 1))
 done
+if [ -n "$working" ]; then
+  if [ -n "$listed" ]; then printf ']'; fi
+  echo
+fi
 echo $((served + count)) > "$CURL_LOG.served"
 finish 200 0

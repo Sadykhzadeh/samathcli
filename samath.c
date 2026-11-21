@@ -105,6 +105,7 @@
   "  -N, --negatives      ask for questions that may have them, when the API\n" \
   "                       leaves them out\n"                              \
   "  -f, --feedback       say after each answer whether it was right\n"   \
+  "  -w, --working        show the working of each mistake\n"            \
   "  -P, --print          print the questions with their answers instead\n" \
   "                       of asking them\n"                               \
   "  -h, --help           show this\n"                                    \
@@ -241,7 +242,8 @@ static int fetchQuestion(Quiz* quiz, Question* question, int terminal) {
    them: for a worksheet, or a key to one. A fetch that fails part of the way
    prints what came before it. */
 static int printWorksheet(const Options* options) {
-  Quiz quiz;
+  /* Static, as the batch of questions is too big for the stack. */
+  static Quiz quiz;
   quizOpen(&quiz, options);
   char* letters = NULL; /* the right answer to each question printed */
   long printed = 0, room = 0;
@@ -517,7 +519,8 @@ int main(int argc, char** argv) {
   if (options.print) return printWorksheet(&options);
   puts(welcomeText);
   giveFeedback = options.feedback;
-  Quiz quiz;
+  /* Static, as the batch of questions is too big for the stack. */
+  static Quiz quiz;
   quizOpen(&quiz, &options);
   inputStart();
 
@@ -617,6 +620,8 @@ int main(int argc, char** argv) {
         puts("(time ran out)");
       else
         printf("(you said %s)\n", m->question.options[m->chosen]);
+      if (*m->question.working)
+        printf("\tworking: %s\n", m->question.working);
     }
   } else if (answered && !outOfMemory)
     puts(noErrors);

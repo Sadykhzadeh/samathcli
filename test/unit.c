@@ -492,6 +492,17 @@ static void takesFeedback(void) {
   CHECK(args(&o, &culprit, 2, "--feedback=yes", "5") == ARGS_UNWANTED_VALUE);
 }
 
+static void takesWorking(void) {
+  Options o;
+  const char* culprit;
+  CHECK(args(&o, &culprit, 1, "5") == ARGS_OK && o.working == 0);
+  CHECK(args(&o, &culprit, 2, "-w", "5") == ARGS_OK && o.working == 1);
+  CHECK(args(&o, &culprit, 2, "5", "--working") == ARGS_OK && o.working == 1);
+  CHECK(args(&o, &culprit, 3, "-pw", "-f", "5") == ARGS_OK);
+  CHECK(o.working == 1 && o.practice == 1 && o.feedback == 1);
+  CHECK(args(&o, &culprit, 2, "--working=yes", "5") == ARGS_UNWANTED_VALUE);
+}
+
 static void takesTheLengthAndBrackets(void) {
   Options o;
   const char* culprit;
@@ -819,6 +830,142 @@ static void countsEveryOptionThatReadsAsTheAnswer(void) {
   CHECK(!checkAnswer("D", "9", o[0], o[1], o[2], o[3]));
 }
 
+static void readsTheTasksOfAWorkedAnswer(void) {
+  Question q[4];
+  CHECK(parseWorkedQuestions("[{\"task\":[3,\"*\",4],\"answer\":12,\"quizOptions\":[10,12,11,9],\"working\":[\"3*4\",\"12\"]},"
+                             "{\"task\":[\"(\",-5,\"+\",2,\")\"],\"answer\":-3,\"quizOptions\":[-3,-7,3,7],\"working\":[\"(-5+2)\",\"-3\"]}]",
+                             q, 4) == 2);
+  CHECK_STR(q[0].expression, "3*4");
+  CHECK_STR(q[0].answer, "12");
+  CHECK_STR(q[0].options[3], "9");
+  CHECK_STR(q[0].working, "3*4 = 12");
+  CHECK_STR(q[1].expression, "(-5+2)");
+  CHECK_STR(q[1].answer, "-3");
+  CHECK_STR(q[1].working, "(-5+2) = -3");
+}
+
+static void readsOneTaskAndTheOrderOfItsMembers(void) {
+  Question q[2];
+  CHECK(parseWorkedQuestions("{\"working\":[\"14-3\",\"11\"],\"answer\":11,"
+                             "\"quizOptions\":[15,12,14,11],\"task\":[14,\"-\",3],"
+                             "\"extra\":{\"deep\":[true,null,false,1.5e3]}}",
+                             q, 2) == 1);
+  CHECK_STR(q[0].expression, "14-3");
+  CHECK_STR(q[0].working, "14-3 = 11");
+  CHECK(parseWorkedQuestions("{\"task\":[14,\"-\",3],\"answer\":11,\"quizOptions\":[15,12,14,11]}", q, 2) == 1);
+  CHECK_STR(q[0].working, "");
+}
+
+static void skipsATaskThatIsNotAQuestion(void) {
+  Question q[4];
+  /* The second task's answer is not one of its options, so it is left out. */
+  CHECK(parseWorkedQuestions("[{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"working\":[\"1+1\",\"2\"]},"
+                             "{\"task\":[2,\"+\",2],\"answer\":9,\"quizOptions\":[4,5,6,7]},"
+                             "{\"task\":[\"x\"],\"answer\":4,\"quizOptions\":[4,5,6,7]},"
+                             "{\"task\":[3,\"+\",3],\"answer\":6,\"quizOptions\":[9,8,7,6]}]",
+                             q, 4) == 2);
+  CHECK_STR(q[0].expression, "1+1");
+  CHECK_STR(q[1].expression, "3+3");
+  CHECK(parseWorkedQuestions("{}", q, 4) == 0);
+}
+
+static void dropsAWorkingThatIsNotPlainArithmetic(void) {
+  Question q[2];
+  char working[QUESTION_WORKING_MAX + 64];
+  CHECK(parseWorkedQuestions("{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"working\":[\"1+1\",\"2;rm\"]}",
+                             q, 2) == 1);
+  CHECK_STR(q[0].working, "");
+  CHECK_STR(q[0].answer, "2");
+  /* A working too long for its room is left out, and the question kept. */
+  size_t at = 0;
+  while (at + 8 < sizeof working - 1) {
+    memcpy(working + at, "1+1 = 2", 7);
+    at += 7;
+    working[at++] = ',';
+  }
+  working[at] = '\0';
+  char json[QUESTION_WORKING_MAX + 256];
+  snprintf(json, sizeof json, "{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"working\":[\"%s\"]}", working);
+  CHECK(parseWorkedQuestions(json, q, 2) == 1);
+  CHECK_STR(q[0].working, "");
+}
+
+static void stopsAtWhatIsNotJSON(void) {
+  Question q[4];
+  const char* task = "{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5]}";
+  CHECK(parseWorkedQuestions("", q, 4) == 0);
+  CHECK(parseWorkedQuestions("<html>502</html>", q, 4) == 0);
+  CHECK(parseWorkedQuestions("1+1 2,3,4,5 2", q, 4) == 0);
+  CHECK(parseWorkedQuestions("[]", q, 4) == 0);
+  CHECK(parseWorkedQuestions("[", q, 4) == 0);
+  CHECK(parseWorkedQuestions("{\"error\":\"no\"}", q, 4) == 0);
+  CHECK(parseWorkedQuestions("[{\"task\":[1", q, 4) == 0);
+  CHECK(parseWorkedQuestions("{\"task\":[1,\"+\",1],\"answer\":2.5,\"quizOptions\":[2,3,4,5]}", q, 4) == 0);
+  CHECK(parseWorkedQuestions("{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"working\":[\"1+1\\u0041\"]}", q, 4) == 1);
+  CHECK_STR(q[0].working, "");
+  CHECK(parseWorkedQuestions(task, q, 0) == 0);
+  /* A list that stops after a good task still gives that task. */
+  char list[256];
+  snprintf(list, sizeof list, "[%s,%s", task, "{\"task\":[");
+  CHECK(parseWorkedQuestions(list, q, 4) == 1);
+  CHECK(parseWorkedQuestions(task, q, 4) == 1);
+  CHECK_STR(q[0].answer, "2");
+}
+
+static void skipsWhatItDoesNotUse(void) {
+  Question q[4];
+  /* A working that is null or has an escape in it is left out, and the
+     question kept; other fields are skipped, escapes and all. */
+  CHECK(parseWorkedQuestions("[{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"working\":null},"
+                             "{\"msg\":\"say \\\"hi\\\"\",\"task\":[3,\"+\",3],\"answer\":6,\"quizOptions\":[9,8,7,6],"
+                             "\"working\":[\"3+3\\u001b\",\"6\"]},"
+                             "{\"task\":[2,\"+\",2],\"answer\":4,\"quizOptions\":[4,5,6,7],"
+                             "\"x\":{\"s\":\"a\\\\\"},\"working\":[\"2+2\",\"4\"]}]",
+                             q, 4) == 3);
+  CHECK_STR(q[0].expression, "1+1");
+  CHECK_STR(q[0].working, "");
+  CHECK_STR(q[1].working, "");
+  CHECK_STR(q[2].working, "2+2 = 4");
+  /* A task that is not a list is a task that is not a question, and the
+     reading goes on with the next one. */
+  CHECK(parseWorkedQuestions("[{\"task\":null,\"answer\":2},{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5]}]", q, 4) == 1);
+  CHECK_STR(q[0].expression, "1+1");
+}
+
+static void refusesDeepNesting(void) {
+  Question q[2];
+  char deep[600];
+  size_t at = 0;
+  while (at < 200) deep[at++] = '[';
+  deep[at] = '\0';
+  char json[700];
+  snprintf(json, sizeof json, "[{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"x\":%s}]", deep);
+  CHECK(parseWorkedQuestions(json, q, 2) == 0);
+  snprintf(json, sizeof json, "{\"x\":%s", deep);
+  CHECK(parseWorkedQuestions(json, q, 2) == 0);
+}
+
+static void urlLosesAParameter(void) {
+  char out[96];
+  CHECK(urlWithoutParameter("http://h/gen?c=true&seed=3", "c", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?seed=3");
+  CHECK(urlWithoutParameter("http://h/gen?c=true", "c", out, sizeof out));
+  CHECK_STR(out, "http://h/gen");
+  CHECK(urlWithoutParameter("http://h/gen?x=1&c=true&y=2#f", "c", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?x=1&y=2#f");
+  CHECK(urlWithoutParameter("http://h/gen?c=true#f", "c", out, sizeof out));
+  CHECK_STR(out, "http://h/gen#f");
+  CHECK(urlWithoutParameter("http://h/gen?cc=1&c", "c", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?cc=1");
+  CHECK(urlWithoutParameter("http://h/gen?&c=true&&x=1&", "c", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?x=1");
+  CHECK(urlWithoutParameter("http://h/gen", "c", out, sizeof out));
+  CHECK_STR(out, "http://h/gen");
+  CHECK(urlWithoutParameter("http://h/gen?working=true&c=true", "working", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?c=true");
+  CHECK(!urlWithoutParameter("http://h/gen?x=1&c=true", "c", out, 16));
+}
+
 static void keepsEveryMistakeInOrder(void) {
   Mistakes list = {NULL, 0, 0};
   Mistake m;
@@ -931,6 +1078,15 @@ int main(void) {
   refusesASecondNumberOfQuestions();
   helpWinsOverEverythingElse();
   aDoubleDashEndsTheOptions();
+  takesWorking();
+  readsTheTasksOfAWorkedAnswer();
+  readsOneTaskAndTheOrderOfItsMembers();
+  skipsATaskThatIsNotAQuestion();
+  skipsWhatItDoesNotUse();
+  dropsAWorkingThatIsNotPlainArithmetic();
+  stopsAtWhatIsNotJSON();
+  refusesDeepNesting();
+  urlLosesAParameter();
   keepsEveryMistakeInOrder();
   keepsTheMistakesWhenTheListCannotGrow();
 

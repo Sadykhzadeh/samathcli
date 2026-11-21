@@ -9,7 +9,7 @@
 /* The letters of the options that stand on their own, and of those that take
    a value. -h is read before anything else, so it is no more than a letter
    to skip here. */
-#define SWITCHES "pbBnNfhP"
+#define SWITCHES "pbBnNfhPw"
 #define VALUED "tTslmor"
 
 /* Whether `text` is some of the operators SaMathAPI names, each once and
@@ -59,7 +59,7 @@ static const struct {
   char letter;
 } longOptions[] = {{"practice", 'p'}, {"brackets", 'b'}, {"no-brackets", 'B'},
                    {"no-negatives", 'n'}, {"negatives", 'N'},
-                   {"feedback", 'f'}, {"print", 'P'},
+                   {"feedback", 'f'}, {"print", 'P'}, {"working", 'w'},
                    {"time", 't'},     {"total", 'T'},    {"seed", 's'},
                    {"length", 'l'},   {"max", 'm'},      {"operators", 'o'},
                    {"range", 'r'}};
@@ -170,6 +170,9 @@ static void setSwitch(char letter, Options* options) {
     case 'P':
       options->print = 1;
       break;
+    case 'w':
+      options->working = 1;
+      break;
   }
 }
 
@@ -231,7 +234,7 @@ static ArgsResult setValue(char letter, const char* value, const char* word,
 }
 
 ArgsResult parseArgs(int argc, char** argv, Options* out, const char** culprit) {
-  Options options = {0, 0, 0, -1, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0};
+  Options options = {0, 0, 0, -1, 0, 0, 0, 0, 0, 0, "", 0, 0, 0, 0, 0};
   int optionsEnded = 0;
   /* The option that is not one, when it is one letter among several. */
   static char unknown[3] = {'-', '\0', '\0'};

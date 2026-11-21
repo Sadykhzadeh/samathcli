@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 
+#include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -85,6 +86,48 @@ int urlWithQuery(const char* url, const char* query, char* out,
   int written = snprintf(out, capacity, "%.*s%s%s", (int)length, url, separator,
                          query);
   return written >= 0 && (size_t)written < capacity;
+}
+
+/* Appends `length` bytes of `text` to `out`, which holds `*used` bytes, with
+   a NUL after them. Returns 0, and leaves `*used` alone, when they do not fit
+   in `capacity`. */
+static int appendBytes(char* out, size_t capacity, size_t* used,
+                       const char* text, size_t length) {
+  if (*used + length + 1 > capacity) return 0;
+  memcpy(out + *used, text, length);
+  *used += length;
+  out[*used] = '\0';
+  return 1;
+}
+
+int urlWithoutParameter(const char* url, const char* name, char* out,
+                        size_t capacity) {
+  size_t length = strcspn(url, "#");
+  const char* query = memchr(url, '?', length);
+  size_t used = 0;
+  if (!appendBytes(out, capacity, &used, url,
+                   query ? (size_t)(query - url) : length))
+    return 0;
+  if (query) {
+    const char* end = url + length;
+    size_t nameLength = strlen(name);
+    int kept = 0;
+    for (const char* param = query + 1; param < end;) {
+      const char* stop = param;
+      while (stop < end && *stop != '&') stop++;
+      size_t size = (size_t)(stop - param);
+      const char* equals = memchr(param, '=', size);
+      size_t key = equals ? (size_t)(equals - param) : size;
+      if (size && !(key == nameLength && !strncmp(param, name, key))) {
+        if (!appendBytes(out, capacity, &used, kept ? "&" : "?", 1) ||
+            !appendBytes(out, capacity, &used, param, size))
+          return 0;
+        kept = 1;
+      }
+      param = stop + 1;
+    }
+  }
+  return appendBytes(out, capacity, &used, url + length, strlen(url + length));
 }
 
 /* Runs curl on `url` and collects what it prints. Returns curl's exit status,
@@ -251,11 +294,30 @@ int isBidiControl(const unsigned char* text) {
    valid UTF-8 only, with the control characters that would move the cursor,
    the C1 controls and the bidirectional controls dropped, a '?' for each byte
    that is no part of a character, and not past REFUSAL_MAX bytes or part of a
-   character. */
+   character. With -w the refusal is JSON, as {"error":"..."}, and its message
+   is what is kept, with the escapes read as the character they stand for; a
+   \u escape is left out, as it is not a character this shows. */
 static void rememberRefusal(Quiz* quiz, const char* body) {
-  const unsigned char* c = (const unsigned char*)body;
+  const char* jsonPrefix = "{\"error\":\"";
+  int json = quiz->working && !strncmp(body, jsonPrefix, strlen(jsonPrefix));
+  const unsigned char* c =
+      (const unsigned char*)body + (json ? strlen(jsonPrefix) : 0);
   size_t length = 0;
   while (*c && *c != '\n') {
+    if (json && *c == '"') break;
+    if (json && *c == '\\') {
+      c++;
+      if (*c == 'u') {
+        c++;
+        for (int digits = 0; digits < 4 && isxdigit(*c); digits++) c++;
+        continue;
+      }
+      if (!*c) break;
+      if (!strchr("\"\\/", *c)) {
+        c++;
+        continue;
+      }
+    }
     size_t size = *c < 0x80 ? 1 : utf8Length(c);
     if (size == 2 && c[0] == 0xC2 && c[1] <= 0x9F) {
       c += 2;
@@ -296,6 +358,7 @@ void quizOpen(Quiz* quiz, const Options* options) {
   quiz->ranged = options->ranged;
   quiz->rangeLow = options->rangeLow;
   quiz->rangeHigh = options->rangeHigh;
+  quiz->working = options->working && !options->print;
   quiz->asked = 0;
   quiz->url = url && *url ? url : apiUrlDefault;
   quiz->batched = 1;
@@ -408,7 +471,21 @@ static int requestUrl(const Quiz* quiz, int want, char* url, size_t capacity) {
                used ? "&" : "",
                quiz->noNegatives == NEGATIVES_ASK ? "true" : "false"))
     return 0;
-  return urlWithQuery(quiz->url, query, url, capacity);
+  const char* base = quiz->url;
+  char without[URL_MAX], plain[URL_MAX];
+  /* A c=true in the URL asks for plain text, which has no room for the
+     working, so the request is for JSON, which a c left out gives. A working
+     already in the URL would be sent twice, which the server refuses. */
+  if (quiz->working) {
+    if (!appendf(query, sizeof query, &used, "%sworking=true",
+                 used ? "&" : ""))
+      return 0;
+    if (!urlWithoutParameter(quiz->url, "c", without, sizeof without) ||
+        !urlWithoutParameter(without, "working", plain, sizeof plain))
+      return 0;
+    base = plain;
+  }
+  return urlWithQuery(base, query, url, capacity);
 }
 
 /* Whether a request that failed with `status` and HTTP status `code` may pass
@@ -493,7 +570,8 @@ static int loadBatch(Quiz* quiz) {
     return QUIZ_DROPPED;
   if (status) return QUIZ_UNREACHABLE;
 
-  int got = parseQuestions(text, quiz->batch, want);
+  int got = quiz->working ? parseWorkedQuestions(text, quiz->batch, want)
+                          : parseQuestions(text, quiz->batch, want);
   free(text);
   if (got == 0) return QUIZ_NOT_QUESTIONS;
   /* A server that ignores `count` sends one question for a request that asks

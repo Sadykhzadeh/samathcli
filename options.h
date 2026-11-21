@@ -44,6 +44,7 @@ typedef struct {
   int rangeLow;
   int rangeHigh;
   int print;       /* print the questions with their answers, without asking them */
+  int working;     /* show the working of each mistake in the result */
 } Options;
 
 typedef enum {

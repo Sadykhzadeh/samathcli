@@ -94,10 +94,16 @@ the one given last counts.
 \fB\-f\fR, \fB\-\-feedback\fR
 Say after each answer whether it was right, before the next question.
 .TP
+\fB\-w\fR, \fB\-\-working\fR
+Show under each mistake in the result how it is worked out, from the task
+down to the answer, one step after another. The API sends the working as JSON,
+so a c=true in SAMATH_API_URL is left out when this is given. An older API
+sends no working, and then nothing is shown.
+.TP
 \fB\-P\fR, \fB\-\-print\fR
 Print the questions with their answers, one after another, instead of asking
-them, for a worksheet or a key. The time limit, practice and feedback do not
-apply to a printout.
+them, for a worksheet or a key. The time limit, practice, feedback and working
+do not apply to a printout.
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 Print a summary of the options and exit.

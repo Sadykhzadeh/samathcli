@@ -77,6 +77,10 @@ expect_err() {
   case "$err" in *"$1"*) ok ;; *) fail "stderr lacks \"$1\"" ;; esac
 }
 
+expect_no_err() {
+  case "$err" in *"$1"*) fail "stderr has \"$1\"" ;; *) ok ;; esac
+}
+
 expect_url() {
   if grep -qF -- "$1" "$CURL_LOG"; then ok; else fail "no request for $1"; fi
 }
@@ -857,6 +861,72 @@ expect_status 1
 expect_err "could not reach"
 expect_no_out "Wrong:"
 expect_no_out "Right:"
+
+# -w asks for JSON, without the c=true of the address, so that the working
+# comes back; the questions are the ones a plain run asks.
+input=$(printf 'bbb')
+run "a run with -w asks for the working as JSON" -w 3
+expect_status 0
+expect_requests 1
+expect_url "http://api.test/gen?count=3&working=true"
+expect_no_out "c=true"
+expect_out "$(printf '\tworking: 0+1 = 1\n')"
+expect_out "$(printf '\tworking: 2+1 = 3\n')"
+expect_no_out "working: 1+1"
+expect_out "You have 2 mistakes!"
+run "the questions of a run with -w are the ones of a seeded run" -s 40 -w 2
+expect_url "http://api.test/gen?count=2&seed=40&working=true"
+expect_out "$(printf '\tworking: 40+1 = 41\n')"
+run_at "http://api.test/gen?c=true&working=true" "the address does not repeat working or c" -w 1
+expect_status 0
+expect_url "http://api.test/gen?working=true"
+expect_no_out "Wrong"
+input=$(right 2)
+run "a run that gets everything right has no working to show" -w 2
+expect_out "Fantastic"
+expect_no_out "working:"
+input=$(printf 'bb')
+run "one question is asked for as an object with -w" -w 1
+expect_status 0
+expect_url "http://api.test/gen?working=true"
+expect_out "$(printf '\tworking: 0+1 = 1\n')"
+# Fields the run does not use are skipped, escapes and all, and a working that
+# is null or has an escape in it is left out: the questions are still asked.
+input=$(printf 'bb')
+run_at "http://api.test/oddmsg?c=true" "a field with escapes in it does not cost a question" -w 2
+expect_status 0
+questions
+if [ "$asked" = 2 ]; then ok; else fail "asked $asked questions, wanted 2"; fi
+expect_out "$(printf '\tworking: 0+1 = 1\n')"
+run_at "http://api.test/oddvoid?c=true" "a working that is null is left out, and the question kept" -w 2
+expect_status 0
+questions
+if [ "$asked" = 2 ]; then ok; else fail "asked $asked questions, wanted 2"; fi
+expect_out "You have 1 mistake!"
+expect_no_out "working:"
+run_at "http://api.test/oddescape?c=true" "a working with an escape in it is left out, and nothing escapes to the terminal" -w 2
+expect_status 0
+questions
+if [ "$asked" = 2 ]; then ok; else fail "asked $asked questions, wanted 2"; fi
+expect_no_out "working:"
+expect_no_out "$(printf '\033')"
+
+# Without -w a refusal is shown as the server sent it; with it, its message.
+run_at "http://api.test/jsonerr?c=true" "without -w a JSON refusal is shown as it came" 1
+expect_status 1
+expect_err 'It said: {"error":"Too many \"x\" \u001b"}'
+run_at "http://api.test/jsonerr?c=true" "with -w a JSON refusal shows its message" -w 1
+expect_status 1
+expect_err 'It said: Too many "x"'
+expect_no_err '{"error"'
+
+run "without -w no working is shown and the request is plain" 2
+expect_no_out "working"
+expect_no_out "working=true"
+input=$(printf 'bbbb')
+run_at "http://api.test/gen?c=true" "a printout ignores -w" -P -w 2
+expect_no_out "working"
+expect_no_out "working=true"
 
 run_at "http://api.test/drops-out?c=true" "a printout keeps the questions before a failure" -P 150
 expect_status 1

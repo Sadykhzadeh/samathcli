@@ -47,6 +47,7 @@ typedef struct {
   int ranged;       /* the answers come from rangeLow to rangeHigh */
   int rangeLow;
   int rangeHigh;
+  int working;      /* 1 to ask for the working of each task, as JSON */
   long asked;       /* how many quizNext has handed out */
   const char* url;
   int batched;      /* the server has answered `count` with that many */
@@ -124,5 +125,11 @@ int quizNext(Quiz* quiz, Question* out);
    does not fit in `capacity`. */
 int urlWithQuery(const char* url, const char* query, char* out,
                  size_t capacity);
+
+/* Writes `url` with each parameter named `name` left out of its query, as
+   "c" for the c=true that makes SaMathAPI answer in plain text, and the rest
+   of the URL as it was. Returns 0 when the result does not fit in `capacity`. */
+int urlWithoutParameter(const char* url, const char* name, char* out,
+                        size_t capacity);
 
 #endif
