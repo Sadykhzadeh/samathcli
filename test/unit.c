@@ -71,6 +71,7 @@ static void refusesALineThatIsNotAQuestion(void) {
   CHECK(!parseQuestion("1+1 2,3,4,5,6 2", &q));
   CHECK(!parseQuestion("1+1 2,3,4,5 2 extra", &q));
   CHECK(!parseQuestion(" 1+1 2,3,4,5 2", &q));
+  CHECK(!parseQuestion(" 2,3,4,5 2", &q));
   CHECK(!parseQuestion("1+1 2,,4,5 2", &q));
   CHECK(!parseQuestion("{\"error\":\"boom\"}", &q));
 }
@@ -126,6 +127,22 @@ static void leavesTheResultAloneWhenItRefuses(void) {
   CHECK(parseQuestion("1+1 2,3,4,5 2", &q));
   CHECK(!parseQuestion("garbage", &q));
   CHECK_STR(q.expression, "1+1");
+}
+
+static void skipsALineAsLongAsTheBufferThatReadsIt(void) {
+  Question q[2];
+  char line[QUESTION_LINE_MAX + 2];
+  char text[2 * QUESTION_LINE_MAX + 32];
+  memset(line, ' ', QUESTION_LINE_MAX + 1);
+  memcpy(line, "1+1 2,3,4,5 2", 13);
+  line[QUESTION_LINE_MAX - 1] = '\0';
+  snprintf(text, sizeof text, "%s\n2+2 4,5,6,7 4\n", line);
+  CHECK(parseQuestions(text, q, 2) == 2);
+  line[QUESTION_LINE_MAX - 1] = ' ';
+  line[QUESTION_LINE_MAX] = '\0';
+  snprintf(text, sizeof text, "%s\n2+2 4,5,6,7 4\n", line);
+  CHECK(parseQuestions(text, q, 2) == 1);
+  CHECK_STR(q[0].expression, "2+2");
 }
 
 static void readsEveryQuestionInAReply(void) {
@@ -854,6 +871,9 @@ static void readsOneTaskAndTheOrderOfItsMembers(void) {
   CHECK_STR(q[0].working, "14-3 = 11");
   CHECK(parseWorkedQuestions("{\"task\":[14,\"-\",3],\"answer\":11,\"quizOptions\":[15,12,14,11]}", q, 2) == 1);
   CHECK_STR(q[0].working, "");
+  CHECK(parseWorkedQuestions("{\"task\":[14,\"-\",3],\"answer\":11,\"quizOptions\":[15,12,14,11]},"
+                             "{\"task\":[2,\"+\",2],\"answer\":4,\"quizOptions\":[4,5,6,7]}", q, 2) == 1);
+  CHECK_STR(q[0].expression, "14-3");
 }
 
 static void skipsATaskThatIsNotAQuestion(void) {
@@ -867,6 +887,19 @@ static void skipsATaskThatIsNotAQuestion(void) {
   CHECK_STR(q[0].expression, "1+1");
   CHECK_STR(q[1].expression, "3+3");
   CHECK(parseWorkedQuestions("{}", q, 4) == 0);
+  char ones[QUESTION_LINE_MAX];
+  char json[QUESTION_LINE_MAX + 128];
+  memset(ones, '1', sizeof ones - 1);
+  ones[sizeof ones - 1] = '\0';
+  /* A member too long to keep leaves the task short, and a short task is
+     not the question it was. */
+  snprintf(json, sizeof json, "{\"task\":[1,\"%s\",1],\"answer\":2,\"quizOptions\":[2,3,4,5]}", ones);
+  CHECK(parseWorkedQuestions(json, q, 4) == 0);
+  char full[QUESTION_LINE_MAX + 1];
+  memset(full, '1', sizeof full - 1);
+  full[sizeof full - 1] = '\0';
+  snprintf(json, sizeof json, "{\"task\":[\"%s\"],\"answer\":2,\"quizOptions\":[2,3,4,5]}", full);
+  CHECK(parseWorkedQuestions(json, q, 4) == 0);
 }
 
 static void dropsAWorkingThatIsNotPlainArithmetic(void) {
@@ -878,6 +911,13 @@ static void dropsAWorkingThatIsNotPlainArithmetic(void) {
   CHECK_STR(q[0].answer, "2");
   CHECK(parseWorkedQuestions("{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"working\":[\"1+1\x1b[2J\",\"2\"]}",
                              q, 2) == 1);
+  CHECK_STR(q[0].working, "");
+  char big[QUESTION_WORKING_MAX + 64];
+  char worked[QUESTION_WORKING_MAX + 256];
+  memset(big, '1', sizeof big - 1);
+  big[sizeof big - 1] = '\0';
+  snprintf(worked, sizeof worked, "{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"working\":[\"1+1\",\"%s\",\"2\"]}", big);
+  CHECK(parseWorkedQuestions(worked, q, 2) == 1);
   CHECK_STR(q[0].working, "");
   /* A working too long for its room is left out, and the question kept. */
   size_t at = 0;
@@ -898,6 +938,8 @@ static void stopsAtWhatIsNotJSON(void) {
   const char* task = "{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5]}";
   CHECK(parseWorkedQuestions("", q, 4) == 0);
   CHECK(parseWorkedQuestions("<html>502</html>", q, 4) == 0);
+  char cut[] = "{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"x\":\"ab\\";
+  CHECK(parseWorkedQuestions(cut, q, 4) == 0);
   CHECK(parseWorkedQuestions("1+1 2,3,4,5 2", q, 4) == 0);
   CHECK(parseWorkedQuestions("[]", q, 4) == 0);
   CHECK(parseWorkedQuestions("[", q, 4) == 0);
@@ -933,6 +975,8 @@ static void skipsWhatItDoesNotUse(void) {
      reading goes on with the next one. */
   CHECK(parseWorkedQuestions("[{\"task\":null,\"answer\":2},{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5]}]", q, 4) == 1);
   CHECK_STR(q[0].expression, "1+1");
+  CHECK(parseWorkedQuestions("[{\"x\":[],\"task\":[1,\"+\",1],\"y\":{},\"answer\":2,\"quizOptions\":[2,3,4,5],\"z\":[[],{}]}]", q, 4) == 1);
+  CHECK_STR(q[0].expression, "1+1");
 }
 
 static void refusesDeepNesting(void) {
@@ -946,6 +990,8 @@ static void refusesDeepNesting(void) {
   CHECK(parseWorkedQuestions(json, q, 2) == 0);
   snprintf(json, sizeof json, "{\"x\":%s", deep);
   CHECK(parseWorkedQuestions(json, q, 2) == 0);
+  CHECK(parseWorkedQuestions("[{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"x\":[[1]]}]", q, 2) == 1);
+  CHECK(parseWorkedQuestions("[{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"x\":[[[1]]]}]", q, 2) == 0);
 }
 
 static void urlLosesAParameter(void) {
@@ -1037,6 +1083,7 @@ int main(void) {
   refusesAnythingButOneLetter();
   countsEveryOptionThatReadsAsTheAnswer();
   readsEveryQuestionInAReply();
+  skipsALineAsLongAsTheBufferThatReadsIt();
   skipsWhatIsNotAQuestionInAReply();
   stopsAtTheRoomItWasGiven();
   addsCountToAnyURL();
