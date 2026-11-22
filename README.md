@@ -109,7 +109,8 @@ Task 9. 18/3-1	= 5	(time ran out)
 ```
 
 The time is the time spent over the questions, from showing one to the key
-that answered it; waiting for the server is not counted. The Slowest line
+that answered it; waiting for the server is not counted, nor is a run that was
+stopped with SIGTSTP, as a shell's job control does it. The Slowest line
 names the question that took longest, but only in a run of three or more where it
 took at least two seconds, so it is left out when nothing was slow.
 

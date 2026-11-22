@@ -24,17 +24,58 @@
 #define BYTE_NONE (-2)
 
 static struct termios original;
+static struct termios takeover; /* the settings a run takes the keyboard with */
+static int taking = 0;          /* whether the run has taken the keyboard over */
 static volatile sig_atomic_t taken = 0;
 static volatile sig_atomic_t interrupted = 0;
 static volatile sig_atomic_t child = 0; /* a process the run stops with it */
 static int unreadable = 0; /* standard input failed, rather than ended */
 static double settled = 0; /* when keys start to answer the question */
+static volatile double stopped = 0; /* seconds the run has been stopped for */
 
 static void giveBack(void) {
   if (taken) {
     taken = 0;
     tcsetattr(STDIN_FILENO, TCSANOW, &original);
   }
+}
+
+static void onStop(int signal);
+
+/* Stops the run on SIGTSTP unless that is ignored already. */
+static void catchStop(void) {
+  struct sigaction current;
+  if (sigaction(SIGTSTP, NULL, &current) || current.sa_handler != SIG_DFL) return;
+  struct sigaction handler;
+  handler.sa_handler = onStop;
+  sigemptyset(&handler.sa_mask);
+  handler.sa_flags = 0;
+  sigaction(SIGTSTP, &handler, NULL);
+}
+
+/* Hands the terminal back to the shell and stops, as a shell's Ctrl-Z does. The
+   time stopped is left out of monotonicSeconds, so that a question does not run
+   out while nobody is there to answer it. Taking the keyboard over again once
+   the run is continued. */
+static void onStop(int signal) {
+  double began = monotonicSeconds();
+  giveBack();
+  struct sigaction fallback;
+  fallback.sa_handler = SIG_DFL;
+  sigemptyset(&fallback.sa_mask);
+  fallback.sa_flags = 0;
+  sigaction(signal, &fallback, NULL);
+  sigset_t unblock;
+  sigemptyset(&unblock);
+  sigaddset(&unblock, signal);
+  sigprocmask(SIG_UNBLOCK, &unblock, NULL);
+  raise(signal);
+  catchStop();
+  if (taking) {
+    tcsetattr(STDIN_FILENO, TCSANOW, &takeover);
+    taken = 1;
+  }
+  stopped += monotonicSeconds() - began;
 }
 
 /* Leaves the terminal as it was, then dies of the same signal as it would
@@ -66,7 +107,7 @@ void inputDie(void) { onSignal(SIGINT); }
 double monotonicSeconds(void) {
   struct timespec time;
   clock_gettime(CLOCK_MONOTONIC, &time);
-  return (double)time.tv_sec + (double)time.tv_nsec / 1e9;
+  return (double)time.tv_sec + (double)time.tv_nsec / 1e9 - stopped;
 }
 
 /* Outside a terminal Ctrl-C is caught as it is at one, so that the result is
@@ -79,6 +120,7 @@ static void catchInterrupt(void) {
   sigemptyset(&handler.sa_mask);
   handler.sa_flags = 0;
   sigaction(SIGINT, &handler, NULL);
+  catchStop();
 }
 
 void inputStart(void) {
@@ -100,6 +142,8 @@ void inputStart(void) {
   keys.c_cc[VSUSP] = _POSIX_VDISABLE;
 #endif
   if (tcsetattr(STDIN_FILENO, TCSANOW, &keys)) return;
+  takeover = keys;
+  taking = 1;
   taken = 1;
   atexit(giveBack);
 
@@ -116,6 +160,7 @@ void inputStart(void) {
   /* No SA_RESTART: the wait for a key has to end when this arrives. */
   handler.sa_handler = onInterrupt;
   sigaction(SIGINT, &handler, NULL);
+  catchStop();
 }
 
 void inputChild(pid_t pid) {

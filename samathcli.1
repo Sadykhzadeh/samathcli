@@ -30,8 +30,8 @@ that runs out of time counts as a mistake.
 .TP
 \fB\-T\fR, \fB\-\-total\fR \fISECONDS\fR
 Give the whole run that many seconds of answering, from 1 to 3600. The time
-is counted as the time limit is, so time spent waiting for the server does not
-count. When it runs out, the question on
+is counted as the time limit is, so time spent waiting for the server or with
+the run stopped by SIGTSTP does not count. When it runs out, the question on
 the screen counts as a mistake if it was not answered, and the questions not
 reached are not asked. Practice does not run after such a run.
 .TP

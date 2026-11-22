@@ -341,6 +341,50 @@ check("an answer key at a narrow terminal keeps each answer whole", len(entries)
 reap(pid)
 os.close(fd)
 
+def start_as_job(argv):
+    # A shell with job control runs the program as its job, as an interactive
+    # shell does, so that a stop comes from the shell's process group.
+    pid, fd = pty.fork()
+    if pid == 0:
+        for number in (signal.SIGPIPE, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM, signal.SIGHUP, signal.SIGTSTP):
+            signal.signal(number, signal.SIG_DFL)
+        os.environ["TERM"] = "xterm"
+        os.execv("/bin/sh", ["sh", "-i"])
+    os.write(fd, ("set -m\n%s %s\n" % (BINARY, " ".join(argv))).encode())
+    return pid, fd
+
+
+def stop_job(fd, shell, seconds):
+    """Stops the program the shell started, as a Ctrl-Z in another terminal
+    would, and reports the state it is in once it is stopped."""
+    with open("/proc/%d/task/%d/children" % (shell, shell)) as children:
+        program = int(children.read().split()[0])
+    os.kill(program, signal.SIGTSTP)
+    end = time.time() + seconds
+    while time.time() < end and open("/proc/%d/stat" % program).read().split()[2] != "T":
+        time.sleep(0.05)
+    return program
+
+
+# A stopped run hands the keyboard back, so the shell echoes what is typed, and
+# the time a question has is not used up while it is stopped: the countdown
+# goes on from the seconds that were left.
+shell, fd = start_as_job(["-t", "2", "2"])
+drain(fd)
+stop_job(fd, shell, 2)
+echo, canon = modes(fd)
+check("echo and line mode are on while the run is stopped", echo and canon, "echo=%s canon=%s" % (echo, canon))
+time.sleep(3)
+os.write(fd, b"fg\n")
+resumed = collect(fd, 3)
+waiting = resumed.split("2/2")[0]  # what is shown before the first question runs out
+check("the countdown goes on after fg, and the question runs out", "1 s left" in waiting and "2/2" in resumed, repr(resumed[:300]))
+os.write(fd, b"q")
+os.write(fd, b"exit\n")
+drain(fd)
+reap(shell)
+os.close(fd)
+
 # Ctrl-D stops the run.
 pid, fd = start(["3"])
 drain(fd)
