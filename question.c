@@ -107,13 +107,14 @@ static const char* jsonString(const char* text, const char** begin,
   return end + 1;
 }
 
-/* The number at `text`, an optional minus sign and digits, as the text of it
-   and its length. Returns the text after it, or NULL. */
+/* The whole number at `text`, an optional minus sign and digits, as the text
+   of it and its length. Returns the text after it, or NULL when there is no
+   such number or it has a fraction or an exponent. */
 static const char* jsonNumber(const char* text, const char** begin,
                               size_t* length) {
   const char* digits = *text == '-' ? text + 1 : text;
   size_t size = strspn(digits, "0123456789");
-  if (!size) return NULL;
+  if (!size || (digits[size] && strchr(".eE", digits[size]))) return NULL;
   *begin = text;
   *length = (size_t)(digits - text) + size;
   return text + *length;

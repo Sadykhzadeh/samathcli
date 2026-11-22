@@ -967,6 +967,14 @@ static void stopsAtWhatIsNotJSON(void) {
   CHECK(parseWorkedQuestions("{\"error\":\"no\"}", q, 4) == 0);
   CHECK(parseWorkedQuestions("[{\"task\":[1", q, 4) == 0);
   CHECK(parseWorkedQuestions("{\"task\":[1,\"+\",1],\"answer\":2.5,\"quizOptions\":[2,3,4,5]}", q, 4) == 0);
+  /* A task whose answer is not a whole number is skipped, and the reading
+     goes on past it. */
+  CHECK(parseWorkedQuestions("[{\"task\":[1,\"+\",1],\"answer\":2.5,\"quizOptions\":[2,3,4,5]},"
+                             "{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5]}]", q, 4) == 1);
+  CHECK_STR(q[0].answer, "2");
+  CHECK(parseWorkedQuestions("[{\"task\":[1,\"+\",1],\"answer\":2e0,\"quizOptions\":[2,3,4,5]},"
+                             "{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5]}]", q, 4) == 1);
+  CHECK_STR(q[0].answer, "2");
   CHECK(parseWorkedQuestions("{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5],\"working\":[\"1+1\\u0041\"]}", q, 4) == 1);
   CHECK_STR(q[0].working, "");
   CHECK(parseWorkedQuestions(task, q, 0) == 0);
