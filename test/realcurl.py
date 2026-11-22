@@ -477,6 +477,30 @@ waiting_out, waiting_err = waiting.communicate(timeout=30)
 check(waiting.returncode == 0 and b"You stopped" not in waiting_out and b"could not read" not in waiting_err,
       "answers that come later on a non-blocking standard input are read: %r %r" % (waiting.returncode, waiting_err[-200:]))
 
+# A connection reset during practice, after the answers of the first round,
+# is said in the result as it is when it happens in that round.
+listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+listener.bind(("127.0.0.1", 0))
+listener.listen(1)
+client = socket.create_connection(listener.getsockname())
+peer, _ = listener.accept()
+listener.close()
+Server.failures = []
+Server.paths = []
+reset_run = subprocess.Popen([BINARY, "2", "-p"], stdin=client, stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE, env=child_env(SAMATH_API_URL=url),
+                             preexec_fn=own_signals)
+client.close()
+peer.sendall(b"b\nb\n")
+time.sleep(1)
+peer.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+peer.close()
+reset_out, reset_err = reset_run.communicate(timeout=30)
+check(reset_run.returncode == 1 and b"Practice stopped with 2 of 2 still to put right." in reset_out
+      and b"I could not read your answers during practice." in reset_out
+      and b"could not read your answers from standard input" in reset_err,
+      "a reset during practice is said in the result: %r %r %r" % (reset_run.returncode, reset_out[-200:], reset_err[-200:]))
+
 # A run stopped by a signal that reaches only the program, as from `kill`, takes
 # curl down with it: curl is not left to wait out its time limit of 10 s.
 for name, number in (("SIGTERM", signal.SIGTERM), ("SIGINT", signal.SIGINT)):

@@ -693,9 +693,11 @@ int main(int argc, char** argv) {
   if (practised && !stillWrong)
     printf("\n🔁 Practice: every mistake put right, in %ld %s.\n", rounds,
            rounds == 1 ? "round" : "rounds");
-  else if (practised)
+  else if (practised) {
     printf("\n🔁 Practice stopped with %ld of %ld still to put right.\n",
            stillWrong, mistakes.count);
+    if (unread) puts("😔 I could not read your answers during practice.");
+  }
   puts(bye);
   mistakesFree(&mistakes);
   /* Output that did not get out, as to a full disk, is not a finished run,
