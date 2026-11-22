@@ -197,6 +197,8 @@ static void putsTheQueryBeforeAFragment(void) {
   CHECK_STR(out, "http://h/gen?c=true&count=5");
   CHECK(urlWithQuery("http://h/gen#x", "", out, sizeof out));
   CHECK_STR(out, "http://h/gen");
+  CHECK(urlWithQuery("http://h/gen#x?y", "count=5", out, sizeof out));
+  CHECK_STR(out, "http://h/gen?count=5");
 }
 
 static void leavesTheURLAloneWithoutAQuery(void) {
@@ -1009,6 +1011,8 @@ static void urlLosesAParameter(void) {
   CHECK_STR(out, "http://h/gen?x=1&y=2#f");
   CHECK(urlWithoutParameter("http://h/gen?c=true#f", "c", out, sizeof out));
   CHECK_STR(out, "http://h/gen#f");
+  CHECK(urlWithoutParameter("http://h/gen#f?c=true", "c", out, sizeof out));
+  CHECK_STR(out, "http://h/gen#f?c=true");
   CHECK(urlWithoutParameter("http://h/gen?cc=1&c", "c", out, sizeof out));
   CHECK_STR(out, "http://h/gen?cc=1");
   CHECK(urlWithoutParameter("http://h/gen?&c=true&&x=1&", "c", out, sizeof out));
