@@ -187,6 +187,9 @@ static void addsCountToAnyURL(void) {
   CHECK_STR(out, "http://h/gen?count=5");
   CHECK(urlWithQuery("http://h/gen?c=true&", "count=5", out, sizeof out));
   CHECK_STR(out, "http://h/gen?c=true&count=5");
+  /* An ampersand in a URL with no query is part of its path. */
+  CHECK(urlWithQuery("http://h/gen&", "count=5", out, sizeof out));
+  CHECK_STR(out, "http://h/gen&?count=5");
 }
 
 static void putsTheQueryBeforeAFragment(void) {

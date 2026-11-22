@@ -79,10 +79,10 @@ int urlWithQuery(const char* url, const char* query, char* out,
                  size_t capacity) {
   size_t length = strcspn(url, "#");
   const char* separator = "?";
-  if (!*query || (length && (url[length - 1] == '?' || url[length - 1] == '&')))
+  if (!*query)
     separator = "";
   else if (memchr(url, '?', length))
-    separator = "&";
+    separator = url[length - 1] == '?' || url[length - 1] == '&' ? "" : "&";
   int written = snprintf(out, capacity, "%.*s%s%s", (int)length, url, separator,
                          query);
   return written >= 0 && (size_t)written < capacity;
