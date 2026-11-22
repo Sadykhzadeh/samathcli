@@ -437,18 +437,29 @@ check(waited < 5, "a reply past 1 MB is not waited for: %.1f s" % waited)
 # Ctrl-C with the answers piped in gives the result so far, as it does at a
 # terminal, and then ends the run by SIGINT.
 read_end, write_end = os.pipe()
-piped = subprocess.Popen([BINARY, "3"], stdin=read_end, stdout=subprocess.PIPE,
+piped_log = tempfile.TemporaryFile()
+piped = subprocess.Popen([BINARY, "3"], stdin=read_end, stdout=piped_log,
                          stderr=subprocess.PIPE, env=child_env(SAMATH_API_URL=url),
                          preexec_fn=own_signals)
 os.close(read_end)
 os.write(write_end, b"a")
-time.sleep(1)
+# The signal comes once the second question is shown, however long the
+# questions take to be fetched.
+end = time.time() + 30
+while time.time() < end:
+    piped_log.seek(0)
+    if b"2/3" in piped_log.read():
+        break
+    time.sleep(0.05)
 piped.send_signal(signal.SIGINT)
-piped_out, piped_err = piped.communicate(timeout=30)
+piped_err = piped.communicate(timeout=30)[1]
 os.close(write_end)
+piped_log.seek(0)
+piped_out = piped_log.read()
+piped_log.close()
 check(piped.returncode == -signal.SIGINT, "Ctrl-C with piped answers ends the run by SIGINT: %r" % piped.returncode)
-check("You stopped after 1 of 3 questions." in piped_out.decode() and "1 of 1 right" in piped_out.decode(),
-      "Ctrl-C with piped answers gives the result so far: %r" % piped_out.decode()[-300:])
+check(b"You stopped after 1 of 3 questions." in piped_out and b"1 of 1 right" in piped_out,
+      "Ctrl-C with piped answers gives the result so far: %r" % piped_out[-300:])
 
 # Standard input that does not block is waited for while it has nothing in it,
 # and the run goes on with the answers that come later.
