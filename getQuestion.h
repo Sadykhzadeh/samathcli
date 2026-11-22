@@ -9,10 +9,11 @@
    caller makes sure there are three. */
 int isBidiControl(const unsigned char* text);
 
-/* The length of the well-formed UTF-8 character that starts at `text`, or 0
-   when the bytes there are not one. Overlong forms, surrogates and code points
-   past U+10FFFF are not well formed. Reads no further than the first byte that
-   is not part of a character, so a NUL ends it. */
+/* The length, 2 to 4, of the well-formed UTF-8 character that starts at
+   `text`, or 0 when the bytes there are not one, ASCII included. Overlong
+   forms, surrogates and code points past U+10FFFF are not well formed. Reads
+   no further than the first byte that is not part of a character, so a NUL
+   ends it. */
 size_t utf8Length(const unsigned char* text);
 
 /* The most bytes of what a refusing server said that are kept. */
@@ -121,8 +122,8 @@ void quizClose(Quiz* quiz);
 int quizNext(Quiz* quiz, Question* out);
 
 /* Writes `url` with `query` ("count=20") added to its query string into
-   `out`; an empty `query` leaves the URL as it is. Returns 0 when the result
-   does not fit in `capacity`. */
+   `out`; an empty `query` leaves the URL as it is, but for a fragment, which
+   is dropped. Returns 0 when the result does not fit in `capacity`. */
 int urlWithQuery(const char* url, const char* query, char* out,
                  size_t capacity);
 
