@@ -308,10 +308,25 @@ static int printWorksheet(const Options* options) {
   }
   quizClose(&quiz);
   if (printed) {
+    /* Ten to a line, and fewer where a line would wrap at a terminal, so that
+       no answer is split across two rows. */
+    int columns = atTerminal ? terminalColumns() : 0;
+    int used = 0;
     puts("Answers:");
-    for (long i = 0; i < printed; i++)
-      printf("%ld %c%s", i + 1, letters[i],
-             (i + 1) % 10 == 0 || i + 1 == printed ? "\n" : "   ");
+    for (long i = 0; i < printed; i++) {
+      char answer[32];
+      int size = snprintf(answer, sizeof answer, "%ld %c", i + 1, letters[i]);
+      if (i && (i % 10 == 0 || (columns && used + 3 + size > columns))) {
+        putchar('\n');
+        used = 0;
+      } else if (i) {
+        fputs("   ", stdout);
+        used += 3;
+      }
+      fputs(answer, stdout);
+      used += size;
+    }
+    putchar('\n');
   }
   free(letters);
   int written = fflush(stdout) == 0 && !ferror(stdout);

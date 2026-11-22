@@ -331,6 +331,16 @@ os.write(fd, b"a")
 reap(pid)
 os.close(fd)
 
+# The answer key of a printout wraps between answers at a narrow terminal, so
+# that no answer is split over two rows, and each row is as wide as the terminal.
+pid, fd = start(["-P", "12"], columns=30)
+key = drain(fd)
+rows = [row for row in key[key.index("Answers:"):].splitlines()[1:] if row]
+entries = [entry for row in rows for entry in row.split("   ")]
+check("an answer key at a narrow terminal keeps each answer whole", len(entries) == 12 and all(re.fullmatch(r"\d+ [A-D]", entry) for entry in entries) and all(len(row) <= 30 for row in rows), repr(rows))
+reap(pid)
+os.close(fd)
+
 # Ctrl-D stops the run.
 pid, fd = start(["3"])
 drain(fd)
