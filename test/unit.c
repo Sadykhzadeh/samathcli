@@ -1077,6 +1077,33 @@ static void knowsTheBidirectionalControls(void) {
   CHECK(!isBidiControl((const unsigned char*)"\xe3\x80\xaa"));
 }
 
+static void refusesOverlongUTF8(void) {
+  CHECK(utf8Length((const unsigned char*)"\xC2\x80") == 2);
+  CHECK(utf8Length((const unsigned char*)"\xC0\x80") == 0);
+  CHECK(utf8Length((const unsigned char*)"\xC1\xBF") == 0);
+  CHECK(utf8Length((const unsigned char*)"\xE0\xA0\x80") == 3);
+  CHECK(utf8Length((const unsigned char*)"\xE0\x9F\xBF") == 0);
+  CHECK(utf8Length((const unsigned char*)"\xF0\x90\x80\x80") == 4);
+  CHECK(utf8Length((const unsigned char*)"\xF0\x8F\xBF\xBF") == 0);
+}
+
+static void refusesUTF8PastTheCharacters(void) {
+  CHECK(utf8Length((const unsigned char*)"\xED\x9F\xBF") == 3);
+  CHECK(utf8Length((const unsigned char*)"\xED\xA0\x80") == 0);
+  CHECK(utf8Length((const unsigned char*)"\xF4\x8F\xBF\xBF") == 4);
+  CHECK(utf8Length((const unsigned char*)"\xF4\x90\x80\x80") == 0);
+  CHECK(utf8Length((const unsigned char*)"\xF5\x80\x80\x80") == 0);
+  CHECK(utf8Length((const unsigned char*)"\xFF\x80") == 0);
+}
+
+static void refusesUTF8WithBadContinuation(void) {
+  CHECK(utf8Length((const unsigned char*)"\xE2\x80\x8E") == 3);
+  CHECK(utf8Length((const unsigned char*)"\xE2\xC0\x80") == 0);
+  CHECK(utf8Length((const unsigned char*)"\xE2\x80\xC0") == 0);
+  CHECK(utf8Length((const unsigned char*)"\xF0\x9F\x98\x80") == 4);
+  CHECK(utf8Length((const unsigned char*)"\xF0\x9F\x98\xC0") == 0);
+}
+
 int main(void) {
   parsesAWellFormedLine();
   keepsNegativesAndBrackets();
@@ -1107,6 +1134,9 @@ int main(void) {
   doesNotRepeatItselfForOneAnswer();
   neverWritesPastTheRoomItWasGiven();
   knowsTheBidirectionalControls();
+  refusesOverlongUTF8();
+  refusesUTF8PastTheCharacters();
+  refusesUTF8WithBadContinuation();
   survivesRandomInput();
   readsTheNumberOfQuestions();
   refusesWhatIsNotANumberOfQuestions();
