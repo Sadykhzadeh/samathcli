@@ -1040,6 +1040,13 @@ expect_status 1
 expect_requests 0
 expect_err "a whole number from 1 to 2147483647, not \"2147483648\""
 
+# Standard output and error going to one file, as a log does: the welcome is
+# written before the failure it comes before.
+name="welcome before a failure in one file"
+(cd "$work/cwd" && SAMATH_API_URL=http://api.test/down?c=true "$root/samath" 2 > "$work/both" 2>&1)
+first=$(head -n 1 "$work/both")
+case "$first" in *Welcome*) ok ;; *) fail "the first line is \"$first\"" ;; esac
+
 # What the completion script offers for the words given, the last of them
 # being the one completed.
 complete_words() {

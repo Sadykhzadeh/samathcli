@@ -561,6 +561,7 @@ int main(int argc, char** argv) {
   atTerminal = isatty(STDOUT_FILENO) && !(term && !strcmp(term, "dumb"));
   if (options.print) return printWorksheet(&options);
   puts(welcomeText);
+  fflush(stdout);
   giveFeedback = options.feedback;
   /* Static, as the batch of questions is too big for the stack. */
   static Quiz quiz;
