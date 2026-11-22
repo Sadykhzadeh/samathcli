@@ -907,6 +907,10 @@ static void skipsATaskThatIsNotAQuestion(void) {
                              q, 4) == 2);
   CHECK_STR(q[0].expression, "1+1");
   CHECK_STR(q[1].expression, "3+3");
+  /* A member that is not an object is skipped as well. */
+  CHECK(parseWorkedQuestions("[2,{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5]}]", q, 4) == 1);
+  CHECK_STR(q[0].expression, "1+1");
+  CHECK(parseWorkedQuestions("[\"x\",null,{\"task\":[1,\"+\",1],\"answer\":2,\"quizOptions\":[2,3,4,5]}]", q, 4) == 1);
   CHECK(parseWorkedQuestions("{}", q, 4) == 0);
   char ones[QUESTION_LINE_MAX];
   char json[QUESTION_LINE_MAX + 128];

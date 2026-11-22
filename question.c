@@ -201,8 +201,9 @@ static const char* jsonList(const char* text, const char* separator, char* out,
 }
 
 /* Reads the task object at `text` into `out`, and sets `*valid` to 1 when it
-   holds a question parseQuestion accepts, or 0 when it does not. Returns the
-   text after the object, or NULL when it is not well-formed. */
+   holds a question parseQuestion accepts, or 0 when it does not. A value that
+   is not an object is skipped, and is not a task. Returns the text after the
+   value, or NULL when it is not well-formed. */
 static const char* readTask(const char* text, Question* out, int* valid) {
   char task[QUESTION_LINE_MAX], options[QUESTION_LINE_MAX];
   char working[QUESTION_WORKING_MAX];
@@ -213,7 +214,7 @@ static const char* readTask(const char* text, Question* out, int* valid) {
   *valid = 0;
 
   text = jsonSpace(text);
-  if (*text != '{') return NULL;
+  if (*text != '{') return jsonSkip(text, 1);
   text = jsonSpace(text + 1);
   if (*text == '}') return text + 1;
   for (;;) {
