@@ -578,6 +578,8 @@ static void takesAnAnswerRange(void) {
   CHECK(o.rangeLow == 9900 && o.rangeHigh == 10000);
   CHECK(args(&o, &culprit, 3, "--range", "7-7", "5") == ARGS_OK);
   CHECK(o.rangeLow == 7 && o.rangeHigh == 7);
+  CHECK(args(&o, &culprit, 3, "-r", "10000-10000", "5") == ARGS_OK);
+  CHECK(o.rangeLow == 10000 && o.rangeHigh == 10000);
   CHECK(args(&o, &culprit, 3, "-pr", "1-5", "5") == ARGS_OK && o.practice);
   const char* const bad[] = {"20-10", "0-101", "10", "10-", "-10", "a-b",
                              "1-2-3", "10000-10001", "1 - 5", "+1-5",
@@ -606,6 +608,7 @@ static void refusesRangeAboveMax(void) {
   /* Answers up to the largest number, and no -m at all, are fine. */
   CHECK(args(&o, &culprit, 5, "-m", "20", "-r", "10-20", "5") == ARGS_OK);
   CHECK(args(&o, &culprit, 5, "-m", "20", "-r", "0-20", "5") == ARGS_OK);
+  CHECK(args(&o, &culprit, 5, "-m", "20", "-r", "20-20", "5") == ARGS_OK);
   CHECK(args(&o, &culprit, 3, "-r", "50-100", "5") == ARGS_OK);
 }
 
