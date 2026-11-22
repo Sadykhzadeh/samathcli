@@ -354,16 +354,14 @@ def start_as_job(argv):
     return pid, fd
 
 
-def stop_job(fd, shell, seconds):
-    """Stops the program the shell started, as a Ctrl-Z in another terminal
-    would, and reports the state it is in once it is stopped."""
-    with open("/proc/%d/task/%d/children" % (shell, shell)) as children:
-        program = int(children.read().split()[0])
-    os.kill(program, signal.SIGTSTP)
+def stop_job(fd, seconds):
+    """Stops the job in the foreground, as a Ctrl-Z in another terminal would,
+    and returns once the shell reports it stopped."""
+    os.kill(os.tcgetpgrp(fd), signal.SIGTSTP)
     end = time.time() + seconds
-    while time.time() < end and open("/proc/%d/stat" % program).read().split()[2] != "T":
-        time.sleep(0.05)
-    return program
+    shown = ""
+    while time.time() < end and "Stopped" not in shown:
+        shown += drain(fd, 0.1)
 
 
 # A stopped run hands the keyboard back, so the shell echoes what is typed. The
@@ -372,7 +370,7 @@ def stop_job(fd, shell, seconds):
 # the cursor is once the run goes on.
 shell, fd = start_as_job(["-t", "2", "2"])
 drain(fd)
-stop_job(fd, shell, 2)
+stop_job(fd, 2)
 echo, canon = modes(fd)
 check("echo and line mode are on while the run is stopped", echo and canon, "echo=%s canon=%s" % (echo, canon))
 time.sleep(3)
