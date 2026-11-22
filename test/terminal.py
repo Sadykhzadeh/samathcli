@@ -4,6 +4,7 @@ terminal settings afterwards. Questions come from test/fakecurl.sh.
 
 usage: python3 test/terminal.py ./samath
 """
+import fcntl
 import os
 import pty
 import re
@@ -11,6 +12,7 @@ import resource
 import select
 import shutil
 import signal
+import struct
 import sys
 import tempfile
 import termios
@@ -30,7 +32,7 @@ os.environ["TERM"] = "xterm"
 open(os.environ["CURL_LOG"], "w").close()
 
 
-def start(argv, closed_output=False, term="xterm"):
+def start(argv, closed_output=False, term="xterm", columns=0):
     # Every run starts with question 1, whose right answer is A.
     if os.path.exists(os.environ["CURL_LOG"] + ".served"):
         os.remove(os.environ["CURL_LOG"] + ".served")
@@ -48,6 +50,8 @@ def start(argv, closed_output=False, term="xterm"):
             os.close(reader)
             os.dup2(writer, 1)
         os.environ["TERM"] = term
+        if columns:
+            fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", 24, columns, 0, 0))
         os.execv(BINARY, [BINARY] + argv)
     return pid, fd
 
@@ -298,6 +302,32 @@ os.close(fd)
 pid, fd = start(["-P", "2"])
 shown = drain(fd)
 check("a printout at a terminal shows the wait, then wipes it", "Asking SaMathAPI" in shown and shown.index("Asking SaMathAPI") < shown.index("\r\x1b[K") < shown.index("1. "), shown[-200:])
+reap(pid)
+os.close(fd)
+
+# A printout at a terminal narrower than the wait line would wrap it, and the
+# wipe would leave its first row behind, so the wait is not shown there at all.
+pid, fd = start(["-P", "2"], columns=30)
+narrow = drain(fd)
+check("a printout at a narrow terminal shows no wait", "Asking" not in narrow and "1. " in narrow, narrow[-200:])
+reap(pid)
+os.close(fd)
+pid, fd = start(["-P", "2"], columns=40)
+exact = drain(fd)
+check("a printout at a terminal exactly as wide as the wait shows it", "Asking SaMathAPI" in exact, exact[-200:])
+reap(pid)
+os.close(fd)
+
+# A run wipes the wait with the question that follows it, so a narrow terminal
+# still shows the wait for a batch.
+os.environ["FAKE_IGNORE_COUNT"] = "1"
+pid, fd = start(["2"], columns=30)
+drain(fd)
+os.write(fd, b"a")
+narrowRun = drain(fd)
+del os.environ["FAKE_IGNORE_COUNT"]
+check("a run at a narrow terminal still shows the wait for a question", "Asking SaMathAPI" in narrowRun, narrowRun[-200:])
+os.write(fd, b"a")
 reap(pid)
 os.close(fd)
 

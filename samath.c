@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/ioctl.h>
 #include <unistd.h>
 #include "checkAnswer.h"
 #include "getQuestion.h"
@@ -28,6 +29,8 @@
   "send them as JSON, with their working, which working=true asks for. " \
   "See SAMATH_API_URL.\n"
 #define fetching "⏳ Asking SaMathAPI for the questions..."
+/* The columns the line takes, its emoji being two wide. */
+#define fetchingWidth 40
 #define noCurl                                                          \
   "😔 I need curl to fetch the questions, and could not run it. Is it "  \
   "installed and on your PATH?\n"
@@ -231,6 +234,22 @@ static void sayFetchFailure(int code, const Quiz* quiz) {
    that says it is dumb, as Emacs's M-x shell does, gets what a pipe gets. */
 static int atTerminal;
 
+/* The columns of the terminal that standard output is, or 0 when it is not
+   known. */
+static int terminalColumns(void) {
+  struct winsize size;
+  if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &size) || !size.ws_col) return 0;
+  return size.ws_col;
+}
+
+/* Whether the wait line fits on one row of the terminal, or the width is not
+   known. The wipe after it clears only the last row, so a wrapped line would be
+   left behind wherever nothing else clears the screen. */
+static int waitFits(void) {
+  int columns = terminalColumns();
+  return !columns || columns >= fetchingWidth;
+}
+
 /* Gets the next question. While a batch is awaited at a terminal, a line says
    so, and it is wiped once the question is there. */
 static int fetchQuestion(Quiz* quiz, Question* question, int terminal) {
@@ -260,7 +279,7 @@ static int printWorksheet(const Options* options) {
   for (long i = 0; i < options->questions; i++) {
     if (fflush(stdout) || ferror(stdout)) break;
     Question question;
-    int fetched = fetchQuestion(&quiz, &question, atTerminal);
+    int fetched = fetchQuestion(&quiz, &question, atTerminal && waitFits());
     if (fetched < 0) {
       sayFetchFailure(fetched, &quiz);
       status = 1;
