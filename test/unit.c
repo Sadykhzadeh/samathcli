@@ -232,6 +232,8 @@ static void saysDurationsTheWayAPersonDoes(void) {
   CHECK_STR(out, "10 s");
   formatDuration(45.6, out, sizeof out);
   CHECK_STR(out, "46 s");
+  formatDuration(45.5, out, sizeof out);
+  CHECK_STR(out, "46 s");
   formatDuration(59.4, out, sizeof out);
   CHECK_STR(out, "59 s");
   /* Rounding up to 60 is a minute, not "60 s". */
@@ -243,6 +245,12 @@ static void saysDurationsTheWayAPersonDoes(void) {
   CHECK_STR(out, "3 min 5 s");
   formatDuration(3725, out, sizeof out);
   CHECK_STR(out, "1 h 2 min");
+  formatDuration(7140, out, sizeof out);
+  CHECK_STR(out, "1 h 59 min");
+  formatDuration(3600, out, sizeof out);
+  CHECK_STR(out, "1 h 0 min");
+  formatDuration(9.95, out, sizeof out);
+  CHECK_STR(out, "10 s");
 }
 
 static void summarisesARun(void) {
@@ -255,6 +263,10 @@ static void summarisesARun(void) {
   CHECK_STR(out, "0 of 4 right (0%), 8.0 s, 2.0 s a question");
   formatStats(10, 10, 31, out, sizeof out);
   CHECK_STR(out, "10 of 10 right (100%), 31 s, 3.1 s a question");
+  formatStats(1, 8, 16, out, sizeof out);
+  CHECK_STR(out, "1 of 8 right (13%), 16 s, 2.0 s a question");
+  formatStats(0, 0, 0, out, sizeof out);
+  CHECK_STR(out, "0 of 0 right (0%), 0.0 s");
 }
 
 static void keepsAMistakeOffAPerfectScore(void) {
@@ -281,6 +293,8 @@ static void namesTheSlowestQuestionOfALongEnoughRun(void) {
   CHECK_STR(out, "Task 4. 18/3-1 (21 s)");
   CHECK(formatSlowest(12, "2+3*4", 2.0, 3, out, sizeof out));
   CHECK_STR(out, "Task 12. 2+3*4 (2.0 s)");
+  CHECK(!formatSlowest(4, "18/3-1", 21.4, 10, out, 21));
+  CHECK(formatSlowest(4, "18/3-1", 21.4, 10, out, 22));
 }
 
 static void doesNotNameTheSlowestWhenThereIsNoneToName(void) {
