@@ -450,6 +450,22 @@ check(piped.returncode == -signal.SIGINT, "Ctrl-C with piped answers ends the ru
 check("You stopped after 1 of 3 questions." in piped_out.decode() and "1 of 1 right" in piped_out.decode(),
       "Ctrl-C with piped answers gives the result so far: %r" % piped_out.decode()[-300:])
 
+# Standard input that does not block is waited for while it has nothing in it,
+# and the run goes on with the answers that come later.
+read_end, write_end = os.pipe()
+os.set_blocking(read_end, False)
+waiting = subprocess.Popen([BINARY, "2"], stdin=read_end, stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE, env=child_env(SAMATH_API_URL=url),
+                           preexec_fn=own_signals)
+os.close(read_end)
+time.sleep(1)
+check(waiting.poll() is None, "a run waits for answers on a non-blocking standard input")
+os.write(write_end, b"ab")
+os.close(write_end)
+waiting_out, waiting_err = waiting.communicate(timeout=30)
+check(waiting.returncode == 0 and b"You stopped" not in waiting_out and b"could not read" not in waiting_err,
+      "answers that come later on a non-blocking standard input are read: %r %r" % (waiting.returncode, waiting_err[-200:]))
+
 # A run stopped by a signal that reaches only the program, as from `kill`, takes
 # curl down with it: curl is not left to wait out its time limit of 10 s.
 for name, number in (("SIGTERM", signal.SIGTERM), ("SIGINT", signal.SIGINT)):

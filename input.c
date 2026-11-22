@@ -209,6 +209,19 @@ static int readByte(int waitMs) {
     ssize_t got = read(STDIN_FILENO, &byte, 1);
     if (got == 1) return byte;
     if (got < 0 && errno == EINTR && !interrupted) continue;
+    /* A non-blocking standard input with nothing in it yet is waited for, as
+       the caller would wait for a key: a timed wait ends with BYTE_NONE, and
+       an untimed one is woken by the next byte. */
+    if (got < 0 && (errno == EAGAIN || errno == EWOULDBLOCK) && !interrupted) {
+      if (waitMs >= 0) return BYTE_NONE;
+      fd_set readable;
+      FD_ZERO(&readable);
+      FD_SET(STDIN_FILENO, &readable);
+      if (select(STDIN_FILENO + 1, &readable, NULL, NULL, NULL) < 0 &&
+          errno != EINTR)
+        return BYTE_END;
+      continue;
+    }
     /* A closed standard input is no input, as the wait above has it; any
        other failure to read is said, as the input could not be used. */
     if (got < 0 && errno != EBADF && !interrupted) unreadable = 1;
