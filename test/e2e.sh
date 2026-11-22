@@ -1047,6 +1047,10 @@ name="welcome before a failure in one file"
 first=$(head -n 1 "$work/both")
 case "$first" in *Welcome*) ok ;; *) fail "the first line is \"$first\"" ;; esac
 
+run "help names the default address" --help
+expect_status 0
+expect_out "The default is http://localhost:3000/gen?c=true."
+
 # What the completion script offers for the words given, the last of them
 # being the one completed.
 complete_words() {

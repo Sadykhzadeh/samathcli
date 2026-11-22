@@ -123,7 +123,8 @@
   "\n"                                                                    \
   "Short options can be joined: -pf, or -pt 30 with a time limit.\n"      \
   "Answer with A, B, C or D, no Enter needed. Q stops the run.\n"         \
-  "SAMATH_API_URL says where the questions come from.\n"
+  "SAMATH_API_URL says where the questions come from.\n"                  \
+  "The default is " apiUrlDefault ".\n"
 
 /* Writes the first `length` bytes of `text` to standard error: text the person
    typed or set, such as an argument or SAMATH_API_URL. A control character
