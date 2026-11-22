@@ -80,6 +80,18 @@ mentions "$root/README.md" "$bounds
 $default
 $fetching"
 
+# --help and --version exit with 0, which the exit status sections of the manual
+# page and README have to say.
+exit_man=$(sed -n '/^\.SH EXIT STATUS/,/^\.SH /p' "$root/samathcli.1" | tr -d '\r' | sed 's/\\-/-/g')
+exit_readme=$(sed -n '/^### Exit status/,/^### /p' "$root/README.md" | tr -d '\r')
+for option in --help --version; do
+  "$bin" "$option" > /dev/null 2>&1 || { echo "$option does not exit with 0" >&2; status=1; }
+  printf '%s\n' "$exit_man" | grep -qF -- "$option" ||
+    { echo "the EXIT STATUS of samathcli.1 does not name $option" >&2; status=1; }
+  printf '%s\n' "$exit_readme" | grep -qF -- "$option" ||
+    { echo "the Exit status of README.md does not name $option" >&2; status=1; }
+done
+
 if [ "$status" = 0 ]; then
   echo "docs: $(wc -l < "$work/help" | tr -d ' ') options agree across --help, options.c, samathcli.1 and README.md"
 fi
