@@ -402,7 +402,7 @@ static void readsTheNumberOfQuestions(void) {
 static void refusesWhatIsNotANumberOfQuestions(void) {
   Options o;
   const char* culprit;
-  const char* bad[] = {"0",   "-3", "abc", "2.5", "", "5x",
+  const char* bad[] = {"0",   "-0", "-3", "abc", "2.5", "", "5x",
                        "2147483648", "99999999999999999999", "-"};
   for (size_t i = 0; i < sizeof bad / sizeof *bad; i++) {
     CHECK(args(&o, &culprit, 1, bad[i]) == ARGS_BAD_COUNT);
