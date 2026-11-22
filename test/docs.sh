@@ -92,6 +92,15 @@ for option in --help --version; do
     { echo "the Exit status of README.md does not name $option" >&2; status=1; }
 done
 
+# Every environment variable the program reads is named in the manual's
+# ENVIRONMENT section.
+env_man=$(sed -n '/^\.SH ENVIRONMENT/,/^\.SH /p' "$root/samathcli.1" | tr -d '\r')
+for name in $(grep -ho 'getenv("[A-Z_]*")' "$root"/*.c | sed 's/^getenv("//; s/")$//' | sort -u) \
+    $(sed -n 's/^#define [A-Za-z]*Env "\([A-Z_]*\)"$/\1/p' "$root"/*.c "$root"/*.h | sort -u); do
+  printf '%s\n' "$env_man" | grep -qwF -- "$name" ||
+    { echo "the ENVIRONMENT section of samathcli.1 does not name $name, which the program reads" >&2; status=1; }
+done
+
 if [ "$status" = 0 ]; then
   echo "docs: $(wc -l < "$work/help" | tr -d ' ') options agree across --help, options.c, samathcli.1 and README.md"
 fi

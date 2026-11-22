@@ -154,7 +154,8 @@ for Ctrl-C.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |
-| `SAMATH_API_URL` | `http://localhost:3000/gen?c=true` | Where questions are fetched from, an `http://` or `https://` address; a file or another scheme is refused. It is handed to `curl` as it is. `curl` does not read its own configuration file (`~/.curlrc`), so nothing in it changes the request. |
+| `SAMATH_API_URL` | `http://localhost:3000/gen?c=true` | Where questions are fetched from, an `http://` or `https://` address; a file or another scheme is refused. The parameters samath passes on, such as `count` and `seed`, are added to its end, and with `-w` any `c` and `working` in it are replaced by `working=true`. `curl` is given the address and does not read its own configuration file (`~/.curlrc`), so nothing in it changes the request. |
+| `TERM` | as the terminal sets it | `dumb` writes the output as it is to a pipe, see [Answering](#answering). |
 
 ### How questions are fetched
 

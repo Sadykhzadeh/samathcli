@@ -122,9 +122,29 @@ The value has to be an
 .B http
 or
 .B https
-address. It is handed to
+address. samath adds the parameters it passes on, such as
+.B count
+and
+.BR seed ,
+to the end of it; with
+.B \-\-working
+it removes any
+.B c
+and
+.B working
+parameters and adds
+.BR working=true ,
+as the JSON answer needs. The address, with those parameters, is what
 .BR curl (1)
-as it is.
+is given; curl reads no configuration file.
+.TP
+.B TERM
+A terminal whose type is
+.BR dumb ,
+as in Emacs's shell
+buffer, cannot clear the screen or move the cursor, so the output is written as it is
+to a pipe: a blank line between questions, and a time limit that is shown on
+the prompt but not counted down. The answers are still read one key at a time.
 .SH EXIT STATUS
 .TP
 .B 0
