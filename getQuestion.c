@@ -312,7 +312,8 @@ static void rememberRefusal(Quiz* quiz, const char* body) {
         for (int digits = 0; digits < 4 && isxdigit(*c); digits++) c++;
         continue;
       }
-      if (!*c) break;
+      /* An escaped newline ends the first line, as a raw one does. */
+      if (!*c || *c == 'n') break;
       if (!strchr("\"\\/", *c)) {
         c++;
         continue;

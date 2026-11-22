@@ -950,6 +950,10 @@ run_at "http://api.test/jsonerr?c=true" "with -w a JSON refusal shows its messag
 expect_status 1
 expect_err 'It said: Too many "x"'
 expect_no_err '{"error"'
+run_at "http://api.test/jsonnl?c=true" "with -w a JSON refusal ends its message at an escaped newline" -w 1
+expect_status 1
+expect_err 'It said: Too many'
+expect_no_err 'Too manyquestions'
 
 run "without -w no working is shown and the request is plain" 2
 expect_no_out "working"

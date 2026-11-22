@@ -96,6 +96,10 @@ case "$url" in
     printf '%s\n' '{"error":"Too many \"x\" \u001b"}'
     finish 400 0
     ;;
+  *jsonnl*)
+    printf '%s\n' '{"error":"Too many\nquestions"}'
+    finish 400 0
+    ;;
   *flaky*|*limited*|*hangs-up*)
     if [ ! -f "$CURL_LOG.flaky" ]; then
       : > "$CURL_LOG.flaky"
