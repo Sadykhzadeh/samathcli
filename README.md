@@ -116,6 +116,15 @@ took at least two seconds, so it is left out when nothing was slow.
 With `-w`, each mistake is followed by a `working:` line that shows how it is
 worked out, as described under [Options](#options).
 
+### Printout
+
+`-P` prints each question as `N. task`, then its options: `A)` and `B)` on
+one line and `C)` and `D)` on the next, indented by a tab with two tabs between
+them, and a blank line after the question. After the last one comes `Answers:`
+and the right letter for each question as `1 C   2 A`, ten to a line, so a key
+can be checked against the worksheet. A line that would wrap at a terminal
+starts a new row of answers instead.
+
 ### Exit status
 
 `0` when the run was finished or stopped with `Q`, whatever the score, and for

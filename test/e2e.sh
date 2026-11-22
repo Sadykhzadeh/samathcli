@@ -871,6 +871,11 @@ expect_out "Answers:
 run "a printout to a file does not say it is asking" -P 2
 expect_no_out "Asking"
 
+run "a printout is laid out as the manual describes" -P 2
+expect_status 0
+expected=$(printf '1. 0+1\n\tA) 1\t\tB) 2\n\tC) 3\t\tD) 4\n\n2. 1+1\n\tA) 5\t\tB) 2\n\tC) 3\t\tD) 4\n\nAnswers:\n1 A   2 B')
+if [ "$out" = "$expected" ]; then ok; else fail "the printout is $out"; fi
+
 run "a printout is the same with a time limit, practice and feedback" -P 3
 plain=$out
 run "a printout ignores a time limit, practice and feedback" -P -t 5 -p -f 3
