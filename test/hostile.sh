@@ -32,12 +32,21 @@ gen="$base/gen"
 long=$(printf '%5000s' '' | tr ' ' a)
 
 # run NAME URL ARGS... : runs samath with URL as SAMATH_API_URL and checks it.
+# A run still going after 30 seconds is stopped, which fails it. The watch is
+# a shell sleep rather than timeout, which not every system that builds samath
+# has.
 run() {
   name=$1
   url=$2
   shift 2
-  printf 'A\nB\nC\nD\nA\n' | SAMATH_API_URL="$url" timeout 30 "$bin" "$@" > "$work/out" 2> "$work/err"
+  printf 'A\nB\nC\nD\nA\n' > "$work/input"
+  SAMATH_API_URL="$url" "$bin" "$@" < "$work/input" > "$work/out" 2> "$work/err" &
+  pid=$!
+  (sleep 30; kill "$pid") < /dev/null > /dev/null 2>&1 &
+  watch=$!
+  wait "$pid"
   status=$?
+  kill "$watch" 2>/dev/null
   noise=$(grep -E '^curl|curl: \(|Sanitizer|runtime error|Failure writing|^==[0-9]+==|Traceback|python' "$work/err")
   controls=$(LC_ALL=C tr -d '\n' < "$work/err" | LC_ALL=C grep '[[:cntrl:]]')
   said=yes
