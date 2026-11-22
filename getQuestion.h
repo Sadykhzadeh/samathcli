@@ -5,9 +5,9 @@
 #include "options.h"
 #include "question.h"
 
-/* Whether the three bytes at `text` are a bidirectional control character; the
-   caller makes sure there are three. */
-int isBidiControl(const unsigned char* text);
+/* Whether the character at `text`, `size` bytes long as utf8Length gives it,
+   is a bidirectional control character. A size of 0 is never one. */
+int isBidiControl(const unsigned char* text, size_t size);
 
 /* The length, 2 to 4, of the well-formed UTF-8 character that starts at
    `text`, or 0 when the bytes there are not one, ASCII included. Overlong

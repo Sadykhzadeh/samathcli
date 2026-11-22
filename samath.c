@@ -142,9 +142,9 @@ static void sayText(const char* text, size_t length) {
     } else if (*c == 0xC2 && c + 1 < end && c[1] >= 0x80 && c[1] <= 0x9F) {
       fputc('?', stderr);
       c++;
-    } else if (end - c >= 3 && isBidiControl(c)) {
+    } else if (isBidiControl(c, size)) {
       fputc('?', stderr);
-      c += 2;
+      c += size - 1;
     } else if (!size) {
       fputc('?', stderr);
     } else {

@@ -280,11 +280,13 @@ size_t utf8Length(const unsigned char* text) {
   return length;
 }
 
-/* Whether the well-formed 3-byte character at `text` is a bidirectional
-   control: U+200E, U+200F, U+202A to U+202E or U+2066 to U+2069. A terminal
-   that shows them reorders the text around them. */
-int isBidiControl(const unsigned char* text) {
-  if (text[0] != 0xE2) return 0;
+/* Whether the well-formed character at `text`, `size` bytes long as utf8Length
+   gives it, is a bidirectional control: U+061C, U+200E, U+200F, U+202A to
+   U+202E or U+2066 to U+2069. A terminal that shows them reorders the text
+   around them. */
+int isBidiControl(const unsigned char* text, size_t size) {
+  if (size == 2) return text[0] == 0xD8 && text[1] == 0x9C;
+  if (size != 3 || text[0] != 0xE2) return 0;
   if (text[1] == 0x80) return text[2] == 0x8E || text[2] == 0x8F || (text[2] >= 0xAA && text[2] <= 0xAE);
   if (text[1] == 0x81) return text[2] >= 0xA6 && text[2] <= 0xA9;
   return 0;
@@ -324,8 +326,8 @@ static void rememberRefusal(Quiz* quiz, const char* body) {
       c += 2;
       continue;
     }
-    if (size == 3 && isBidiControl(c)) {
-      c += 3;
+    if (isBidiControl(c, size)) {
+      c += size;
       continue;
     }
     if (size == 1 && (*c < ' ' || *c == 0x7f)) {
