@@ -48,8 +48,10 @@ void inputDiscard(void);
 
    With `seconds` above 0 it gives up after that long with CHOICE_TIMEOUT,
    and calls `tick` with the whole seconds that are left each time that
-   number changes. `tick` may be NULL. */
-int readChoice(double seconds, void (*tick)(int left));
+   number changes. After the run is stopped and continued, `tick` is called
+   once more with `resumed` set to 1, so that the caller can show the prompt
+   again where the cursor is now. `tick` may be NULL. */
+int readChoice(double seconds, void (*tick)(int left, int resumed));
 
 /* The whole seconds in `seconds`, rounded up, as a countdown shows them. */
 int secondsLeft(double seconds);

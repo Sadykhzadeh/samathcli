@@ -376,9 +376,14 @@ static void showPrompt(double limit) {
   fflush(stdout);
 }
 
-/* Counts the time limit down in place, at a terminal only. */
-static void tick(int left) {
+/* Counts the time limit down in place, at a terminal only. After a stop the
+   prompt is shown again, as the cursor saved on it is no longer there. */
+static void tick(int left, int resumed) {
   if (!atTerminal) return;
+  if (resumed) {
+    showPrompt(left);
+    return;
+  }
   printf("\0338%d s left: \033[K", left);
   fflush(stdout);
 }

@@ -32,6 +32,7 @@ static volatile sig_atomic_t child = 0; /* a process the run stops with it */
 static int unreadable = 0; /* standard input failed, rather than ended */
 static double settled = 0; /* when keys start to answer the question */
 static volatile double stopped = 0; /* seconds the run has been stopped for */
+static volatile sig_atomic_t resumed = 0; /* a stop has been continued */
 
 static void giveBack(void) {
   if (taken) {
@@ -76,6 +77,7 @@ static void onStop(int signal) {
     taken = 1;
   }
   stopped += monotonicSeconds() - began;
+  resumed = 1;
 }
 
 /* Leaves the terminal as it was, then dies of the same signal as it would
@@ -232,19 +234,22 @@ int secondsLeft(double seconds) {
   return (double)whole < seconds ? whole + 1 : whole;
 }
 
-int readChoice(double seconds, void (*tick)(int left)) {
+int readChoice(double seconds, void (*tick)(int left, int resumed)) {
   double deadline = monotonicSeconds() + seconds;
   int shown = secondsLeft(seconds);
+  resumed = 0;
 
   for (;;) {
+    int continued = resumed;
+    resumed = 0;
     int waitMs = -1;
     if (seconds > 0) {
       double remaining = deadline - monotonicSeconds();
       if (remaining <= 0) return CHOICE_TIMEOUT;
       int left = secondsLeft(remaining);
-      if (left != shown) {
+      if (left != shown || continued) {
         shown = left;
-        if (tick) tick(left);
+        if (tick) tick(left, continued);
       }
       waitMs = (int)((remaining - (double)(left - 1)) * 1000) + 1;
     }

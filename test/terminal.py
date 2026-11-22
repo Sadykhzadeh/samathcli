@@ -366,9 +366,10 @@ def stop_job(fd, shell, seconds):
     return program
 
 
-# A stopped run hands the keyboard back, so the shell echoes what is typed, and
-# the time a question has is not used up while it is stopped: the countdown
-# goes on from the seconds that were left.
+# A stopped run hands the keyboard back, so the shell echoes what is typed. The
+# time a question has is not used up while it is stopped, so the countdown
+# goes on from the seconds that were left, and the prompt is shown again where
+# the cursor is once the run goes on.
 shell, fd = start_as_job(["-t", "2", "2"])
 drain(fd)
 stop_job(fd, shell, 2)
@@ -378,6 +379,7 @@ time.sleep(3)
 os.write(fd, b"fg\n")
 resumed = collect(fd, 3)
 waiting = resumed.split("2/2")[0]  # what is shown before the first question runs out
+check("the prompt is shown again after fg, with the seconds left", re.search(r"Answer \(A-D, Q to stop\) - \x1b7\d s left: ", waiting) is not None, repr(resumed[:300]))
 check("the countdown goes on after fg, and the question runs out", "1 s left" in waiting and "2/2" in resumed, repr(resumed[:300]))
 os.write(fd, b"q")
 os.write(fd, b"exit\n")
