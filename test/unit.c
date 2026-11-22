@@ -790,6 +790,8 @@ static void suggestsTheOptionThatWasMeant(void) {
   CHECK(nearestOption("--zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz") == NULL);
   CHECK(nearestOption("-x") == NULL);
   CHECK(nearestOption("--") == NULL);
+  CHECK(nearestOption("--ma") == NULL);
+  CHECK_STR(nearestOption("--prxxt"), "--print");
 }
 
 static void refusesASecondNumberOfQuestions(void) {
